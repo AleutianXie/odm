@@ -679,7 +679,6 @@ html.no-js .catalog-filter-supplier:hover .supplier-lists {
 
 .catalog-filter-attribute .media-item img,
 .catalog-filter-supplier .media-item img {
-	vertical-align: top;
 	height: 1em;
 	width: 1em;
 }
@@ -1470,9 +1469,26 @@ html.no-js .catalog-filter-supplier:hover .supplier-lists {
 	min-width: 1.5em;
 }
 
+.catalog-list-items .selection .radio .select-label > span,
+.catalog-detail-basket .selection .radio .select-label > span {
+	text-align: center;
+	min-width: 2.5em;
+	display: block;
+	padding: 0;
+}
+
+.catalog-list-items .selection .radio .select-label,
+.catalog-detail-basket .selection .radio .select-label {
+	border: solid 1px #ccc;
+	padding: 0.5em;
+	width: auto;
+}
+
 .catalog-list-items .selection .select-option:checked + .select-label,
 .catalog-detail-basket .selection .select-option:checked + .select-label {
 	border: solid 1px #B0A060;
+	background-color: #B0A060;
+	color: #fff;
 }
 
 .catalog-list-items .selection .select-option:disabled + .select-label,
@@ -2408,8 +2424,7 @@ html.no-js .catalog-filter-supplier:hover .supplier-lists {
 	padding: 0.5em;
 }
 
-.aimeos .common-summary-detail .details img {
-	float: left;
+.aimeos .common-summary-detail .image img.detail {
 	max-width: 6em;
 	max-height: 8em;
 	overflow: hidden;
@@ -2606,7 +2621,6 @@ html.no-js .catalog-filter-supplier:hover .supplier-lists {
 
 .account-history-list .history-item {
 	border: solid 1px #D0D0D0;
-	display: block;
 	margin: 1em;
 }
 
@@ -2662,7 +2676,6 @@ html.no-js .catalog-filter-supplier:hover .supplier-lists {
 
 .account-subscription-list .subscription-item {
 	border: solid 1px #D0D0D0;
-	display: block;
 	margin: 1em;
 }
 
@@ -2690,12 +2703,6 @@ html.no-js .catalog-filter-supplier:hover .supplier-lists {
 .account-subscription-list .subscription-cancel .delete:after {
 	font: normal normal normal 14px/1 FontAwesome;
 	content: "\f014";
-}
-
-.account-subscription-list .subscription-item {
-	display: -webkit-flex;
-	display: flex;
-	flex-wrap: wrap;
 }
 
 .account-subscription-detail {

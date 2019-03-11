@@ -230,7 +230,7 @@ abstract class Base
 		$text = ( isset( $params['f_search'] ) ? (string) $params['f_search'] : '' );
 		$catid = ( isset( $params['f_catid'] ) ? (string) $params['f_catid'] : '' );
 
-		if( $catid == '' && $catfilter === true )
+		if( $catid == '' && $catfilter === true && $text == '' )
 		{
 			/** client/html/catalog/lists/catid-default
 			 * The default category ID used if none is given as parameter
@@ -325,7 +325,7 @@ abstract class Base
 		/** client/html/catalog/lists/size
 		 * The number of products shown in a list page
 		 *
-		 * Limits the number of products that is shown in the list pages to the
+		 * Limits the number of products that are shown in the list pages to the
 		 * given value. If more products are available, the products are split
 		 * into bunches which will be shown on their own list page. The user is
 		 * able to move to the next page (or previous one if it's not the first)

@@ -346,7 +346,7 @@ class Standard
 		}
 
 
-		$provider = $manager->getProvider( $item, $code );
+		$provider = $manager->getProvider( $item, strtolower( $code ) );
 
 		if( $provider->isAvailable( $this->get() ) !== true )
 		{
@@ -382,7 +382,7 @@ class Standard
 			throw new \Aimeos\Controller\Frontend\Basket\Exception( sprintf( $msg, $code ) );
 		}
 
-		$manager->getProvider( $item, $code )->deleteCoupon( $this->get() );
+		$manager->getProvider( $item, strtolower( $code ) )->deleteCoupon( $this->get() );
 		$this->save();
 	}
 

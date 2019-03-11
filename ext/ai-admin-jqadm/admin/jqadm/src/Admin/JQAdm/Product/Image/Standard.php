@@ -264,7 +264,7 @@ class Standard
 
 		foreach( $attrListItems as $listItem )
 		{
-			if( ( $litem = $mediaItem->getListItem( 'attribute', 'variant', $listItem->getRefId() ) ) !== null )
+			if( ( $litem = $mediaItem->getListItem( 'attribute', 'variant', $listItem->getRefId(), false ) ) !== null )
 			{
 				unset( $listItems[$litem->getId()] );
 				continue;
@@ -303,6 +303,48 @@ class Standard
 		$view->imageTypes = $typeManager->searchItems( $search );
 
 		return $view;
+	}
+
+
+	/**
+	 * Removes the media reference and the media item if not shared
+	 *
+	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item including media reference
+	 * @param array $listItems Media list items to be removed
+	 * @return \Aimeos\MShop\Product\Item\Iface Modified product item
+	 */
+	protected function deleteMediaItems( \Aimeos\MShop\Product\Item\Iface $item, array $listItems )
+	{
+		$cntl = \Aimeos\Controller\Common\Media\Factory::createController( $this->getContext() );
+
+		foreach( $listItems as $listItem )
+		{
+			if( ( $refItem = $listItem->getRefItem() ) !== null && $this->isShared( $refItem ) === false ) {
+				$cntl->delete( $refItem );
+			}
+
+			$item->deleteListItem( 'media', $listItem, $refItem );
+		}
+
+		return $item;
+	}
+
+
+	/**
+	 * Returns if a media file is referenced more than once
+	 *
+	 * @param \Aimeos\MShop\Media\Item\Iface $mediaItem Media item with file URL
+	 * @return boolean True if URL is shared between media items, false if not
+	 * @todo This doesn't work for ElasticSearch because we can't search for URLs in ES documents
+	 */
+	protected function isShared( \Aimeos\MShop\Media\Item\Iface $mediaItem )
+	{
+		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'media' );
+
+		$search = $manager->createSearch()->setSlice( 0, 2 );
+		$search->setConditions( $search->compare( '==', 'media.url', $mediaItem->getUrl() ) );
+
+		return count( $manager->searchItems( $search ) ) !== 1 ? true : false;
 	}
 
 
@@ -374,7 +416,7 @@ class Standard
 			$type = $mediaTypeManager->getItem( $entry['media.typeid'] )->getCode();
 			$listType = $listTypeManager->getItem( $entry['product.lists.typeid'] )->getCode();
 
-			if( ( $listItem = $item->getListItem( 'media', $listType, $entry['media.id'] ) ) === null ) {
+			if( ( $listItem = $item->getListItem( 'media', $listType, $entry['media.id'], false ) ) === null ) {
 				$listItem = $listManager->createItem( $listType, 'media' );
 			}
 
@@ -384,7 +426,11 @@ class Standard
 
 			$refItem->fromArray( $entry );
 
-			if( ( $file = $this->getValue( $files, 'image/' . $idx . '/file' ) ) !== null && $file->getError() !== UPLOAD_ERR_NO_FILE ) {
+			if( ( $file = $this->getValue( $files, 'image/' . $idx . '/file' ) ) !== null && $file->getError() !== UPLOAD_ERR_NO_FILE )
+			{
+				if( $refItem->getId() == null || $this->isShared( $refItem ) ) {
+					$refItem = $refItem->setUrl( '' )->setPreview( '' ); // keep copied and shared image
+				}
 				$cntl->add( $refItem, $file );
 			}
 
@@ -408,17 +454,7 @@ class Standard
 			unset( $listItems[$listItem->getId()] );
 		}
 
-
-		foreach( $listItems as $listItem )
-		{
-			if( ( $refItem = $listItem->getRefItem() ) !== null ) {
-				$cntl->delete( $refItem );
-			}
-
-			$item->deleteListItem( 'media', $listItem, $refItem );
-		}
-
-		return $item;
+		return $this->deleteMediaItems( $item, $listItems );
 	}
 
 

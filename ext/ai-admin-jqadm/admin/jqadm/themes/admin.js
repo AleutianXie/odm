@@ -179,6 +179,11 @@ Aimeos = {
 	},
 
 
+	getOptionsCustomers : function(request, response, element, criteria, labelFcn) {
+		Aimeos.getOptions(request, response, element, 'customer', 'customer.code', 'customer.code', criteria, labelFcn);
+	},
+
+
 	getOptionsCurrencies : function(request, response, element, criteria, labelFcn) {
 		Aimeos.getOptions(request, response, element, 'locale/currency', 'locale.currency.id', '-locale.currency.status,locale.currency.id', criteria, labelFcn);
 	},
@@ -247,12 +252,19 @@ Aimeos.Config = {
 			}).done(function(result) {
 
 				$(result.data).each(function(idx, entry) {
-					var cfgkey = $("table.item-config input.config-key[value='" + entry.id + "']", target);
+					var nodes = $("table.item-config input.config-key", target);
+					var node = null;
 
-					if(cfgkey.length > 0) {
+					nodes.each(function() {
+						if($(this).val() === entry.id) {
+							node = $(this);
+						}
+					})
+
+					if(node) {
 						var el = $("table.item-config .config-item.prototype .config-type-" + entry.attributes.type, target).clone();
-						var row = cfgkey.closest(".config-item");
-						var old = $(".config-type", row);
+						var row = node.closest(".config-item");
+						var old = $(".config-value", row);
 
 						$("> [disabled='disabled']", el).prop("disabled", false);
 						$("> input", el).val(old.val());

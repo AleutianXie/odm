@@ -201,9 +201,6 @@ $statusList = [
 									</select>
 								</div>
 							</div>
-						</div>
-
-						<div class="col-xl-6 content-block <?= $this->site()->readonly( $basket->getLocale()->getSiteId() ); ?>">
 							<div class="form-group row">
 								<label class="col-4 form-control-label help"><?= $enc->html( $this->translate( 'admin', 'Site' ) ); ?></label>
 								<div class="col-8">
@@ -211,6 +208,21 @@ $statusList = [
 								</div>
 								<div class="col-12 form-text text-muted help-text">
 									<?= $enc->html( $this->translate( 'admin', 'Site the order was placed at' ) ); ?>
+								</div>
+							</div>
+						</div>
+
+						<div class="col-xl-6 content-block <?= $this->site()->readonly( $basket->getLocale()->getSiteId() ); ?>">
+							<div class="form-group row">
+								<label class="col-4 form-control-label"><?= $enc->html( $this->translate( 'admin', 'Customer' ) ); ?></label>
+								<div class="col-8">
+									<select class="combobox item-customer" tabindex="1"
+										name="<?= $enc->attr( $this->formparam( array( 'item', 'order.base.customerid' ) ) ); ?>"
+										<?= $this->site()->readonly( $basket->getLocale()->getSiteId() ); ?> />
+										<option value="<?= $enc->attr( $this->get( 'itemData/order.base.customerid' ) ); ?>" >
+											<?= $enc->html( $this->get( 'itemData/customer.code' ) ); ?>
+										</option>
+									</select>
 								</div>
 							</div>
 							<div class="form-group row">
@@ -657,9 +669,18 @@ $statusList = [
 													<td>
 														<input type="hidden" class="service-attr-id" value="<?= $enc->attr( $attrId ); ?>"
 															name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, $serviceId, 'order.base.service.attribute.id', '' ) ) ); ?>" />
+														<input type="hidden" class="service-attr-attributeid"
+															name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, $serviceId, 'order.base.service.attribute.attrid', '' ) ) ); ?>"
+															value="<?= $enc->attr( $this->get( 'itemData/service/' . $type . '/' . $serviceId . '/order.base.service.attribute.attrid/' . $idx ) ); ?>" />
 														<input type="hidden" class="service-attr-type"
 															name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, $serviceId, 'order.base.service.attribute.type', '' ) ) ); ?>"
-															value="<?= $enc->attr( $this->get( 'itemData/service/' . $type . '/' . $serviceId . 'order.base.service.attribute.type/' . $idx ) ); ?>" />
+															value="<?= $enc->attr( $this->get( 'itemData/service/' . $type . '/' . $serviceId . '/order.base.service.attribute.type/' . $idx ) ); ?>" />
+														<input type="hidden" class="service-attr-name"
+															name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, $serviceId, 'order.base.service.attribute.name', '' ) ) ); ?>"
+															value="<?= $enc->attr( $this->get( 'itemData/service/' . $type . '/' . $serviceId . '/order.base.service.attribute.name/' . $idx ) ); ?>" />
+														<input type="hidden" class="service-attr-quantity"
+															name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, $serviceId, 'order.base.service.attribute.quantity', '' ) ) ); ?>"
+															value="<?= $enc->attr( $this->get( 'itemData/service/' . $type . '/' . $serviceId . '/order.base.service.attribute.quantity/' . $idx ) ); ?>" />
 														<input type="text" class="service-attr-code form-control" tabindex="1"
 															name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, $serviceId, 'order.base.service.attribute.code', '' ) ) ); ?>"
 															value="<?= $enc->attr( $this->get( 'itemData/service/' . $type . '/' . $serviceId . '/order.base.service.attribute.code/' . $idx ) ); ?>"
@@ -685,13 +706,19 @@ $statusList = [
 												<td>
 													<input type="hidden" class="service-attr-id" value="" disabled="disabled"
 														name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, '_id_', 'order.base.service.attribute.id', '' ) ) ); ?>" />
+													<input type="hidden" class="service-attr-attributeid" value="" disabled="disabled"
+														name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, '_id_', 'order.base.service.attribute.attrid', '' ) ) ); ?>" />
 													<input type="hidden" class="service-attr-type" value="<?= $enc->attr( $type ); ?>" disabled="disabled"
 														name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, '_id_', 'order.base.service.attribute.type', '' ) ) ); ?>" />
-													<input type="text" class="service-attr-code form-control" tabindex="1" disabled="disabled"
+													<input type="hidden" class="service-attr-name" value="" disabled="disabled"
+														name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, '_id_', 'order.base.service.attribute.name', '' ) ) ); ?>" />
+													<input type="hidden" class="service-attr-quantity" value="1" disabled="disabled"
+														name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, '_id_', 'order.base.service.attribute.quantity', '' ) ) ); ?>" />
+													<input type="text" class="service-attr-code form-control" value="" disabled="disabled" tabindex="1"
 														name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, '_id_', 'order.base.service.attribute.code', '' ) ) ); ?>" />
 												</td>
 												<td>
-													<input type="text" class="service-attr-value form-control" tabindex="1" disabled="disabled"
+													<input type="text" class="service-attr-value form-control" value="" disabled="disabled" tabindex="1"
 														name="<?= $enc->attr( $this->formparam( array( 'item', 'service', $type, '_id_', 'order.base.service.attribute.value', '' ) ) ); ?>" />
 												</td>
 												<td class="actions">
