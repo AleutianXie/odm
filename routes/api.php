@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,4 +16,10 @@ use Illuminate\Http\Request;
 
 Route::middleware('auth:api')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+Route::get("/diy/backgrounds", function() {
+    $files = Storage::disk('public')->allfiles('upload/diy');
+    $paths = array_map("Storage::url", $files);
+    return response()->json($paths);
 });
