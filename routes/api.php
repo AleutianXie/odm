@@ -23,3 +23,17 @@ Route::get("/diy/backgrounds", function() {
     $paths = array_map("Storage::url", $files);
     return response()->json($paths);
 });
+
+Route::get("/diy/models", function() {
+    $models = [
+        [
+            'name' => 'iphone',
+            'model' => ['5/SE', '6/7/8', '6/7/8 plus', 'X', 'X max'],
+        ],
+        [
+            'name' => 'huawei',
+            'model' => ['Mate 20 Pro', 'Mate X', 'Mate 20', 'P30'],
+        ]
+    ];
+    return response()->json($models);
+});
