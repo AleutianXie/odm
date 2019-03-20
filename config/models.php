@@ -1,0 +1,96 @@
+<?php
+
+return [
+    "Apple" => [
+        "iPhone 5G/5S",
+        "iPhone 6G/6S",
+        "iPhone 6G Plus/6S Plus",
+        "iPhone 7/8",
+        "iPhone X",
+        "iPhone XR",
+        "iPhone XS",
+        "iPhone XS Max"
+    ],
+    "Samsung" => [
+        "S9",
+        "S9 Plus",
+        "S8",
+        "S8 Plus",
+        "Note 9",
+        "s7",
+        "s7 edge",
+        "s6",
+        "s6 edge",
+        "s6 edge plus",
+        "J7 2015",
+        "J7Prime/ON7 2016",
+        "J7 2017",
+        "J7 2018",
+        "J7Pro/J730",
+        "J5 2016",
+        "J5 2017",
+        "J5Pro/J530",
+        "J3 2016",
+        "J3 2017",
+        "J3 2018",
+        "A8 2018",
+        "A8 Plus 2018",
+        "A7 2016",
+        "A7 2017",
+        "A7 2018",
+        "A5 2016",
+        "A5 2017",
+        "S10",
+        "S10 plus",
+        "S10e"
+    ],
+    "Huawei" => [
+        "P8LITE2016",
+        "P10LITE",
+        "P20",
+        "P20LITE/NOVA3E",
+        "P20PRO/P20  PLUS",
+        "P10PLUS",
+        "P10",
+        "P9",
+        "P9 Lite",
+        "Honer 5X",
+        "Honer 7X",
+        "NOVA3",
+        "NOVA3I",
+        "Mate 20",
+        "Mate 20 Lite",
+        "Mate 10",
+    ],
+    "Xiaomi" => [
+        "Mi 8 2018",
+        "Mi A1/5X",
+        "Redmi Note5",
+        "Redmi 5",
+        "Redmi 5 Plus",
+        "Redmi 6"
+    ],
+    "Oneplus" => [
+        "oneplus 6T",
+        "oneplus 6",
+        "oneplus 5",
+        "oneplus 3",
+        "oneplus 5T"
+    ],
+    "LG" => [
+        "V40",
+        "K20",
+        "G7",
+        "Stylo 4",
+        "V30",
+        "G6"
+    ],
+    "Google" => [
+        "Pixel",
+        "Pixel XL",
+        "Pixel 2",
+        "Pixel 2 XL",
+        "Pixel 3",
+        "Pixel 3 XL"
+    ]
+];
