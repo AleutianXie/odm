@@ -19,7 +19,13 @@ Route::middleware('auth:api')->get('/user', function (Request $request) {
 });
 
 Route::get("/diy/backgrounds", function() {
-    $files = Storage::disk('public')->allfiles('upload/diy');
+    $files = Storage::disk('public')->allfiles('upload/diy/backgrounds');
+    $paths = array_map("Storage::url", $files);
+    return response()->json($paths);
+});
+
+Route::get("/diy/depot", function() {
+    $files = Storage::disk('public')->allfiles('upload/diy/depot');
     $paths = array_map("Storage::url", $files);
     return response()->json($paths);
 });
