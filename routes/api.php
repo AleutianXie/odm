@@ -33,3 +33,21 @@ Route::get("/diy/depot", function() {
 Route::get("/diy/models", function() {
     return response()->json(config("models"));
 });
+
+Route::post("/diy/save", function(Request $request) {
+    $id = $request->input('id', 0);
+    if ($id == 0) {
+        return response()->json(['success' => false, 'msg' => 'user id is empty']);
+    }
+    $content = $request->input('content', '');
+    // $content = file_get_contents('http://odm.cicisoft.com/photo1.png');
+    if ($content == '') {
+        return response()->json(['success' => false, 'msg' => 'file content is empty']);
+    }
+    $fileName = 'diy/output/' . md5($content) . '.png';
+    if (Storage::disk('public')->put($fileName, $content)) {
+        return response()->json(['success' => true, 'msg' => '上传成功', 'data' => Storage::url($fileName)]);
+    } else {
+        return response()->json(['success' => false, 'msg' => '上传失败']);
+    }
+});
