@@ -24,11 +24,7 @@ Route::get("/diy/backgrounds", function() {
     return response()->json($paths);
 });
 
-Route::get("/diy/depot", function() {
-    $files = Storage::disk('public')->allfiles('upload/diy/depot');
-    $paths = array_map("Storage::url", $files);
-    return response()->json($paths);
-});
+Route::get("/diy/depot", "API\DiyController@getDepots");
 
 Route::get("/diy/models", function() {
     return response()->json(config("models"));
@@ -57,3 +53,5 @@ Route::post("/diy/save", function(Request $request) {
         return response()->json(['success' => false, 'msg' => '上传失败']);
     }
 });
+
+Route::post("/diy/depot/upload", "API\DiyController@upload");
