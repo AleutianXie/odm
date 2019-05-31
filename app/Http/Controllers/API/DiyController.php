@@ -22,7 +22,7 @@ class DiyController extends Controller
 
         $content = file_get_contents($request->file('file')->getRealPath());
         // $content = file_get_contents('http://odm.cicisoft.com/photo1.png');
-        $fileName = 'upload/diy/depot' . md5($content) . '.png';
+        $fileName = 'upload/diy/depot/' . md5($content) . '.png';
         if (Storage::disk('public')->put($fileName, $content)) {
             $path = Storage::url($fileName);
             Depot::create(compact('user_id', 'path'));

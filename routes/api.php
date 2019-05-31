@@ -44,9 +44,11 @@ Route::post("/diy/save", function(Request $request) {
     // $content = file_get_contents('http://odm.cicisoft.com/photo1.png');
     $content1 = file_get_contents($request->file('file1')->getRealPath());
     $content2 = file_get_contents($request->file('file2')->getRealPath());
+    Log::info($content1);
+    Log::info($content2);
     $fileName1 = 'diy/output/' . md5($content1) . '.png';
     $fileName2 = 'diy/output/' . md5($content2) . '.png';
-    if (Storage::disk('public')->put($fileName1, $content1) ||
+    if (Storage::disk('public')->put($fileName1, $content1) &&
         Storage::disk('public')->put($fileName2, $content2)) {
         return response()->json(['success' => true, 'msg' => '上传成功', 'data' => [Storage::url($fileName1), Storage::url($fileName2)]]);
     } else {
