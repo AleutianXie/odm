@@ -6,9 +6,18 @@
 @import 'variables';
 
 // Bootstrap
-@import '~bootstrap/scss/bootstrap';
+// @import '~bootstrap/scss/bootstrap';
 
-.navbar-laravel {
-  background-color: #fff;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
-}
+// Bootstrap 3.3.7
+@import "~bootstrap/dist/css/bootstrap.min.css";
+
+// Bootstrap 3.4.1
+//@import "~admin-lte/bower_components/bootstrap/dist/css/bootstrap.min.css";
+
+// Font Awesome
+@import "~font-awesome/css/font-awesome.min.css";
+
+//.navbar-laravel {
+//  background-color: #fff;
+//  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+//}
