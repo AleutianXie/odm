@@ -154,16 +154,14 @@ class Standard
 		$date = date( 'Y-m-d H:i:s', time() - $days * 86400 );
 
 
-		$typeItem = $this->getTypeItem( 'product/lists/type', 'product', 'bought-together' );
-
-		$baseManager = \Aimeos\MShop\Factory::createManager( $context, 'order/base' );
+		$baseManager = \Aimeos\MShop::create( $context, 'order/base' );
 		$search = $baseManager->createSearch();
 		$search->setConditions( $search->compare( '>', 'order.base.ctime', $date ) );
 		$search->setSlice( 0, 0 );
 		$totalOrders = 0;
 		$baseManager->searchItems( $search, [], $totalOrders );
 
-		$baseProductManager = \Aimeos\MShop\Factory::createManager( $context, 'order/base/product' );
+		$baseProductManager = \Aimeos\MShop::create( $context, 'order/base/product' );
 		$search = $baseProductManager->createSearch();
 		$search->setConditions( $search->compare( '>', 'order.base.product.ctime', $date ) );
 		$start = 0;
@@ -175,12 +173,12 @@ class Standard
 
 			foreach( $totalCounts as $id => $count )
 			{
-				$this->removeListItems( $id, $typeItem->getId() );
+				$this->removeListItems( $id );
 
 				if( $count / $totalOrders > $minSupport )
 				{
 					$productIds = $this->getSuggestions( $id, $prodIds, $count, $totalOrders, $maxItems, $minSupport, $minConfidence, $date );
-					$this->addListItems( $id, $typeItem->getId(), $productIds );
+					$this->addListItems( $id, $productIds );
 				}
 			}
 
@@ -210,8 +208,8 @@ class Standard
 		$refIds = [];
 		$context = $this->getContext();
 
-		$catalogListManager = \Aimeos\MShop\Factory::createManager( $context, 'catalog/lists' );
-		$baseProductManager = \Aimeos\MShop\Factory::createManager( $context, 'order/base/product' );
+		$catalogListManager = \Aimeos\MShop::create( $context, 'catalog/lists' );
+		$baseProductManager = \Aimeos\MShop::create( $context, 'order/base/product' );
 
 
 		$search = $baseProductManager->createSearch();
@@ -265,16 +263,15 @@ class Standard
 	 * Adds products as referenced products to the product list.
 	 *
 	 * @param string $productId Unique ID of the product the given products should be referenced to
-	 * @param integer $typeId Unique ID of the list type used for the referenced products
 	 * @param array $productIds List of position as key and product ID as value
 	 */
-	protected function addListItems( $productId, $typeId, array $productIds )
+	protected function addListItems( $productId, array $productIds )
 	{
 		if( empty( $productIds ) ) {
 			return;
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/lists' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product/lists' );
 		$item = $manager->createItem();
 
 		foreach( $productIds as $pos => $refid )
@@ -282,7 +279,7 @@ class Standard
 			$item->setId( null );
 			$item->setParentId( $productId );
 			$item->setDomain( 'product' );
-			$item->setTypeId( $typeId );
+			$item->setType( 'bought-together' );
 			$item->setPosition( $pos );
 			$item->setRefId( $refid );
 			$item->setStatus( 1 );
@@ -296,17 +293,16 @@ class Standard
 	 * Remove all suggested products from product list.
 	 *
 	 * @param string $productId Unique ID of the product the references should be removed from
-	 * @param integer $typeId Unique ID of the list type the referenced products should be removed from
 	 */
-	protected function removeListItems( $productId, $typeId )
+	protected function removeListItems( $productId )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/lists' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product/lists' );
 
 		$search = $manager->createSearch();
 		$expr = array(
 			$search->compare( '==', 'product.lists.parentid', $productId ),
 			$search->compare( '==', 'product.lists.domain', 'product' ),
-			$search->compare( '==', 'product.lists.typeid', $typeId ),
+			$search->compare( '==', 'product.lists.type', 'bought-together' ),
 		);
 		$search->setConditions( $search->combine( '&&', $expr ) );
 

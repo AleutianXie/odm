@@ -13,6 +13,7 @@ $detailTarget = $this->config( 'client/html/catalog/detail/url/target' );
 $detailController = $this->config( 'client/html/catalog/detail/url/controller', 'catalog' );
 $detailAction = $this->config( 'client/html/catalog/detail/url/action', 'detail' );
 $detailConfig = $this->config( 'client/html/catalog/detail/url/config', [] );
+$detailProdid = $this->config( 'client/html/catalog/detail/url/d_prodid', false );
 
 $basketTarget = $this->config( 'client/html/basket/standard/url/target' );
 $basketController = $this->config( 'client/html/basket/standard/url/controller', 'basket' );
@@ -32,8 +33,9 @@ $basketParams = ( $basketSite ? ['site' => $basketSite] : [] );
 		<?php foreach( $this->get( 'listProductItems', [] ) as $id => $productItem ) : $firstImage = true; ?>
 			<?php
 				$conf = $productItem->getConfig(); $css = ( isset( $conf['css-class'] ) ? $conf['css-class'] : '' );
-				$params = array( 'd_name' => $productItem->getName( 'url' ), 'd_prodid' => $id );
-				if( $position !== null ) { $params['d_pos'] = $position++; }
+				$params = ['d_name' => $productItem->getName( 'url' )];
+				$position === null ?: $params['d_pos'] = $position++;
+				$detailProdid == false ?: $params['d_prodid'] = $id;
 
 				$url = $this->url( ($productItem->getTarget() ?: $detailTarget ), $detailController, $detailAction, $params, [], $detailConfig );
 			?>
@@ -90,7 +92,7 @@ $basketParams = ( $basketSite ? ['site' => $basketSite] : [] );
 							data-prodid="<?= $enc->attr( $id ); ?>"
 							data-prodcode="<?= $enc->attr( $productItem->getCode() ); ?>">
 							<?= $this->partial(
-								$this->config( 'client/html/common/partials/price', 'common/partials/price-standard.php' ),
+								$this->config( 'client/html/common/partials/price', 'common/partials/price-standard' ),
 								array( 'prices' => $productItem->getRefItems( 'price', null, 'default' ) )
 							); ?>
 						</div>
@@ -104,7 +106,7 @@ $basketParams = ( $basketSite ? ['site' => $basketSite] : [] );
 										data-prodid="<?= $enc->attr( $prodid ); ?>"
 										data-prodcode="<?= $enc->attr( $product->getCode() ); ?>">
 										<?= $this->partial(
-											$this->config( 'client/html/common/partials/price', 'common/partials/price-standard.php' ),
+											$this->config( 'client/html/common/partials/price', 'common/partials/price-standard' ),
 											array( 'prices' => $prices )
 										); ?>
 									</div>
@@ -129,7 +131,7 @@ $basketParams = ( $basketSite ? ['site' => $basketSite] : [] );
 						<?php if( $productItem->getType() === 'select' ) : ?>
 							<div class="items-selection">
 								<?= $this->partial(
-									$this->config( 'client/html/common/partials/selection', 'common/partials/selection-standard.php' ),
+									$this->config( 'client/html/common/partials/selection', 'common/partials/selection-standard' ),
 									array(
 										'products' => $productItem->getRefItems( 'product', 'default', 'default' ),
 										'productItems' => $this->get( 'itemsProductItems', [] ),
@@ -140,7 +142,7 @@ $basketParams = ( $basketSite ? ['site' => $basketSite] : [] );
 
 						<div class="items-attribute">
 							<?= $this->partial(
-								$this->config( 'client/html/common/partials/attribute', 'common/partials/attribute-standard.php' ),
+								$this->config( 'client/html/common/partials/attribute', 'common/partials/attribute-standard' ),
 								array(
 									'attributeConfigItems' => $productItem->getRefItems( 'attribute', null, 'config' ),
 									'attributeCustomItems' => $productItem->getRefItems( 'attribute', null, 'custom' ),

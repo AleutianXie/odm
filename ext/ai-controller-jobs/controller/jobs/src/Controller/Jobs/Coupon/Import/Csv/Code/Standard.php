@@ -128,7 +128,7 @@ class Standard
 					continue;
 				}
 
-				list( $couponId, ) = explode( '.', $filename );
+				list( $couponId,) = explode( '.', $filename );
 				$container = $this->getContainer( $fs->readf( $dir . '/' . $filename ) );
 
 				$msg = sprintf( 'Started coupon import from "%1$s" (%2$s)', $filename, __CLASS__ );
@@ -280,7 +280,7 @@ class Standard
 	{
 		$errors = 0;
 		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'coupon/code' );
+		$manager = \Aimeos\MShop::create( $context, 'coupon/code' );
 
 		foreach( $data as $code => $list )
 		{

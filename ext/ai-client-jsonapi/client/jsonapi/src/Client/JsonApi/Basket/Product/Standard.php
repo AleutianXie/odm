@@ -37,7 +37,7 @@ class Standard
 	{
 		parent::__construct( $context, $path );
 
-		$this->controller = \Aimeos\Controller\Frontend\Basket\Factory::createController( $this->getContext() );
+		$this->controller = \Aimeos\Controller\Frontend\Basket\Factory::create( $this->getContext() );
 	}
 
 
@@ -87,6 +87,12 @@ class Standard
 
 			$view->item = $this->controller->get();
 			$status = 200;
+		}
+		catch( \Aimeos\MShop\Plugin\Provider\Exception $e )
+		{
+			$status = 409;
+			$errors = $this->translatePluginErrorCodes( $e->getErrorCodes() );
+			$view->errors = $this->getErrorDetails( $e, 'mshop' ) + $errors;
 		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
@@ -141,13 +147,17 @@ class Standard
 				}
 
 				$qty = ( isset( $entry->attributes->quantity ) ? $entry->attributes->quantity : 1 );
-				$cfgAttrCodes = ( isset( $entry->attributes->codes ) ? (array) $entry->attributes->codes : [] );
-
-				$this->controller->editProduct( $entry->id, $qty, $cfgAttrCodes );
+				$this->controller->updateProduct( $entry->id, $qty );
 			}
 
 			$view->item = $this->controller->get();
 			$status = 200;
+		}
+		catch( \Aimeos\MShop\Plugin\Provider\Exception $e )
+		{
+			$status = 409;
+			$errors = $this->translatePluginErrorCodes( $e->getErrorCodes() );
+			$view->errors = $this->getErrorDetails( $e, 'mshop' ) + $errors;
 		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
@@ -180,6 +190,7 @@ class Standard
 			$this->clearCache();
 			$this->controller->setType( $view->param( 'id', 'default' ) );
 
+			$list = [];
 			$body = (string) $request->getBody();
 
 			if( ( $payload = json_decode( $body ) ) === null || !isset( $payload->data ) ) {
@@ -196,20 +207,37 @@ class Standard
 					throw new \Aimeos\Client\JsonApi\Exception( sprintf( 'Product ID is missing' ) );
 				}
 
-				$qty = ( isset( $entry->attributes->quantity ) ? $entry->attributes->quantity : 1 );
-				$stocktype = ( isset( $entry->attributes->stocktype ) ? $entry->attributes->stocktype : 'default' );
-				$variantAttrIds = ( isset( $entry->attributes->variant ) ? (array) $entry->attributes->variant : [] );
-				$hiddenAttrIds = ( isset( $entry->attributes->hidden ) ? (array) $entry->attributes->hidden : [] );
-				$configAttrIds = ( isset( $entry->attributes->config ) ? get_object_vars( $entry->attributes->config ) : [] );
-				$customAttrIds = ( isset( $entry->attributes->custom ) ? get_object_vars( $entry->attributes->custom ) : [] );
+				$list[] = $entry->attributes->{'product.id'};
+			}
 
-				$this->controller->addProduct( $entry->attributes->{'product.id'}, $qty, $stocktype,
-					$variantAttrIds, $configAttrIds, $hiddenAttrIds, $customAttrIds );
+			$products = \Aimeos\Controller\Frontend::create( $this->getContext(), 'product' )
+				->uses( ['attriubte', 'media', 'price', 'product', 'text'] )->product( $list )->search();
+
+			foreach( $payload->data as $entry )
+			{
+				if( isset( $products[$entry->attributes->{'product.id'}] ) )
+				{
+					$qty = ( isset( $entry->attributes->quantity ) ? $entry->attributes->quantity : 1 );
+					$supplier = ( isset( $entry->attributes->supplier ) ? $entry->attributes->supplier : null );
+					$stocktype = ( isset( $entry->attributes->stocktype ) ? $entry->attributes->stocktype : 'default' );
+					$varAttrIds = ( isset( $entry->attributes->variant ) ? (array) $entry->attributes->variant : [] );
+					$confAttrIds = ( isset( $entry->attributes->config ) ? get_object_vars( $entry->attributes->config ) : [] );
+					$custAttrIds = ( isset( $entry->attributes->custom ) ? get_object_vars( $entry->attributes->custom ) : [] );
+
+					$this->controller->addProduct( $products[$entry->attributes->{'product.id'}],
+						$qty, $varAttrIds, $confAttrIds, $custAttrIds, $stocktype, $supplier );
+				}
 			}
 
 
 			$view->item = $this->controller->get();
 			$status = 201;
+		}
+		catch( \Aimeos\MShop\Plugin\Provider\Exception $e )
+		{
+			$status = 409;
+			$errors = $this->translatePluginErrorCodes( $e->getErrorCodes() );
+			$view->errors = $this->getErrorDetails( $e, 'mshop' ) + $errors;
 		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
@@ -273,7 +301,7 @@ class Standard
 		];
 
 		$tplconf = 'client/jsonapi/standard/template-options';
-		$default = 'options-standard.php';
+		$default = 'options-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -296,7 +324,7 @@ class Standard
 	protected function render( ResponseInterface $response, \Aimeos\MW\View\Iface $view, $status )
 	{
 		$tplconf = 'client/jsonapi/basket/standard/template';
-		$default = 'basket/standard.php';
+		$default = 'basket/standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 

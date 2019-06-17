@@ -270,12 +270,12 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/property' );
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/property/type' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product/property' );
+		$typeManager = \Aimeos\MShop::create( $this->getContext(), 'product/property/type' );
 
 		foreach( $data as $type => $value )
 		{
@@ -284,14 +284,13 @@ class Standard
 			if( ( $value = trim( $value ) ) != '' )
 			{
 				if( ( $propItem = reset( $propItems ) ) === false ) {
-					$propItem = $manager->createItem( $type, 'product' );
+					$propItem = $manager->createItem()->setType( $type );
 				}
 
 				$propItem->setLanguageId( null );
 				$propItem->setValue( $value );
 
 				$item->addPropertyItem( $propItem );
-
 			}
 			else
 			{
@@ -349,7 +348,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/physical/template-item';
-		$default = 'product/item-physical-standard.php';
+		$default = 'product/item-physical-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

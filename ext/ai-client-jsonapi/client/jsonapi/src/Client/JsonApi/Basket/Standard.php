@@ -35,7 +35,7 @@ class Standard extends Base implements \Aimeos\Client\JsonApi\Iface
 	{
 		parent::__construct( $context, $path );
 
-		$this->controller = \Aimeos\Controller\Frontend\Basket\Factory::createController( $this->getContext() );
+		$this->controller = \Aimeos\Controller\Frontend\Basket\Factory::create( $this->getContext() );
 	}
 
 
@@ -57,6 +57,12 @@ class Standard extends Base implements \Aimeos\Client\JsonApi\Iface
 			$status = 200;
 			$type = $view->param( 'id', 'default' );
 			$view->item = $this->controller->setType( $type )->clear()->get();
+		}
+		catch( \Aimeos\MShop\Plugin\Provider\Exception $e )
+		{
+			$status = 409;
+			$errors = $this->translatePluginErrorCodes( $e->getErrorCodes() );
+			$view->errors = $this->getErrorDetails( $e, 'mshop' ) + $errors;
 		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
@@ -146,6 +152,12 @@ class Standard extends Base implements \Aimeos\Client\JsonApi\Iface
 			$view->item = $basket;
 			$status = 200;
 		}
+		catch( \Aimeos\MShop\Plugin\Provider\Exception $e )
+		{
+			$status = 409;
+			$errors = $this->translatePluginErrorCodes( $e->getErrorCodes() );
+			$view->errors = $this->getErrorDetails( $e, 'mshop' ) + $errors;
+		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
 			$status = 404;
@@ -174,6 +186,7 @@ class Standard extends Base implements \Aimeos\Client\JsonApi\Iface
 
 		try
 		{
+			$this->controller->get()->check();
 			$this->clearCache();
 
 			$item = $this->controller->setType( $view->param( 'id', 'default' ) )->store();
@@ -181,6 +194,12 @@ class Standard extends Base implements \Aimeos\Client\JsonApi\Iface
 
 			$view->item = $item;
 			$status = 200;
+		}
+		catch( \Aimeos\MShop\Plugin\Provider\Exception $e )
+		{
+			$status = 409;
+			$errors = $this->translatePluginErrorCodes( $e->getErrorCodes() );
+			$view->errors = $this->getErrorDetails( $e, 'mshop' ) + $errors;
 		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
@@ -216,7 +235,7 @@ class Standard extends Base implements \Aimeos\Client\JsonApi\Iface
 		];
 
 		$tplconf = 'client/jsonapi/standard/template-options';
-		$default = 'options-standard.php';
+		$default = 'options-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -288,7 +307,7 @@ class Standard extends Base implements \Aimeos\Client\JsonApi\Iface
 		 * @category Developer
 		 */
 		$tplconf = 'client/jsonapi/basket/standard/template';
-		$default = 'basket/standard.php';
+		$default = 'basket/standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 

@@ -19,7 +19,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	protected function setUp()
 	{
 		$this->view = \TestHelperJqadm::getView();
-		$request = $this->getMockBuilder( '\Psr\Http\Message\ServerRequestInterface' )->getMock();
+		$request = $this->getMockBuilder( \Psr\Http\Message\ServerRequestInterface::class )->getMock();
 		$helper = new \Aimeos\MW\View\Helper\Request\Standard( $this->view, $request, '127.0.0.1', 'test' );
 		$this->view ->addHelper( 'request', $helper );
 
@@ -190,7 +190,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSave()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'order/base' );
+		$manager = \Aimeos\MShop::create( $this->context, 'order/base' );
 		$this->view->item = $manager->createItem();
 
 		$param = array(
@@ -287,27 +287,27 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	public function testGetSubClient()
 	{
 		$result = $this->object->getSubClient( 'invoice' );
-		$this->assertInstanceOf( '\Aimeos\Admin\JQAdm\Iface', $result );
+		$this->assertInstanceOf( \Aimeos\Admin\JQAdm\Iface::class, $result );
 	}
 
 
 	public function testGetSubClientInvalid()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( '$unknown$' );
 	}
 
 
 	public function testGetSubClientUnknown()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( 'unknown' );
 	}
 
 
 	public function getClientMock( $method )
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Order\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Order\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( [$method] )
 			->getMock();
@@ -321,7 +321,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getViewNoRender()
 	{
-		$view = $this->getMockBuilder( '\Aimeos\MW\View\Standard' )
+		$view = $this->getMockBuilder( \Aimeos\MW\View\Standard::class )
 			->setConstructorArgs( array( [] ) )
 			->setMethods( array( 'render', 'config' ) )
 			->getMock();
@@ -339,7 +339,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getOrderBaseItem( $comment = 'This is another comment.' )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'order/base' );
+		$manager = \Aimeos\MShop::create( $this->context, 'order/base' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'order.base.comment', $comment ) );

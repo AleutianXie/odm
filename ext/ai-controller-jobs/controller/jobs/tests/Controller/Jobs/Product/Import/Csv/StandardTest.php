@@ -18,7 +18,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function setUp()
 	{
-		\Aimeos\MShop\Factory::setCache( true );
+		\Aimeos\MShop::cache( true );
 
 		$this->context = \TestHelperJobs::getContext();
 		$this->aimeos = \TestHelperJobs::getAimeos();
@@ -33,9 +33,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function tearDown()
 	{
-		\Aimeos\MShop\Factory::setCache( false );
-		\Aimeos\MShop\Factory::clear();
-
+		\Aimeos\MShop::cache( false );
 		$this->object = null;
 
 		if( file_exists( 'tmp/import.zip' ) ) {
@@ -259,15 +257,15 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function delete( array $prodcodes, array $delete, array $nondelete )
 	{
-		$catListManager = \Aimeos\MShop\Catalog\Manager\Factory::createManager( $this->context )->getSubmanager( 'lists' );
-		$productManager = \Aimeos\MShop\Product\Manager\Factory::createManager( $this->context );
+		$catListManager = \Aimeos\MShop\Catalog\Manager\Factory::create( $this->context )->getSubmanager( 'lists' );
+		$productManager = \Aimeos\MShop\Product\Manager\Factory::create( $this->context );
 		$listManager = $productManager->getSubManager( 'lists' );
 
 		foreach( $this->get( $prodcodes, $delete + $nondelete ) as $id => $product )
 		{
 			foreach( $delete as $domain )
 			{
-				$manager = \Aimeos\MShop\Factory::createManager( $this->context, $domain );
+				$manager = \Aimeos\MShop::create( $this->context, $domain );
 
 				foreach( $product->getListItems( $domain ) as $listItem )
 				{
@@ -292,7 +290,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		}
 
 
-		$attrManager = \Aimeos\MShop\Attribute\Manager\Factory::createManager( $this->context );
+		$attrManager = \Aimeos\MShop\Attribute\Manager\Factory::create( $this->context );
 
 		$search = $attrManager->createSearch();
 		$search->setConditions( $search->compare( '==', 'attribute.code', 'import-test' ) );
@@ -305,7 +303,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function get( array $prodcodes, array $domains )
 	{
-		$productManager = \Aimeos\MShop\Product\Manager\Factory::createManager( $this->context );
+		$productManager = \Aimeos\MShop\Product\Manager\Factory::create( $this->context );
 
 		$search = $productManager->createSearch();
 		$search->setConditions( $search->compare( '==', 'product.code', $prodcodes ) );
@@ -316,11 +314,11 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getProperties( array $prodids )
 	{
-		$manager = \Aimeos\MShop\Product\Manager\Factory::createManager( $this->context )->getSubManager( 'property' );
+		$manager = \Aimeos\MShop\Product\Manager\Factory::create( $this->context )->getSubManager( 'property' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'product.property.parentid', $prodids ) );
-		$search->setSortations( array( $search->sort( '+', 'product.property.type.code' ) ) );
+		$search->setSortations( array( $search->sort( '+', 'product.property.type' ) ) );
 
 		return $manager->searchItems( $search );
 	}

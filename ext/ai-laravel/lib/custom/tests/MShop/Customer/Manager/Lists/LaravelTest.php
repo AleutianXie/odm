@@ -1,24 +1,26 @@
 <?php
 
-namespace Aimeos\MShop\Customer\Manager\Lists;
-
-
 /**
  * @license LGPLv3, http://opensource.org/licenses/LGPL-3.0
  * @copyright Aimeos (aimeos.org), 2015-2018
  */
+
+
+ namespace Aimeos\MShop\Customer\Manager\Lists;
+
+
 class LaravelTest extends \PHPUnit\Framework\TestCase
 {
 	private $object;
 	private $context;
-	private $editor = 'ai-laravel:unittest';
+	private $editor = 'ai-laravel:lib/custom';
 
 
 	protected function setUp()
 	{
 		$this->context = \TestHelper::getContext();
 		$this->editor = $this->context->getEditor();
-		$manager = \Aimeos\MShop\Customer\Manager\Factory::createManager( $this->context, 'Laravel' );
+		$manager = \Aimeos\MShop\Customer\Manager\Factory::create( $this->context, 'Laravel' );
 		$this->object = $manager->getSubManager( 'lists', 'Laravel' );
 	}
 
@@ -40,13 +42,13 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 		$search = $this->object->createSearch( true );
 		$expr = array(
 			$search->getConditions(),
-			$search->compare( '==', 'customer.lists.editor', 'ai-laravel:unittest' ),
+			$search->compare( '==', 'customer.lists.editor', 'ai-laravel:lib/custom' ),
 		);
 		$search->setConditions( $search->combine( '&&', $expr ) );
 
 		$result = $this->object->aggregate( $search, 'customer.lists.domain' );
 
-		$this->assertEquals( 1, count( $result ) );
+		$this->assertEquals( 2, count( $result ) );
 		$this->assertArrayHasKey( 'text', $result );
 		$this->assertEquals( 4, $result['text'] );
 	}
@@ -96,11 +98,10 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 
 
 		$this->assertTrue( $item->getId() !== null );
-		$this->assertTrue( $itemSaved->getType() !== null );
 		$this->assertEquals( $item->getId(), $itemSaved->getId() );
 		$this->assertEquals( $item->getSiteId(), $itemSaved->getSiteId() );
 		$this->assertEquals( $item->getParentId(), $itemSaved->getParentId() );
-		$this->assertEquals( $item->getTypeId(), $itemSaved->getTypeId() );
+		$this->assertEquals( $item->getType(), $itemSaved->getType() );
 		$this->assertEquals( $item->getRefId(), $itemSaved->getRefId() );
 		$this->assertEquals( $item->getDomain(), $itemSaved->getDomain() );
 		$this->assertEquals( $item->getDateStart(), $itemSaved->getDateStart() );
@@ -114,11 +115,10 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 		$this->assertRegExp( '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/', $itemSaved->getTimeCreated() );
 		$this->assertRegExp('/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/', $itemSaved->getTimeModified() );
 
-		$this->assertTrue( $itemUpd->getType() !== null );
 		$this->assertEquals( $itemExp->getId(), $itemUpd->getId() );
 		$this->assertEquals( $itemExp->getSiteId(), $itemUpd->getSiteId() );
 		$this->assertEquals( $itemExp->getParentId(), $itemUpd->getParentId() );
-		$this->assertEquals( $itemExp->getTypeId(), $itemUpd->getTypeId() );
+		$this->assertEquals( $itemExp->getType(), $itemUpd->getType() );
 		$this->assertEquals( $itemExp->getRefId(), $itemUpd->getRefId() );
 		$this->assertEquals( $itemExp->getDomain(), $itemUpd->getDomain() );
 		$this->assertEquals( $itemExp->getDateStart(), $itemUpd->getDateStart() );
@@ -129,94 +129,11 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( $itemExp->getTimeCreated(), $itemUpd->getTimeCreated() );
 		$this->assertRegExp( '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/', $itemUpd->getTimeModified() );
 
-		$this->assertInstanceOf( '\Aimeos\MShop\Common\Item\Iface', $resultSaved );
-		$this->assertInstanceOf( '\Aimeos\MShop\Common\Item\Iface', $resultUpd );
+		$this->assertInstanceOf( \Aimeos\MShop\Common\Item\Iface::class, $resultSaved );
+		$this->assertInstanceOf( \Aimeos\MShop\Common\Item\Iface::class, $resultUpd );
 
 		$this->setExpectedException('\\Aimeos\\MShop\\Exception');
 		$this->object->getItem( $itemSaved->getId() );
-	}
-
-
-	public function testMoveItemLastToFront()
-	{
-		$listItems = $this->getListItems();
-		$this->assertGreaterThan( 1, count( $listItems ) );
-
-		if( ( $first = reset( $listItems ) ) === false ) {
-			throw new \RuntimeException( 'No first customer list item' );
-		}
-
-		if( ( $last = end( $listItems ) ) === false ) {
-			throw new \RuntimeException( 'No last customer list item' );
-		}
-
-		$this->object->moveItem( $last->getId(), $first->getId() );
-
-		$newFirst = $this->object->getItem( $last->getId() );
-		$newSecond = $this->object->getItem( $first->getId() );
-
-		$this->object->moveItem( $last->getId() );
-
-		$this->assertEquals( 1, $newFirst->getPosition() );
-		$this->assertEquals( 2, $newSecond->getPosition() );
-	}
-
-
-	public function testMoveItemFirstToLast()
-	{
-		$listItems = $this->getListItems();
-		$this->assertGreaterThan( 1, count( $listItems ) );
-
-		if( ( $first = reset( $listItems ) ) === false ) {
-			throw new \RuntimeException( 'No first customer list item' );
-		}
-
-		if( ( $second = next( $listItems ) ) === false ) {
-			throw new \RuntimeException( 'No second customer list item' );
-		}
-
-		if( ( $last = end( $listItems ) ) === false ) {
-			throw new \RuntimeException( 'No last customer list item' );
-		}
-
-		$this->object->moveItem( $first->getId() );
-
-		$newBefore = $this->object->getItem( $last->getId() );
-		$newLast = $this->object->getItem( $first->getId() );
-
-		$this->object->moveItem( $first->getId(), $second->getId() );
-
-		$this->assertEquals( $last->getPosition() - 1, $newBefore->getPosition() );
-		$this->assertEquals( $last->getPosition(), $newLast->getPosition() );
-	}
-
-
-	public function testMoveItemFirstUp()
-	{
-		$listItems = $this->getListItems();
-		$this->assertGreaterThan( 1, count( $listItems ) );
-
-		if( ( $first = reset( $listItems ) ) === false ) {
-			throw new \RuntimeException( 'No first customer list item' );
-		}
-
-		if( ( $second = next( $listItems ) ) === false ) {
-			throw new \RuntimeException( 'No second customer list item' );
-		}
-
-		if( ( $last = end( $listItems ) ) === false ) {
-			throw new \RuntimeException( 'No last customer list item' );
-		}
-
-		$this->object->moveItem( $first->getId(), $last->getId() );
-
-		$newLast = $this->object->getItem( $last->getId() );
-		$newUp = $this->object->getItem( $first->getId() );
-
-		$this->object->moveItem( $first->getId(), $second->getId() );
-
-		$this->assertEquals( $last->getPosition() - 1, $newUp->getPosition() );
-		$this->assertEquals( $last->getPosition(), $newLast->getPosition() );
 	}
 
 
@@ -228,58 +145,52 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 		$expr = [];
 		$expr[] = $search->compare( '!=', 'customer.lists.id', null );
 		$expr[] = $search->compare( '!=', 'customer.lists.siteid', null );
-		$expr[] = $search->compare( '>', 'customer.lists.parentid', 0 );
+		$expr[] = $search->compare( '!=', 'customer.lists.parentid', null );
+		$expr[] = $search->compare( '!=', 'customer.lists.key', null );
 		$expr[] = $search->compare( '==', 'customer.lists.domain', 'text' );
-		$expr[] = $search->compare( '>', 'customer.lists.typeid', 0 );
+		$expr[] = $search->compare( '==', 'customer.lists.type', 'default' );
 		$expr[] = $search->compare( '>', 'customer.lists.refid', 0 );
 		$expr[] = $search->compare( '==', 'customer.lists.datestart', '2010-01-01 00:00:00' );
-		$expr[] = $search->compare( '==', 'customer.lists.dateend', '2100-01-01 00:00:00' );
+		$expr[] = $search->compare( '==', 'customer.lists.dateend', '2098-01-01 00:00:00' );
 		$expr[] = $search->compare( '!=', 'customer.lists.config', null );
-		$expr[] = $search->compare( '>', 'customer.lists.position', 1 );
+		$expr[] = $search->compare( '>', 'customer.lists.position', 0 );
 		$expr[] = $search->compare( '==', 'customer.lists.status', 1 );
 		$expr[] = $search->compare( '>=', 'customer.lists.mtime', '1970-01-01 00:00:00' );
 		$expr[] = $search->compare( '>=', 'customer.lists.ctime', '1970-01-01 00:00:00' );
 		$expr[] = $search->compare( '==', 'customer.lists.editor', $this->editor );
 
-		$expr[] = $search->compare( '!=', 'customer.lists.type.id', 0 );
-		$expr[] = $search->compare( '!=', 'customer.lists.type.siteid', null );
-		$expr[] = $search->compare( '==', 'customer.lists.type.code', 'default' );
-		$expr[] = $search->compare( '==', 'customer.lists.type.domain', 'text' );
-		$expr[] = $search->compare( '==', 'customer.lists.type.label', 'Standard' );
-		$expr[] = $search->compare( '==', 'customer.lists.type.status', 1 );
-		$expr[] = $search->compare( '>=', 'customer.lists.type.mtime', '1970-01-01 00:00:00' );
-		$expr[] = $search->compare( '>=', 'customer.lists.type.ctime', '1970-01-01 00:00:00' );
-		$expr[] = $search->compare( '==', 'customer.lists.type.editor', $this->editor );
-
 		$search->setConditions( $search->combine( '&&', $expr ) );
-		$search->setSlice(0, 1);
+		$search->setSlice( 0, 2 );
 		$results = $this->object->searchItems( $search, [], $total );
-		$this->assertEquals( 1, count( $results ) );
-		$this->assertEquals( 2, $total );
+		$this->assertEquals( 2, count( $results ) );
+		$this->assertEquals( 3, $total );
 
-		foreach($results as $itemId => $item) {
+		foreach( $results as $itemId => $item ) {
 			$this->assertEquals( $itemId, $item->getId() );
 		}
 	}
 
 
-	public function testSearchItemsNoCriteria()
+	public function testSearchItemsAll()
 	{
+		//search without base criteria
 		$search = $this->object->createSearch();
 		$search->setConditions( $search->compare( '==', 'customer.lists.editor', $this->editor ) );
-		$this->assertEquals( 4, count( $this->object->searchItems($search) ) );
+		$result = $this->object->searchItems( $search );
+		$this->assertEquals( 5, count( $result ) );
 	}
 
 
-	public function testSearchItemsBaseCriteria()
+	public function testSearchItemsBase()
 	{
-		$search = $this->object->createSearch(true);
+		//search with base criteria
+		$search = $this->object->createSearch( true );
 		$conditions = array(
 			$search->compare( '==', 'customer.lists.editor', $this->editor ),
 			$search->getConditions()
 		);
 		$search->setConditions( $search->combine( '&&', $conditions ) );
-		$this->assertEquals( 4, count( $this->object->searchItems($search) ) );
+		$this->assertEquals( 5, count( $this->object->searchItems( $search ) ) );
 	}
 
 
@@ -290,33 +201,5 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 
 		$this->setExpectedException( '\\Aimeos\\MShop\\Exception' );
 		$this->object->getSubManager( 'unknown' );
-	}
-
-
-	protected function getListItems()
-	{
-		$manager = \Aimeos\MShop\Customer\Manager\Factory::createManager( $this->context, 'Laravel' );
-
-		$search = $manager->createSearch();
-		$search->setConditions( $search->compare( '==', 'customer.code', 'UTC003' ) );
-		$search->setSlice( 0, 1 );
-
-		$results = $manager->searchItems( $search );
-
-		if( ( $item = reset( $results ) ) === false ) {
-			throw new \RuntimeException( 'No customer item found' );
-		}
-
-		$search = $this->object->createSearch();
-		$expr = array(
-			$search->compare( '==', 'customer.lists.parentid', $item->getId() ),
-			$search->compare( '==', 'customer.lists.domain', 'text' ),
-			$search->compare( '==', 'customer.lists.editor', $this->editor ),
-			$search->compare( '==', 'customer.lists.type.code', 'default' ),
-		);
-		$search->setConditions( $search->combine( '&&', $expr ) );
-		$search->setSortations( array( $search->sort( '+', 'customer.lists.position' ) ) );
-
-		return $this->object->searchItems( $search );
 	}
 }

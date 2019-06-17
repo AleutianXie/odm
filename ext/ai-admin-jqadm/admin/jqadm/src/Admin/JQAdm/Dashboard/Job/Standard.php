@@ -50,7 +50,7 @@ class Standard
 			}
 
 			$fs = $context->getFileSystemManager()->get( 'fs-admin' );
-			$manager = \Aimeos\MAdmin\Factory::createManager( $context, 'job' );
+			$manager = \Aimeos\MAdmin::create( $context, 'job' );
 			$item = $manager->getItem( $id );
 			$result = $item->getResult();
 
@@ -94,7 +94,7 @@ class Standard
 			}
 
 			$fs = $context->getFileSystemManager()->get( 'fs-admin' );
-			$item = \Aimeos\MAdmin\Factory::createManager( $context, 'job' )->getItem( $id );
+			$item = \Aimeos\MAdmin::create( $context, 'job' )->getItem( $id );
 			$result = $item->getResult();
 
 			if( isset( $result['file'] ) && $fs->has( $result['file'] ) )
@@ -132,7 +132,7 @@ class Standard
 
 		try
 		{
-			$manager = \Aimeos\MAdmin\Factory::createManager( $context, 'job' );
+			$manager = \Aimeos\MAdmin::create( $context, 'job' );
 
 			$search = $manager->createSearch();
 			$search->setSortations( [$search->sort( '-', 'job.ctime' ), $search->sort( '-', 'job.id' )] );
@@ -180,7 +180,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/dashboard/job/template-list';
-		$default = 'dashboard/list-job-standard.php';
+		$default = 'dashboard/list-job-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

@@ -39,7 +39,7 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'product' );
+			$manager = \Aimeos\MShop::create( $context, 'product' );
 			$view->item = $manager->getItem( $id, $this->getDomains() );
 
 			$view->itemData = $this->toArray( $view->item, true );
@@ -85,7 +85,7 @@ class Standard
 			$data = $view->param( 'item', [] );
 
 			if( !isset( $view->item ) ) {
-				$view->item = \Aimeos\MShop\Factory::createManager( $context, 'product' )->createItem();
+				$view->item = \Aimeos\MShop::create( $context, 'product' )->createItem();
 			}
 
 			$data['product.siteid'] = $view->item->getSiteId();
@@ -128,7 +128,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'product' );
+		$manager = \Aimeos\MShop::create( $context, 'product' );
 		$manager->begin();
 
 		try
@@ -185,7 +185,7 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'product' );
+			$manager = \Aimeos\MShop::create( $context, 'product' );
 
 			$view->item = $manager->getItem( $id, $this->getDomains() );
 			$view->itemSubparts = $this->getSubClientNames();
@@ -226,7 +226,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'product' );
+		$manager = \Aimeos\MShop::create( $context, 'product' );
 		$manager->begin();
 
 		try
@@ -282,7 +282,7 @@ class Standard
 		{
 			$total = 0;
 			$params = $this->storeSearchParams( $view->param(), 'product' );
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'product' );
+			$manager = \Aimeos\MShop::create( $context, 'product' );
 
 			$search = $manager->createSearch();
 			$search->setSortations( [$search->sort( '+', 'product.id')] );
@@ -332,7 +332,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/template-list';
-		$default = 'product/list-standard.php';
+		$default = 'product/list-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -499,19 +499,19 @@ class Standard
 	 */
 	protected function getTypeItems()
 	{
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/type' );
+		$typeManager = \Aimeos\MShop::create( $this->getContext(), 'product/type' );
 
-		$search = $typeManager->createSearch();
-		$search->setSortations( array( $search->sort( '+', 'product.type.label' ) ) );
+		$search = $typeManager->createSearch( true )->setSlice( 0, 10000 );
+		$search->setSortations( [$search->sort( '+', 'product.type.position' )] );
 
-		return $typeManager->searchItems( $search );
+		return $this->map( $typeManager->searchItems( $search ) );
 	}
 
 
 	/**
 	 * Creates new and updates existing items using the data array
 	 *
-	 * @param string[] Data array
+	 * @param array $data Data array
 	 * @return \Aimeos\MShop\Product\Item\Iface New product item object
 	 */
 	protected function fromArray( array $data )
@@ -528,16 +528,15 @@ class Standard
 			}
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product' );
 
 		if( isset( $data['product.id'] ) && $data['product.id'] != '' ) {
 			$item = $manager->getItem( $data['product.id'], $this->getDomains() );
 		} else {
-			$typeManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/type' );
-			$item = $manager->createItem( $typeManager->getItem( $data['product.typeid'] )->getCode(), 'product' );
+			$item = $manager->createItem();
 		}
 
-		$item->fromArray( $data );
+		$item->fromArray( $data, true );
 		$item->setConfig( $conf );
 
 		return $item;
@@ -600,7 +599,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/template-item';
-		$default = 'product/item-standard.php';
+		$default = 'product/item-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

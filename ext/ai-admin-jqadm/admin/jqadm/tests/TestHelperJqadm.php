@@ -13,7 +13,7 @@ class TestHelperJqadm
 	public static function bootstrap()
 	{
 		self::getAimeos();
-		\Aimeos\MShop\Factory::setCache( false );
+		\Aimeos\MShop::cache( false );
 	}
 
 
@@ -51,7 +51,7 @@ class TestHelperJqadm
 		$helper = new \Aimeos\MW\View\Helper\Date\Standard( $view, 'Y-m-d' );
 		$view->addHelper( 'date', $helper );
 
-		$config = new \Aimeos\MW\Config\Decorator\Protect( $config, array( 'admin', 'client/html', 'controller/jsonadm' ) );
+		$config = new \Aimeos\MW\Config\Decorator\Protect( $config, ['admin', 'resource/fs/baseurl'] );
 		$helper = new \Aimeos\MW\View\Helper\Config\Standard( $view, $config );
 		$view->addHelper( 'config', $helper );
 
@@ -146,7 +146,7 @@ class TestHelperJqadm
 		$ctx->setSession( $session );
 
 
-		$localeManager = \Aimeos\MShop\Locale\Manager\Factory::createManager( $ctx );
+		$localeManager = \Aimeos\MShop::create( $ctx, 'locale' );
 		$locale = $localeManager->bootstrap( $site, '', '', false );
 		$ctx->setLocale( $locale );
 

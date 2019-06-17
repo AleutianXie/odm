@@ -130,7 +130,6 @@ ksort( $attrTypeDeps );
 
 					<ul class="select-list" data-index="<?= $index++; ?>" data-type="<?= $enc->attr( $code ); ?>">
 						<?php foreach( $positions as $attrId => $position ) : ?>
-
 							<li class="select-entry">
 								<input class="select-option" type="radio"
 									id="option-<?= $enc->attr( $attrId ); ?>"
@@ -143,7 +142,7 @@ ksort( $attrTypeDeps );
 									<?php foreach( $attributeItems[$attrId]->getListItems( 'media', 'icon' ) as $listItem ) : ?>
 										<?php if( ( $item = $listItem->getRefItem() ) !== null ) : ?>
 											<?= '-->' . $this->partial( $this->config(
-												'client/html/common/partials/media', 'common/partials/media-standard.php' ),
+												'client/html/common/partials/media', 'common/partials/media-standard' ),
 												array( 'item' => $item, 'boxAttributes' => array( 'class' => 'media-item' ) )
 											) . '<!--'; ?>
 										<?php endif; ?>
@@ -157,7 +156,6 @@ ksort( $attrTypeDeps );
 					</ul>
 
 				<?php else : ?>
-
 					<select class="form-control select-list"
 						name="<?= $enc->attr( $this->formparam( array( 'b_prod', 0, 'attrvarid', $code ) ) ); ?>"
 						data-index="<?= $index++; ?>" data-type="<?= $enc->attr( $code ); ?>" >

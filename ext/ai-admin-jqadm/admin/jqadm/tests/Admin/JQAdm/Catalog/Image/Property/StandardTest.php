@@ -6,7 +6,7 @@
  */
 
 
-namespace Aimeos\Admin\JQAdm\Catalog\Image\Property;
+namespace Aimeos\Admin\JQAdm\Catalog\Media\Property;
 
 
 class StandardTest extends \PHPUnit\Framework\TestCase
@@ -21,7 +21,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$this->view = \TestHelperJqadm::getView();
 		$this->context = \TestHelperJqadm::getContext();
 
-		$this->object = new \Aimeos\Admin\JQAdm\Catalog\Image\Property\Standard( $this->context );
+		$this->object = new \Aimeos\Admin\JQAdm\Catalog\Media\Property\Standard( $this->context );
 		$this->object = new \Aimeos\Admin\JQAdm\Common\Decorator\Page( $this->object, $this->context );
 		$this->object->setAimeos( \TestHelperJqadm::getAimeos() );
 		$this->object->setView( $this->view );
@@ -36,7 +36,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCreate()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'catalog' );
+		$manager = \Aimeos\MShop::create( $this->context, 'catalog' );
 
 		$this->view->item = $manager->createItem();
 		$result = $this->object->create();
@@ -48,13 +48,13 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopy()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'catalog' );
+		$manager = \Aimeos\MShop::create( $this->context, 'catalog' );
 
 		$this->view->item = $manager->findItem( 'cafe', ['media'] );
 		$result = $this->object->copy();
 
 		$this->assertNull( $this->view->get( 'errors' ) );
-		$this->assertContains( 'item-image-property', $result );
+		$this->assertContains( 'item-media-property', $result );
 	}
 
 
@@ -69,35 +69,35 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGet()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'catalog' );
+		$manager = \Aimeos\MShop::create( $this->context, 'catalog' );
 
 		$this->view->item = $manager->findItem( 'cafe', ['media'] );
 		$result = $this->object->get();
 
 		$this->assertNull( $this->view->get( 'errors' ) );
-		$this->assertContains( 'item-image-property', $result );
+		$this->assertContains( 'item-media-property', $result );
 	}
 
 
 	public function testSave()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'catalog' );
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'media/property/type' );
+		$manager = \Aimeos\MShop::create( $this->context, 'catalog' );
+		$typeManager = \Aimeos\MShop::create( $this->context, 'media/property/type' );
 
 		$item = $manager->findItem( 'cafe', ['media'] );
-		$item->setCode( 'jqadm-test-image-property' );
+		$item->setCode( 'jqadm-test-media-property' );
 		$item->setId( null );
 
 		$this->view->item = $manager->insertItem( $item );
 
 		$param = array(
 			'site' => 'unittest',
-			'image' => array(
+			'media' => array(
 				0 => array(
 					'property' => array(
 						0 => array(
 							'media.property.id' => '',
-							'media.property.typeid' => $typeManager->findItem( 'size', [], 'media' )->getId(),
+							'media.property.type' => 'size',
 						),
 					),
 				),
@@ -124,7 +124,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSaveException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Catalog\Image\Property\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Catalog\Media\Property\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'fromArray' ) )
 			->getMock();
@@ -133,11 +133,11 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->will( $this->throwException( new \RuntimeException() ) );
 
 		$this->view = \TestHelperJqadm::getView();
-		$this->view->item = \Aimeos\MShop\Factory::createManager( $this->context, 'catalog' )->createItem();
+		$this->view->item = \Aimeos\MShop::create( $this->context, 'catalog' )->createItem();
 
 		$object->setView( $this->view );
 
-		$this->setExpectedException( '\RuntimeException' );
+		$this->setExpectedException( \RuntimeException::class );
 		$object->save();
 	}
 
@@ -150,7 +150,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSubClient()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( 'unknown' );
 	}
 }

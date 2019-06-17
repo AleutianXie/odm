@@ -87,7 +87,7 @@ class Standard
 		 * @see controller/jobs/product/export/standard/template-index
 		 */
 		$tplconf = 'controller/jobs/product/export/standard/template-items';
-		$default = 'product/export/items-body-standard.xml';
+		$default = 'product/export/items-body-standard';
 
 		$context = $this->getContext();
 		$view = $context->getView();
@@ -218,7 +218,7 @@ class Standard
 		 * @see controller/jobs/product/export/standard/template-index
 		 */
 		$tplconf = 'controller/jobs/product/export/standard/template-header';
-		$default = 'product/export/items-header-standard.xml';
+		$default = 'product/export/items-header-standard';
 
 		$context = $this->getContext();
 		$view = $context->getView();
@@ -261,7 +261,7 @@ class Standard
 		 * @see controller/jobs/product/export/standard/template-index
 		 */
 		$tplconf = 'controller/jobs/product/export/standard/template-footer';
-		$default = 'product/export/items-footer-standard.xml';
+		$default = 'product/export/items-footer-standard';
 
 		$context = $this->getContext();
 		$view = $context->getView();
@@ -288,9 +288,9 @@ class Standard
 		$start = 0; $filenum = 1;
 		$names = [];
 
-		$productManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product' );
 
-		$search = $productManager->createSearch( $default );
+		$search = $manager->createSearch( $default );
 		$search->setSortations( array( $search->sort( '+', 'product.id' ) ) );
 		$search->setSlice( 0, $maxQuery );
 
@@ -299,19 +299,24 @@ class Standard
 
 		do
 		{
-			$items = $productManager->searchItems( $search, $domains );
-			$this->addItems( $content, $items );
-
+			$items = $manager->searchItems( $search, $domains );
+			$free = $maxItems * $filenum - $start;
 			$count = count( $items );
-			$start += $count;
-			$search->setSlice( $start, $maxQuery );
 
-			if( $start + $maxQuery > $maxItems * $filenum )
+			if( $free < $count )
 			{
+				$this->addItems( $content, array_slice( $items, 0, $free, true ) );
+				$items = array_slice( $items, $free, null, true );
+
 				$this->closeContent( $content );
 				$content = $this->createContent( $container, ++$filenum );
 				$names[] = $content->getResource();
 			}
+
+			$this->addItems( $content, $items );
+
+			$start += $count;
+			$search->setSlice( $start, $maxQuery );
 		}
 		while( $count >= $search->getSliceSize() );
 

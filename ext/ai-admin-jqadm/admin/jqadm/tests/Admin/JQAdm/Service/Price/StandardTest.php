@@ -36,7 +36,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCreate()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
+		$manager = \Aimeos\MShop::create( $this->context, 'service' );
 
 		$this->view->item = $manager->createItem();
 		$result = $this->object->create();
@@ -48,7 +48,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopy()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
+		$manager = \Aimeos\MShop::create( $this->context, 'service' );
 
 		$this->view->item = $manager->findItem( 'unitcode', ['price'] );
 		$result = $this->object->copy();
@@ -60,7 +60,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testDelete()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
+		$manager = \Aimeos\MShop::create( $this->context, 'service' );
 
 		$this->view->item = $manager->createItem();
 		$result = $this->object->delete();
@@ -72,7 +72,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGet()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
+		$manager = \Aimeos\MShop::create( $this->context, 'service' );
 
 		$this->view->item = $manager->findItem( 'unitcode', ['price'] );
 		$result = $this->object->get();
@@ -84,13 +84,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSave()
 	{
-		$listTypeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'service/lists/type' );
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'price/type' );
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
-
-		$listTypeId = $listTypeManager->findItem( 'default', [], 'price' )->getId();
-		$typeId = $typeManager->findItem( 'default', [], 'service' )->getId();
-
+		$manager = \Aimeos\MShop::create( $this->context, 'service' );
 		$item = $manager->createItem();
 
 		$param = array(
@@ -103,9 +97,8 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 				'price.rebate' => '5',
 				'price.costs' => '1',
 				'price.quantity' => '2',
-				'price.typeid' => $typeId,
+				'price.type' => 'default',
 				'service.lists.type' => 'default',
-				'service.lists.typeid' => $listTypeId
 			]],
 		);
 
@@ -136,7 +129,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSaveException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Service\Price\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Service\Price\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'fromArray' ) )
 			->getMock();
@@ -145,18 +138,18 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->will( $this->throwException( new \RuntimeException() ) );
 
 		$view = \TestHelperJqadm::getView();
-		$view->item = \Aimeos\MShop\Factory::createManager( $this->context, 'service' )->createItem();
+		$view->item = \Aimeos\MShop::create( $this->context, 'service' )->createItem();
 
 		$object->setView( $view );
 
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$object->save();
 	}
 
 
 	public function testSaveMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Service\Price\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Service\Price\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'fromArray' ) )
 			->getMock();
@@ -165,11 +158,11 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->will( $this->throwException( new \Aimeos\MShop\Exception() ) );
 
 		$this->view = \TestHelperJqadm::getView();
-		$this->view->item = \Aimeos\MShop\Factory::createManager( $this->context, 'service' )->createItem();
+		$this->view->item = \Aimeos\MShop::create( $this->context, 'service' )->createItem();
 
 		$object->setView( $this->view );
 
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$object->save();
 	}
 
@@ -182,7 +175,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSubClient()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( 'unknown' );
 	}
 }

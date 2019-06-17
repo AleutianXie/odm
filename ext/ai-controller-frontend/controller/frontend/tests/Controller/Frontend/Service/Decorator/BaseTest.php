@@ -20,11 +20,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	{
 		$this->context = \TestHelperFrontend::getContext();
 
-		$this->stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Service\Standard' )
+		$this->stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Service\Standard::class )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$this->object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Service\Decorator\Base' )
+		$this->object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Service\Decorator\Base::class )
 			->setConstructorArgs( [$this->stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -38,11 +38,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testConstructException()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Iface' )->getMock();
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Iface::class )->getMock();
 
-		$this->setExpectedException( '\Aimeos\MW\Common\Exception' );
+		$this->setExpectedException( \Aimeos\MW\Common\Exception::class );
 
-		$this->getMockBuilder( '\Aimeos\Controller\Frontend\Service\Decorator\Base' )
+		$this->getMockBuilder( \Aimeos\Controller\Frontend\Service\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -50,12 +50,12 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCall()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Service\Standard' )
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Service\Standard::class )
 			->disableOriginalConstructor()
 			->setMethods( ['invalid'] )
 			->getMock();
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Service\Decorator\Base' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Service\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 
@@ -65,18 +65,37 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	}
 
 
-	public function testCheckAttributes()
+	public function testCompare()
 	{
-		$this->stub->expects( $this->once() )->method( 'checkAttributes' )
-			->will( $this->returnValue( [] ) );
+		$this->assertSame( $this->object, $this->object->compare( '==', 'service.type', 'delivery' ) );
+	}
 
-		$this->assertEquals( [], $this->object->checkAttributes( -1, [] ) );
+
+	public function testFind()
+	{
+		$item = \Aimeos\MShop::create( $this->context, 'service' )->createItem();
+
+		$this->stub->expects( $this->once() )->method( 'find' )
+			->will( $this->returnValue( $item ) );
+
+		$this->assertSame( $item, $this->object->find( 'test' ) );
+	}
+
+
+	public function testGet()
+	{
+		$item = \Aimeos\MShop::create( $this->context, 'service' )->createItem();
+
+		$this->stub->expects( $this->once() )->method( 'get' )
+			->will( $this->returnValue( $item ) );
+
+		$this->assertSame( $item, $this->object->get( -1 ) );
 	}
 
 
 	public function testGetProvider()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
+		$manager = \Aimeos\MShop::create( $this->context, 'service' );
 		$provider = $manager->getProvider( $manager->findItem( 'unitcode', [], 'service', 'delivery' ), 'delivery' );
 
 		$this->stub->expects( $this->once() )->method( 'getProvider' )
@@ -95,34 +114,64 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	}
 
 
+	public function testParse()
+	{
+		$this->assertSame( $this->object, $this->object->parse( [] ) );
+	}
+
+
 	public function testProcess()
 	{
-		$item = \Aimeos\MShop\Factory::createManager( $this->context, 'order' )->createItem();
+		$item = \Aimeos\MShop::create( $this->context, 'order' )->createItem();
 
 		$this->stub->expects( $this->once() )->method( 'process' )
-			->will( $this->returnValue( new \Aimeos\MShop\Common\Item\Helper\Form\Standard() ) );
+			->will( $this->returnValue( new \Aimeos\MShop\Common\Helper\Form\Standard() ) );
 
-		$this->assertInstanceOf( 'Aimeos\MShop\Common\Item\Helper\Form\Iface', $this->object->process( $item, -1, [], [] ) );
+		$this->assertInstanceOf( 'Aimeos\MShop\Common\Helper\Form\Iface', $this->object->process( $item, -1, [], [] ) );
+	}
+
+
+	public function testSearch()
+	{
+		$total = 0;
+		$item = \Aimeos\MShop::create( $this->context, 'service' )->createItem();
+
+		$this->stub->expects( $this->once() )->method( 'search' )
+			->will( $this->returnValue( [$item] ) );
+
+		$this->assertEquals( [$item], $this->object->search( $total ) );
+	}
+
+
+	public function testSlice()
+	{
+		$this->assertSame( $this->object, $this->object->slice( 0, 100 ) );
+	}
+
+
+	public function testSort()
+	{
+		$this->assertSame( $this->object, $this->object->sort( 'type' ) );
 	}
 
 
 	public function testUpdatePush()
 	{
-		$response = $this->getMockBuilder( '\Psr\Http\Message\ResponseInterface' )->getMock();
-		$request = $this->getMockBuilder( '\Psr\Http\Message\ServerRequestInterface' )->getMock();
+		$response = $this->getMockBuilder( \Psr\Http\Message\ResponseInterface::class )->getMock();
+		$request = $this->getMockBuilder( \Psr\Http\Message\ServerRequestInterface::class )->getMock();
 
 		$this->stub->expects( $this->once() )->method( 'updatePush' )
 			->will( $this->returnValue( $response ) );
 
-		$this->assertInstanceOf( '\Psr\Http\Message\ResponseInterface', $this->object->updatePush( $request, $response, 'test' ) );
+		$this->assertInstanceOf( \Psr\Http\Message\ResponseInterface::class, $this->object->updatePush( $request, $response, 'test' ) );
 	}
 
 
 	public function testUpdateSync()
 	{
-		$response = $this->getMockBuilder( '\Psr\Http\Message\ResponseInterface' )->getMock();
-		$request = $this->getMockBuilder( '\Psr\Http\Message\ServerRequestInterface' )->getMock();
-		$item = \Aimeos\MShop\Factory::createManager( $this->context, 'order' )->createItem();
+		$response = $this->getMockBuilder( \Psr\Http\Message\ResponseInterface::class )->getMock();
+		$request = $this->getMockBuilder( \Psr\Http\Message\ServerRequestInterface::class )->getMock();
+		$item = \Aimeos\MShop::create( $this->context, 'order' )->createItem();
 
 		$this->stub->expects( $this->once() )->method( 'updateSync' )
 			->will( $this->returnValue( $item ) );
@@ -131,17 +180,21 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	}
 
 
+	public function testUses()
+	{
+		$this->assertSame( $this->object, $this->object->uses( ['text'] ) );
+	}
+
+
 	public function testGetController()
 	{
-		$result = $this->access( 'getController' )->invokeArgs( $this->object, [] );
-
-		$this->assertSame( $this->stub, $result );
+		$this->assertSame( $this->stub, $this->access( 'getController' )->invokeArgs( $this->object, [] ) );
 	}
 
 
 	protected function access( $name )
 	{
-		$class = new \ReflectionClass( '\Aimeos\Controller\Frontend\Service\Decorator\Base' );
+		$class = new \ReflectionClass( \Aimeos\Controller\Frontend\Service\Decorator\Base::class );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 

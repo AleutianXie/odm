@@ -114,7 +114,7 @@ class Standard
 		 * @see client/html/checkout/standard/address/delivery/standard/template-header
 		 */
 		$tplconf = 'client/html/checkout/standard/address/delivery/standard/template-body';
-		$default = 'checkout/standard/address-delivery-body-standard.php';
+		$default = 'checkout/standard/address-delivery-body-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -219,8 +219,13 @@ class Standard
 		{
 			if( ( $id = $view->param( 'ca_delivery_delete', null ) ) !== null )
 			{
-				\Aimeos\Controller\Frontend\Factory::createController( $context, 'customer' )->deleteAddressItem( $id );
-				throw new \Aimeos\Client\Html\Exception( sprintf( 'Delivery address deleted successfully' ) );
+				$cntl = \Aimeos\Controller\Frontend::create( $context, 'customer' );
+
+				if( ( $item = $cntl->uses( ['customer/address'] )->get()->getAddressItem( $id ) ) !== null )
+				{
+					$cntl->deleteAddressItem( $item )->store();
+					throw new \Aimeos\Client\Html\Exception( sprintf( 'Delivery address deleted successfully' ) );
+				}
 			}
 
 			// only start if there's something to do
@@ -440,8 +445,9 @@ class Standard
 	 */
 	protected function setAddress( \Aimeos\MW\View\Iface $view )
 	{
+		$address = null;
 		$context = $this->getContext();
-		$basketCtrl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'basket' );
+		$basketCtrl = \Aimeos\Controller\Frontend::create( $context, 'basket' );
 
 		/** client/html/checkout/standard/address/delivery/disable-new
 		 * Disables the option to enter a different delivery address for an order
@@ -468,39 +474,34 @@ class Standard
 		if( ( $option = $view->param( 'ca_deliveryoption', 'null' ) ) === 'null' && $disable === false ) // new address
 		{
 			$params = $view->param( 'ca_delivery', [] );
-			$invalid = $this->checkFields( $params );
 
-			if( count( $invalid ) > 0 )
-			{
-				$view->deliveryError = $invalid;
+			if( ( $view->deliveryError = $this->checkFields( $params ) ) !== [] ) {
 				throw new \Aimeos\Client\Html\Exception( sprintf( 'At least one delivery address part is missing or invalid' ) );
 			}
 
-			$basketCtrl->setAddress( $type, $params );
+			$basketCtrl->addAddress( $type, $params );
 		}
 		else if( ( $option = $view->param( 'ca_deliveryoption', 'null' ) ) !== '-1' ) // existing address
 		{
-			$list = [];
 			$params = $view->param( 'ca_delivery_' . $option, [] );
 
-			if( !empty( $params ) && ( $invalid = $this->checkFields( $params ) ) !== [] )
-			{
-				$view->deliveryError = $invalid;
+			if( !empty( $params ) && ( $view->deliveryError = $this->checkFields( $params ) ) !== [] ) {
 				throw new \Aimeos\Client\Html\Exception( sprintf( 'At least one delivery address part is missing or invalid' ) );
 			}
 
-			foreach( $params as $key => $value ) {
-				$list[str_replace( 'order.base', 'customer', $key )] = $value;
+			$cntl = \Aimeos\Controller\Frontend::create( $context, 'customer' );
+
+			if( ( $address = $cntl->uses( ['customer/address'] )->get()->getAddressItem( $option ) ) !== null )
+			{
+				$cntl->addAddressItem( $address->fromArray( $params ), $option )->store();
+				$params = $address->toArray();
 			}
 
-			$controller = \Aimeos\Controller\Frontend\Factory::createController( $context, 'customer' );
-			$address = $controller->editAddressItem( $option, $list );
-
-			$basketCtrl->setAddress( $type, $address );
+			$basketCtrl->addAddress( $type, $params );
 		}
 		else
 		{
-			$basketCtrl->setAddress( $type, null );
+			$basketCtrl->deleteAddress( $type );
 		}
 	}
 
@@ -516,13 +517,14 @@ class Standard
 	public function addData( \Aimeos\MW\View\Iface $view, array &$tags = [], &$expire = null )
 	{
 		$context = $this->getContext();
-		$basketCntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'basket' );
+		$basketCntl = \Aimeos\Controller\Frontend::create( $context, 'basket' );
 
-		try {
-			$langid = $basketCntl->get()->getAddress( 'delivery' )->getLanguageId();
-		} catch( \Exception $e ) {
+		if( ( $address = current( $basketCntl->get()->getAddress( 'delivery' ) ) ) === false ) {
 			$langid = $view->param( 'ca_delivery/order.base.address.languageid', $context->getLocale()->getLanguageId() );
+		} else {
+			$langid = $address->getLanguageId();
 		}
+
 		$view->deliveryLanguage = $langid;
 
 		$hidden = $view->config( 'client/html/checkout/standard/address/delivery/hidden', [] );

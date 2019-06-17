@@ -22,7 +22,7 @@ foreach( $data as $key => $value ) {
 	"meta": {
 		"total": <?= count( $data ); ?>,
 		"prefix": <?= json_encode( $this->get( 'prefix' ) ); ?>,
-		"content-baseurl": "<?= $this->config( 'client/html/common/content/baseurl' ); ?>"
+		"content-baseurl": "<?= $this->config( 'resource/fs/baseurl' ); ?>"
 
 		<?php if( $this->csrf()->name() != '' ) : ?>
 			, "csrf": {
@@ -34,11 +34,9 @@ foreach( $data as $key => $value ) {
 	},
 
 	<?php if( isset( $this->errors ) ) : ?>
-
 		"errors": <?= json_encode( $this->errors, JSON_PRETTY_PRINT ); ?>
 
 	<?php else : ?>
-
 		"data": <?= json_encode( $entries ); ?>
 
 	<?php endif; ?>

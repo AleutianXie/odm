@@ -86,7 +86,7 @@ $cfgSuggest = $this->config( 'admin/jqadm/catalog/item/config/suggest', ['css-cl
 
 		<div class="item-actions">
 			<?php if( isset( $this->itemData ) ) : ?>
-				<?= $this->partial( $this->config( 'admin/jqadm/partial/itemactions', 'common/partials/itemactions-standard.php' ), ['params' => $params] ); ?>
+				<?= $this->partial( $this->config( 'admin/jqadm/partial/itemactions', 'common/partials/itemactions-standard' ), ['params' => $params] ); ?>
 			<?php else : ?>
 				<span class="placeholder">&nbsp;</span>
 			<?php endif; ?>
@@ -112,7 +112,6 @@ $cfgSuggest = $this->config( 'admin/jqadm/catalog/item/config/suggest', ['css-cl
 		</div>
 
 		<?php if( isset( $this->itemData ) ) : ?>
-
 			<div class="col-lg-9 catalog-content">
 				<div class="row">
 
@@ -297,7 +296,7 @@ $cfgSuggest = $this->config( 'admin/jqadm/catalog/item/config/suggest', ['css-cl
 					</div>
 
 					<div class="item-actions">
-						<?= $this->partial( $this->config( 'admin/jqadm/partial/itemactions', 'common/partials/itemactions-standard.php' ), ['params' => $params] ); ?>
+						<?= $this->partial( $this->config( 'admin/jqadm/partial/itemactions', 'common/partials/itemactions-standard' ), ['params' => $params] ); ?>
 					</div>
 				</div>
 
@@ -311,4 +310,4 @@ $cfgSuggest = $this->config( 'admin/jqadm/catalog/item/config/suggest', ['css-cl
 <?php $this->block()->stop(); ?>
 
 
-<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard.php' ) ); ?>
+<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard' ) ); ?>

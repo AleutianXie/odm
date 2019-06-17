@@ -36,7 +36,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopy()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'customer' );
+		$manager = \Aimeos\MShop::create( $this->context, 'customer' );
 		$this->view->item = $manager->findItem( 'UTC001' );
 
 		$result = $this->object->copy();
@@ -48,7 +48,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCreate()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'customer' );
+		$manager = \Aimeos\MShop::create( $this->context, 'customer' );
 		$this->view->item = $manager->findItem( 'UTC001' );
 
 		$result = $this->object->create();
@@ -60,7 +60,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGet()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'customer' );
+		$manager = \Aimeos\MShop::create( $this->context, 'customer' );
 		$this->view->item = $manager->findItem( 'UTC001' );
 
 		$result = $this->object->get();
@@ -72,7 +72,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Customer\Order\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Customer\Order\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'storeSearchParams' ) )
 			->getMock();
@@ -88,7 +88,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Customer\Order\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Customer\Order\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'storeSearchParams' ) )
 			->getMock();
@@ -104,7 +104,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSave()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'customer' );
+		$manager = \Aimeos\MShop::create( $this->context, 'customer' );
 		$this->view->item = $manager->findItem( 'UTC001' );
 
 		$result = $this->object->save();
@@ -116,14 +116,14 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSubClient()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( 'unknown' );
 	}
 
 
 	protected function getViewNoRender()
 	{
-		return $this->getMockBuilder( '\Aimeos\MW\View\Standard' )
+		return $this->getMockBuilder( \Aimeos\MW\View\Standard::class )
 			->setConstructorArgs( array( [] ) )
 			->setMethods( array( 'render', 'config' ) )
 			->getMock();

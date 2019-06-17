@@ -17,7 +17,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function setUp()
 	{
-		\Aimeos\MShop\Factory::setCache( true );
+		\Aimeos\MShop::cache( true );
 
 		$this->context = \TestHelperCntl::getContext();
 		$this->endpoint = new \Aimeos\Controller\Common\Catalog\Import\Csv\Processor\Done( $this->context, [] );
@@ -26,8 +26,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function tearDown()
 	{
-		\Aimeos\MShop\Factory::setCache( false );
-		\Aimeos\MShop\Factory::clear();
+		\Aimeos\MShop::cache( false );
 	}
 
 
@@ -240,7 +239,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 		$data = array(
 			0 => 'path/to/file',
-			1 => 'download',
+			1 => 'test',
 			2 => 'path/to/file2',
 			3 => 'default',
 		);
@@ -250,17 +249,9 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$catalog = $this->create( 'job_csv_test' );
 
 		$object = new \Aimeos\Controller\Common\Catalog\Import\Csv\Processor\Media\Standard( $this->context, $mapping, $this->endpoint );
+
+		$this->setExpectedException( '\Aimeos\Controller\Common\Exception' );
 		$object->process( $catalog, $data );
-
-
-		$listItems = $catalog->getListItems();
-		$listItem = reset( $listItems );
-
-		$this->assertEquals( 1, count( $listItems ) );
-		$this->assertInstanceOf( '\\Aimeos\\MShop\\Common\\Item\\Lists\\Iface', $listItem );
-
-		$this->assertEquals( 'default', $listItem->getType() );
-		$this->assertEquals( 'path/to/file2', $listItem->getRefItem()->getUrl() );
 	}
 
 
@@ -269,7 +260,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	 */
 	protected function create( $code )
 	{
-		$manager = \Aimeos\MShop\Catalog\Manager\Factory::createManager( $this->context );
+		$manager = \Aimeos\MShop\Catalog\Manager\Factory::create( $this->context );
 
 		$item = $manager->createItem();
 		$item->setCode( $code );

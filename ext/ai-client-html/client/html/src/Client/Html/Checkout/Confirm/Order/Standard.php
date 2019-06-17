@@ -95,7 +95,7 @@ class Standard
 		 * @see client/html/checkout/confirm/order/standard/template-header
 		 */
 		$tplconf = 'client/html/checkout/confirm/order/standard/template-body';
-		$default = 'checkout/confirm/order-body-standard.php';
+		$default = 'checkout/confirm/order-body-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -215,7 +215,7 @@ class Standard
 				$view->summaryShowDownloadAttributes = true;
 			}
 
-			$controller = \Aimeos\Controller\Frontend\Factory::createController( $this->getContext(), 'basket' );
+			$controller = \Aimeos\Controller\Frontend::create( $this->getContext(), 'basket' );
 			$parts = \Aimeos\MShop\Order\Item\Base\Base::PARTS_ALL;
 
 			$view->summaryBasket = $controller->load( $view->confirmOrderItem->getBaseId(), $parts, false );

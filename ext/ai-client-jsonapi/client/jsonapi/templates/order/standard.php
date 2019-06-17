@@ -24,7 +24,7 @@ foreach( (array) $fields as $resource => $list ) {
 }
 
 
-$entryFcn = function( \Aimeos\MShop\Order\Item\Iface $item, \Aimeos\MShop\Common\Item\Helper\Form\Iface $form = null ) use ( $fields, $target, $cntl, $action, $config )
+$entryFcn = function( \Aimeos\MShop\Order\Item\Iface $item, \Aimeos\MShop\Common\Helper\Form\Iface $form = null ) use ( $fields, $target, $cntl, $action, $config )
 {
 	$id = $item->getId();
 	$attributes = $item->toArray();
@@ -67,7 +67,7 @@ $entryFcn = function( \Aimeos\MShop\Order\Item\Iface $item, \Aimeos\MShop\Common
 	"meta": {
 		"total": <?= $this->get( 'total', 0 ); ?>,
 		"prefix": <?= json_encode( $this->get( 'prefix' ) ); ?>,
-		"content-baseurl": "<?= $this->config( 'client/html/common/content/baseurl' ); ?>"
+		"content-baseurl": "<?= $this->config( 'resource/fs/baseurl' ); ?>"
 
 		<?php if( $this->csrf()->name() != '' ) : ?>
 			, "csrf": {
@@ -82,11 +82,9 @@ $entryFcn = function( \Aimeos\MShop\Order\Item\Iface $item, \Aimeos\MShop\Common
 	}
 
 	<?php if( isset( $this->errors ) ) : ?>
-
 		,"errors": <?= json_encode( $this->errors, JSON_PRETTY_PRINT ); ?>
 
 	<?php elseif( isset( $this->items ) ) : ?>
-
 		<?php
 			$data = [];
 			$items = $this->get( 'items', [] );

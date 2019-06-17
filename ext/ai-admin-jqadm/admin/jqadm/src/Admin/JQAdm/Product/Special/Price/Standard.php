@@ -251,15 +251,15 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
 		$context = $this->getContext();
 
-		$attrManager = \Aimeos\MShop\Factory::createManager( $context, 'attribute' );
-		$listManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists' );
-		$typeManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists/type' );
+		$attrManager = \Aimeos\MShop::create( $context, 'attribute' );
+		$listManager = \Aimeos\MShop::create( $context, 'product/lists' );
+		$typeManager = \Aimeos\MShop::create( $context, 'product/lists/type' );
 
 		$attrId = $attrManager->findItem( 'custom', [], 'product', 'price' )->getId();
 
@@ -267,9 +267,7 @@ class Standard
 		{
 			if( $item->getListItem( 'attribute', 'custom', $attrId, false ) === null )
 			{
-				$listItem = $listManager->createItem( 'custom', 'attribute' );
-				$listItem->setRefId( $attrId );
-
+				$listItem = $listManager->createItem()->setType( 'custom' )->setRefId( $attrId );
 				$item->addListItem( 'attribute', $listItem, $listItem->getRefItem() );
 			}
 		}
@@ -332,7 +330,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/special/price/template-item';
-		$default = 'product/item-special-price-standard.php';
+		$default = 'product/item-special-price-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

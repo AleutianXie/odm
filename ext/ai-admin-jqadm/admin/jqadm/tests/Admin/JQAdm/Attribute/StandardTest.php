@@ -19,7 +19,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	protected function setUp()
 	{
 		$this->view = \TestHelperJqadm::getView();
-		$request = $this->getMockBuilder( '\Psr\Http\Message\ServerRequestInterface' )->getMock();
+		$request = $this->getMockBuilder( \Psr\Http\Message\ServerRequestInterface::class )->getMock();
 		$helper = new \Aimeos\MW\View\Helper\Request\Standard( $this->view, $request, '127.0.0.1', 'test' );
 		$this->view ->addHelper( 'request', $helper );
 
@@ -68,7 +68,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopy()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' );
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 
 		$param = ['site' => 'unittest', 'id' => $manager->findItem( '30', [], 'product', 'length' )->getId()];
 		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $this->view, $param );
@@ -132,7 +132,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGet()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' );
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 
 		$param = ['site' => 'unittest', 'id' => $manager->findItem( '30', [], 'product', 'length' )->getId()];
 		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $this->view, $param );
@@ -170,24 +170,21 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	{
 		$object = new \Aimeos\Admin\JQAdm\Attribute\Standard( $this->context, [] );
 
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$object->getView();
 	}
 
 
 	public function testSave()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' );
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute/type' );
-
-		$typeId = $typeManager->findItem( 'color', [], 'product' )->getId();
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 
 		$param = array(
 			'site' => 'unittest',
 			'item' => array(
 				'attribute.id' => '',
 				'attribute.domain' => 'product',
-				'attribute.typeid' => $typeId,
+				'attribute.type' => 'color',
 				'attribute.code' => 'test',
 				'attribute.label' => 'test label',
 				'attribute.position' => 1,
@@ -281,28 +278,28 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSubClient()
 	{
-		$result = $this->object->getSubClient( 'image' );
-		$this->assertInstanceOf( '\Aimeos\Admin\JQAdm\Iface', $result );
+		$result = $this->object->getSubClient( 'media' );
+		$this->assertInstanceOf( \Aimeos\Admin\JQAdm\Iface::class, $result );
 	}
 
 
 	public function testGetSubClientInvalid()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( '$unknown$' );
 	}
 
 
 	public function testGetSubClientUnknown()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( 'unknown' );
 	}
 
 
 	public function getClientMock( $method )
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Attribute\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Attribute\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( [$method] )
 			->getMock();
@@ -316,12 +313,12 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getViewNoRender()
 	{
-		$view = $this->getMockBuilder( '\Aimeos\MW\View\Standard' )
+		$view = $this->getMockBuilder( \Aimeos\MW\View\Standard::class )
 			->setConstructorArgs( array( [] ) )
 			->setMethods( array( 'render', 'config' ) )
 			->getMock();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' );
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 
 		$param = ['site' => 'unittest', 'id' => $manager->findItem( '30', [], 'product', 'length' )->getId()];
 		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $view, $param );

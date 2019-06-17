@@ -14,9 +14,9 @@
 	"prefer-stable": true,
 	"minimum-stability": "dev",
 	"require": {
-		"php": ">=5.3.3",
+		"php": ">=5.5.0",
 		"composer/installers": "^1.0",
-		"aimeos/aimeos-core": "2018.10.*"
+		"aimeos/aimeos-core": "~2019.04"
 	},
 	"autoload": {
 		"psr-4": {

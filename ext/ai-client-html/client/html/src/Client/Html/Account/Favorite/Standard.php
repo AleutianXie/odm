@@ -126,7 +126,7 @@ class Standard
 		 * @see client/html/account/favorite/standard/template-header
 		 */
 		$tplconf = 'client/html/account/favorite/standard/template-body';
-		$default = 'account/favorite/body-standard.php';
+		$default = 'account/favorite/body-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -176,7 +176,7 @@ class Standard
 			 * @see client/html/account/favorite/standard/template-body
 			 */
 			$tplconf = 'client/html/account/favorite/standard/template-header';
-			$default = 'account/favorite/header-standard.php';
+			$default = 'account/favorite/header-standard';
 
 			return $view->render( $view->config( $tplconf, $default ) );
 		}
@@ -282,19 +282,18 @@ class Standard
 	{
 		$view = $this->getView();
 		$context = $this->getContext();
-		$userId = $context->getUserId();
 		$ids = (array) $view->param( 'fav_id', [] );
 
 		try
 		{
-			if( $userId != null && !empty( $ids ) )
+			if( $context->getUserId() != null && !empty( $ids ) )
 			{
 				switch( $view->param( 'fav_action' ) )
 				{
 					case 'add':
-						$this->addFavorites( $ids, $userId ); break;
+						$this->addFavorites( $ids ); break;
 					case 'delete':
-						$this->deleteFavorites( $ids, $userId ); break;
+						$this->deleteFavorites( $ids ); break;
 				}
 			}
 
@@ -325,69 +324,45 @@ class Standard
 
 
 	/**
-	 * Returns the customer list items referencing the favorite products
-	 *
-	 * @param array $ids List of product IDs
-	 * @param string $userId Unique customer ID
-	 * @param string $typeId ID of the list item type
-	 * @return array Associative list of product IDs as keys and list items as values
-	 */
-	protected function getListItems( array $ids, $userId, $typeId )
-	{
-		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists' );
-
-		$search = $manager->createSearch();
-		$expr = array(
-			$search->compare( '==', 'customer.lists.parentid', $userId ),
-			$search->compare( '==', 'customer.lists.refid', $ids ),
-			$search->compare( '==', 'customer.lists.domain', 'product' ),
-			$search->compare( '==', 'customer.lists.typeid', $typeId ),
-		);
-		$search->setConditions( $search->combine( '&&', $expr ) );
-
-		$items = [];
-		foreach( $manager->searchItems( $search ) as $item ) {
-			$items[$item->getRefId()] = $item;
-		}
-
-		return $items;
-	}
-
-
-	/**
 	 * Adds new product favorite references to the given customer
 	 *
 	 * @param array $ids List of product IDs
-	 * @param string $userId Unique customer ID
 	 */
-	protected function addFavorites( array $ids, $userId )
+	protected function addFavorites( array $ids )
 	{
 		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists' );
 
-		$typeManager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists/type' );
-		$typeId = $typeManager->findItem( 'favorite', [], 'product' )->getId();
+		/** client/html/account/favorite/standard/maxitems
+		 * Maximum number of products that can be favorites
+		 *
+		 * This option limits the number of products users can add to their
+		 * favorite list. It must be a positive integer value greater than 0.
+		 *
+		 * @param integer Number of products
+		 * @since 2019.04
+		 * @category User
+		 * @category Developer
+		 */
+		$max = $context->getConfig()->get( 'client/html/account/favorite/standard/maxitems', 100 );
 
-		$listItems = $this->getListItems( $ids, $userId, $typeId );
+		$cntl = \Aimeos\Controller\Frontend::create( $context, 'customer' );
+		$item = $cntl->uses( ['product' => ['favorite']] )->get();
 
-		$item = $manager->createItem();
-		$item->setDomain( 'product' );
-		$item->setParentId( $userId );
-		$item->setTypeId( $typeId );
-		$item->setStatus( 1 );
+		if( count( $item->getRefItems( 'product', null, 'favorite' ) ) + count( $ids ) > $max )
+		{
+			$msg = sprintf( $context->getI18n()->dt( 'client', 'You can only save up to %1$s products as favorites' ), $max );
+			throw new \Aimeos\Client\Html\Exception( $msg );
+		}
 
 		foreach( $ids as $id )
 		{
-			if( !isset( $listItems[$id] ) )
-			{
-				$item->setId( null );
-				$item->setRefId( $id );
-
-				$item = $manager->saveItem( $item );
-				$manager->moveItem( $item->getId() );
+			if( ( $listItem = $item->getListItem( 'product', 'favorite', $id ) ) === null ) {
+				$listItem = $cntl->createListItem();
 			}
+			$cntl->addListItem( 'product', $listItem->setType( 'favorite' )->setRefId( $id ) );
 		}
+
+		$cntl->store();
 	}
 
 
@@ -395,27 +370,20 @@ class Standard
 	 * Removes product favorite references from the customer
 	 *
 	 * @param array $ids List of product IDs
-	 * @param string $userId Unique customer ID
 	 */
-	protected function deleteFavorites( array $ids, $userId )
+	protected function deleteFavorites( array $ids )
 	{
-		$listIds = [];
-		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists' );
-
-		$typeManager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists/type' );
-		$typeId = $typeManager->findItem( 'favorite', [], 'product' )->getId();
-
-		$listItems = $this->getListItems( $ids, $userId, $typeId );
+		$cntl = \Aimeos\Controller\Frontend::create( $this->getContext(), 'customer' );
+		$item = $cntl->uses( ['product' => ['favorite']] )->get();
 
 		foreach( $ids as $id )
 		{
-			if( isset( $listItems[$id] ) ) {
-				$listIds[] = $listItems[$id]->getId();
+			if( ( $listItem = $item->getListItem( 'product', 'favorite', $id ) ) !== null ) {
+				$cntl->deleteListItem( 'product', $listItem );
 			}
 		}
 
-		$manager->deleteItems( $listIds );
+		$cntl->store();
 	}
 
 
@@ -487,32 +455,7 @@ class Standard
 	 */
 	public function addData( \Aimeos\MW\View\Iface $view, array &$tags = [], &$expire = null )
 	{
-		$total = 0;
-		$productIds = [];
 		$context = $this->getContext();
-
-		$typeManager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists/type' );
-		$typeItem = $typeManager->findItem( 'favorite', [], 'product' );
-
-		$size = $this->getProductListSize( $view );
-		$current = $this->getProductListPage( $view );
-		$last = ( $total != 0 ? ceil( $total / $size ) : 1 );
-
-
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists' );
-
-		$search = $manager->createSearch();
-		$expr = array(
-			$search->compare( '==', 'customer.lists.parentid', $context->getUserId() ),
-			$search->compare( '==', 'customer.lists.typeid', $typeItem->getId() ),
-			$search->compare( '==', 'customer.lists.domain', 'product' ),
-		);
-		$search->setConditions( $search->combine( '&&', $expr ) );
-		$search->setSortations( array( $search->sort( '-', 'customer.lists.position' ) ) );
-		$search->setSlice( ( $current - 1 ) * $size, $size );
-
-		$view->favoriteListItems = $manager->searchItems( $search, [], $total );
-
 
 		/** client/html/account/favorite/domains
 		 * A list of domain names whose items should be available in the account favorite view template
@@ -530,16 +473,18 @@ class Standard
 		 * @category Developer
 		 * @see client/html/catalog/domains
 		 */
-		$default = array( 'text', 'price', 'media' );
-		$domains = $context->getConfig()->get( 'client/html/account/favorite/domains', $default );
+		$domains = $context->getConfig()->get( 'client/html/account/favorite/domains', ['text', 'price', 'media'] );
+		$domains['product'] = ['favorite'];
 
-		foreach( $view->favoriteListItems as $listItem ) {
-			$productIds[] = $listItem->getRefId();
-		}
+		$cntl = \Aimeos\Controller\Frontend::create( $context, 'customer' );
+		$listItems = $cntl->uses( $domains )->get()->getListItems( 'product', 'favorite' );
+		$total = count( $listItems );
 
-		$controller = \Aimeos\Controller\Frontend\Factory::createController( $context, 'product' );
+		$size = $this->getProductListSize( $view );
+		$current = $this->getProductListPage( $view );
+		$last = ( $total != 0 ? ceil( $total / $size ) : 1 );
 
-		$view->favoriteProductItems = $controller->getItems( $productIds, $domains );
+		$view->favoriteItems = $listItems;
 		$view->favoritePageFirst = 1;
 		$view->favoritePagePrev = ( $current > 1 ? $current - 1 : 1 );
 		$view->favoritePageNext = ( $current < $last ? $current + 1 : $last );

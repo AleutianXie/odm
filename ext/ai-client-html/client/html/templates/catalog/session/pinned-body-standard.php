@@ -115,7 +115,6 @@ $count = $this->config( 'client/html/catalog/session/pinned/count/enable', 1 );
 
 	<ul class="pinned-items">
 		<?php foreach( $pinList as $id => $productItem ) : ?>
-
 			<?php $pinParams = array( 'pin_action' => 'delete', 'pin_id' => $id ) + $params; ?>
 			<?php $detailParams = array( 'd_name' => $productItem->getName( 'url' ), 'd_prodid' => $id ); ?>
 
@@ -136,7 +135,7 @@ $count = $this->config( 'client/html/catalog/session/pinned/count/enable', 1 );
 					<h3 class="name"><?= $enc->html( $productItem->getName(), $enc::TRUST ); ?></h3>
 					<div class="price-list">
 						<?= $this->partial(
-							$this->config( 'client/html/common/partials/price', 'common/partials/price-standard.php' ),
+							$this->config( 'client/html/common/partials/price', 'common/partials/price-standard' ),
 							array( 'prices' => $productItem->getRefItems( 'price', null, 'default' ) )
 						); ?>
 					</div>

@@ -162,30 +162,20 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	{
 		$object = new \Aimeos\Admin\JQAdm\Plugin\Standard( $this->context, [] );
 
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$object->getView();
 	}
 
 
 	public function testSave()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'plugin' );
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'plugin/type' );
-
-		$search = $typeManager->createSearch();
-		$search->setSlice( 0, 1 );
-		$typeItems = $typeManager->searchItems( $search );
-
-		if( ( $typeItem = reset( $typeItems ) ) === false ) {
-			throw new \RuntimeException( 'No plugin type item found' );
-		}
-
+		$manager = \Aimeos\MShop::create( $this->context, 'plugin' );
 
 		$param = array(
 			'site' => 'unittest',
 			'item' => array(
 				'plugin.id' => '',
-				'plugin.typeid' => $typeItem->getId(),
+				'plugin.type' =>'order',
 				'plugin.provider' => 'Example',
 				'plugin.label' => 'test label',
 				'plugin.position' => '2',
@@ -282,21 +272,21 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSubClientInvalid()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( '$unknown$' );
 	}
 
 
 	public function testGetSubClientUnknown()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( 'unknown' );
 	}
 
 
 	public function getClientMock( $method )
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Plugin\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Plugin\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( [$method] )
 			->getMock();
@@ -310,7 +300,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getViewNoRender()
 	{
-		$view = $this->getMockBuilder( '\Aimeos\MW\View\Standard' )
+		$view = $this->getMockBuilder( \Aimeos\MW\View\Standard::class )
 			->setConstructorArgs( array( [] ) )
 			->setMethods( array( 'render', 'config' ) )
 			->getMock();
@@ -328,7 +318,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getItem( $label = 'Shipping-Plugin' )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'plugin' );
+		$manager = \Aimeos\MShop::create( $this->context, 'plugin' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'plugin.label', $label ) );

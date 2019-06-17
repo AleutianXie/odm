@@ -65,7 +65,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Coupon\Code\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Coupon\Code\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'toArray' ) )
 			->getMock();
@@ -81,7 +81,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Coupon\Code\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Coupon\Code\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'toArray' ) )
 			->getMock();
@@ -97,7 +97,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSave()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'coupon/code' );
+		$manager = \Aimeos\MShop::create( $this->context, 'coupon/code' );
 
 		$param = array(
 			'site' => 'unittest',
@@ -123,7 +123,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSaveException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Coupon\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Coupon\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'fromArray' ) )
 			->getMock();
@@ -139,7 +139,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSaveMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Coupon\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Coupon\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'fromArray' ) )
 			->getMock();
@@ -155,14 +155,14 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSubClient()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( 'unknown' );
 	}
 
 
 	protected function getViewNoRender()
 	{
-		$view = $this->getMockBuilder( '\Aimeos\MW\View\Standard' )
+		$view = $this->getMockBuilder( \Aimeos\MW\View\Standard::class )
 			->setConstructorArgs( array( [] ) )
 			->setMethods( array( 'render', 'config' ) )
 			->getMock();
@@ -175,7 +175,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getCouponItem( $provider = 'Example,BasketValues' )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'coupon' );
+		$manager = \Aimeos\MShop::create( $this->context, 'coupon' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'coupon.provider', $provider ) );

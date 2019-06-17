@@ -18,6 +18,8 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function setUp()
 	{
+		\Aimeos\MShop::cache( true );
+
 		$this->context = \TestHelperJadm::getContext();
 		$this->view = $this->context->getView();
 
@@ -29,7 +31,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function tearDown()
 	{
-		\Aimeos\MShop\Factory::clear();
+		\Aimeos\MShop::cache( false );
 	}
 
 
@@ -229,7 +231,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	{
 		$params = array(
 			'filter' => array(
-				'==' => array( 'product.type.code' => 'select' )
+				'==' => array( 'product.type' => 'select' )
 			)
 		);
 		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $this->view, $params );
@@ -257,7 +259,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			'filter' => array(
 				'&&' => array(
 					array( '=~' => array( 'product.label' => 'Unittest: Test' ) ),
-					array( '==' => array( 'product.type.code' => 'select' ) ),
+					array( '==' => array( 'product.type' => 'select' ) ),
 				)
 			)
 		);
@@ -313,7 +315,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	public function testGetSort()
 	{
 		$params = array(
-			'sort' => 'product.label,-product.code'
+			'sort' => 'product.label'
 		);
 		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $this->view, $params );
 		$this->view->addHelper( 'param', $helper );
@@ -328,8 +330,8 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( 28, $result['meta']['total'] );
 		$this->assertEquals( 25, count( $result['data'] ) );
 		$this->assertEquals( 'product', $result['data'][0]['type'] );
-		$this->assertEquals( 'QRST', $result['data'][0]['attributes']['product.code'] );
-		$this->assertEquals( '16 discs', $result['data'][0]['attributes']['product.label'] );
+		$this->assertEquals( 'ABCD', $result['data'][0]['attributes']['product.code'] );
+		$this->assertEquals( 'ABCD/16 discs', $result['data'][0]['attributes']['product.label'] );
 		$this->assertEquals( 0, count( $result['included'] ) );
 
 		$this->assertArrayNotHasKey( 'errors', $result );
@@ -539,7 +541,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$this->assertArrayHasKey( 'data', $result );
 		$this->assertEquals( '-1', $result['data']['id'] );
 		$this->assertEquals( 'product', $result['data']['type'] );
-		$this->assertGreaterThan( 0, $result['data']['attributes']['product.typeid'] );
+		$this->assertEquals( 'default', $result['data']['attributes']['product.type'] );
 		$this->assertEquals( 'test', $result['data']['attributes']['product.label'] );
 
 		$this->assertArrayNotHasKey( 'included', $result );
@@ -722,7 +724,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( 1, count( $response->getHeader( 'Content-Type' ) ) );
 
 		$this->assertNull( $result['meta']['prefix'] );
-		$this->assertGreaterThan( 59, count( $result['meta']['resources'] ) );
+		$this->assertGreaterThan( 65, count( $result['meta']['resources'] ) );
 		$this->assertGreaterThan( 0, count( $result['meta']['attributes'] ) );
 
 		$this->assertArrayNotHasKey( 'errors', $result );
@@ -741,7 +743,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( 1, count( $response->getHeader( 'Content-Type' ) ) );
 
 		$this->assertEquals( 'prefix', $result['meta']['prefix'] );
-		$this->assertGreaterThan( 59, count( $result['meta']['resources'] ) );
+		$this->assertGreaterThan( 65, count( $result['meta']['resources'] ) );
 		$this->assertGreaterThan( 0, count( $result['meta']['attributes'] ) );
 
 		$this->assertArrayNotHasKey( 'errors', $result );
@@ -808,7 +810,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getProductItem( $code = 'CNC' )
 	{
-		$manager = \Aimeos\MShop\Product\Manager\Factory::createManager( $this->context );
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'product.code', $code ) );
 		$items = $manager->searchItems( $search );

@@ -46,6 +46,14 @@ class Laravel
 			'internaltype'=> \Aimeos\MW\DB\Statement\Base::PARAM_INT,
 			'public' => false,
 		),
+		'customer.lists.key' => array(
+			'code' => 'customer.lists.key',
+			'internalcode' => 'lvuli."key"',
+			'label' => 'Unique key',
+			'type' => 'string',
+			'internaltype' => \Aimeos\MW\DB\Statement\Base::PARAM_STR,
+			'public' => false,
+		),
 		'customer.lists.domain'=> array(
 			'code'=>'customer.lists.domain',
 			'internalcode'=>'lvuli."domain"',
@@ -53,13 +61,12 @@ class Laravel
 			'type'=> 'string',
 			'internaltype'=> \Aimeos\MW\DB\Statement\Base::PARAM_STR,
 		),
-		'customer.lists.typeid' => array(
-			'code'=>'customer.lists.typeid',
-			'internalcode'=>'lvuli."typeid"',
-			'label'=>'Customer list type ID',
-			'type'=> 'integer',
-			'internaltype' => \Aimeos\MW\DB\Statement\Base::PARAM_INT,
-			'public' => false,
+		'customer.lists.type' => array(
+			'code'=>'customer.lists.type',
+			'internalcode'=>'lvuli."type"',
+			'label'=>'Customer list type',
+			'type'=> 'string',
+			'internaltype' => \Aimeos\MW\DB\Statement\Base::PARAM_STR,
 		),
 		'customer.lists.refid'=> array(
 			'code'=>'customer.lists.refid',
@@ -135,7 +142,7 @@ class Laravel
 	public function cleanup( array $siteids )
 	{
 		$path = 'mshop/customer/manager/lists/submanagers';
-		foreach( $this->getContext()->getConfig()->get( $path, array( 'type' ) ) as $domain ) {
+		foreach( $this->getContext()->getConfig()->get( $path, ['type'] ) as $domain ) {
 			$this->getObject()->getSubManager( $domain )->cleanup( $siteids );
 		}
 
@@ -153,7 +160,7 @@ class Laravel
 	{
 		$path = 'mshop/customer/manager/lists/submanagers';
 
-		return $this->getSearchAttributesBase( $this->searchConfig, $path, array( 'type' ), $withsub );
+		return $this->getSearchAttributesBase( $this->searchConfig, $path, [], $withsub );
 	}
 
 
@@ -173,7 +180,7 @@ class Laravel
 	/**
 	 * Returns the config path for retrieving the configuration values.
 	 *
-	 * @return string Configuration path (mshop/customer/manager/lists/type/laravel/)
+	 * @return string Configuration path (mshop/customer/manager/lists/laravel/)
 	 */
 	protected function getConfigPath()
 	{

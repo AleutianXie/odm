@@ -34,7 +34,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetItem()
 	{
-		$catId = \Aimeos\MShop\Factory::createManager( $this->context, 'catalog' )->findItem( 'cafe' )->getId();
+		$catId = \Aimeos\MShop::create( $this->context, 'catalog' )->findItem( 'cafe' )->getId();
 		$params = array(
 			'id' => $catId,
 			'fields' => array(
@@ -97,7 +97,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\JsonApi\Catalog\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\JsonApi\Catalog\Standard::class )
 			->setConstructorArgs( [$this->context, 'catalog'] )
 			->setMethods( ['getItem'] )
 			->getMock();
@@ -119,7 +119,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\JsonApi\Catalog\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\JsonApi\Catalog\Standard::class )
 			->setConstructorArgs( [$this->context, 'catalog'] )
 			->setMethods( ['getItem'] )
 			->getMock();

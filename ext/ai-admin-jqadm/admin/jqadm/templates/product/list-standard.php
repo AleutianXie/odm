@@ -509,21 +509,22 @@ $delConfig = $this->config( 'admin/jqadm/url/delete/config', [] );
  * @since 2016.04
  * @category Developer
  */
-$default = $this->config( 'admin/jqadm/product/fields', ['product.id', 'product.status', 'product.typeid', 'product.code', 'product.label'] );
+$default = $this->config( 'admin/jqadm/product/fields', ['image', 'product.id', 'product.status', 'product.type', 'product.code', 'product.label'] );
 $fields = $this->session( 'aimeos/admin/jqadm/product/fields', $default );
 
 $searchParams = $params = $this->get( 'pageParams', [] );
 $searchParams['page']['start'] = 0;
 
 $typeList = [];
-foreach( $this->get( 'itemTypes', [] ) as $id => $typeItem ) {
-	$typeList[$id] = $typeItem->getCode();
+foreach( $this->get( 'itemTypes', [] ) as $typeItem ) {
+	$typeList[$typeItem->getCode()] = $typeItem->getCode();
 }
 
 $columnList = [
+	'image' => null,
 	'product.id' => $this->translate( 'admin', 'ID' ),
 	'product.status' => $this->translate( 'admin', 'Status' ),
-	'product.typeid' => $this->translate( 'admin', 'Type' ),
+	'product.type' => $this->translate( 'admin', 'Type' ),
 	'product.code' => $this->translate( 'admin', 'Code' ),
 	'product.label' => $this->translate( 'admin', 'Label' ),
 	'product.datestart' => $this->translate( 'admin', 'Start date' ),
@@ -546,7 +547,7 @@ $columnList = [
 	</span>
 
 	<?= $this->partial(
-		$this->config( 'admin/jqadm/partial/navsearch', 'common/partials/navsearch-standard.php' ), [
+		$this->config( 'admin/jqadm/partial/navsearch', 'common/partials/navsearch-standard' ), [
 			'filter' => $this->session( 'aimeos/admin/jqadm/product/filter', [] ),
 			'filterAttributes' => $this->get( 'filterAttributes', [] ),
 			'filterOperators' => $this->get( 'filterOperators', [] ),
@@ -557,7 +558,7 @@ $columnList = [
 
 
 <?= $this->partial(
-		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard.php' ),
+		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard' ),
 		['pageParams' => $params, 'pos' => 'top', 'total' => $this->get( 'total' ),
 		'page' =>$this->session( 'aimeos/admin/jqadm/product/page', [] )]
 	);
@@ -570,7 +571,7 @@ $columnList = [
 		<thead class="list-header">
 			<tr>
 				<?= $this->partial(
-						$this->config( 'admin/jqadm/partial/listhead', 'common/partials/listhead-standard.php' ),
+						$this->config( 'admin/jqadm/partial/listhead', 'common/partials/listhead-standard' ),
 						['fields' => $fields, 'params' => $params, 'data' => $columnList,
 						'sort' => $this->session( 'aimeos/admin/jqadm/product/sort', 'product.id' )]
 					);
@@ -584,7 +585,7 @@ $columnList = [
 					</a>
 
 					<?= $this->partial(
-							$this->config( 'admin/jqadm/partial/columns', 'common/partials/columns-standard.php' ),
+							$this->config( 'admin/jqadm/partial/columns', 'common/partials/columns-standard' ),
 							['fields' => $fields, 'data' => $columnList]
 						);
 					?>
@@ -594,9 +595,10 @@ $columnList = [
 		<tbody>
 
 			<?= $this->partial(
-				$this->config( 'admin/jqadm/partial/listsearch', 'common/partials/listsearch-standard.php' ), [
+				$this->config( 'admin/jqadm/partial/listsearch', 'common/partials/listsearch-standard' ), [
 					'fields' => $fields, 'filter' => $this->session( 'aimeos/admin/jqadm/product/filter', [] ),
 					'data' => [
+						'image' => null,
 						'product.id' => ['op' => '=='],
 						'product.status' => ['op' => '==', 'type' => 'select', 'val' => [
 							'1' => $this->translate( 'mshop/code', 'status:1' ),
@@ -604,7 +606,7 @@ $columnList = [
 							'-1' => $this->translate( 'mshop/code', 'status:-1' ),
 							'-2' => $this->translate( 'mshop/code', 'status:-2' ),
 						]],
-						'product.typeid' => ['op' => '==', 'type' => 'select', 'val' => $typeList],
+						'product.type' => ['op' => '==', 'type' => 'select', 'val' => $typeList],
 						'product.code' => [],
 						'product.label' => [],
 						'product.datestart' => ['op' => '>=', 'type' => 'datetime-local'],
@@ -620,13 +622,16 @@ $columnList = [
 			<?php foreach( $this->get( 'items', [] ) as $id => $item ) : ?>
 				<?php $url = $enc->attr( $this->url( $getTarget, $getCntl, $getAction, ['id' => $id] + $params, [], $getConfig ) ); ?>
 				<tr class="<?= $this->site()->readonly( $item->getSiteId() ); ?>">
+					<?php if( in_array( 'image', $fields ) ) : $mediaItem = current( $item->getRefItems( 'media', 'default', 'default' ) ); ?>
+						<td class="image"><a class="items-field" href="<?= $url; ?>" tabindex="1"><img class="image" src="<?= $mediaItem ? $enc->attr( $this->content( $mediaItem->getPreview() ) ) : '' ?>" /></a></td>
+					<?php endif; ?>
 					<?php if( in_array( 'product.id', $fields ) ) : ?>
 						<td class="product-id"><a class="items-field" href="<?= $url; ?>" tabindex="1"><?= $enc->html( $item->getId() ); ?></a></td>
 					<?php endif; ?>
 					<?php if( in_array( 'product.status', $fields ) ) : ?>
 						<td class="product-status"><a class="items-field" href="<?= $url; ?>"><div class="fa status-<?= $enc->attr( $item->getStatus() ); ?>"></div></a></td>
 					<?php endif; ?>
-					<?php if( in_array( 'product.typeid', $fields ) ) : ?>
+					<?php if( in_array( 'product.type', $fields ) ) : ?>
 						<td class="product-type"><a class="items-field" href="<?= $url; ?>"><?= $enc->html( $item->getType() ); ?></a></td>
 					<?php endif; ?>
 					<?php if( in_array( 'product.code', $fields ) ) : ?>
@@ -685,7 +690,7 @@ $columnList = [
 </form>
 
 <?= $this->partial(
-		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard.php' ),
+		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard' ),
 		['pageParams' => $params, 'pos' => 'bottom', 'total' => $this->get( 'total' ),
 		'page' => $this->session( 'aimeos/admin/jqadm/product/page', [] )]
 	);
@@ -693,4 +698,4 @@ $columnList = [
 
 <?php $this->block()->stop(); ?>
 
-<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard.php' ) ); ?>
+<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard' ) ); ?>

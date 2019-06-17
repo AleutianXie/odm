@@ -176,17 +176,23 @@ class Standard
 
 		try
 		{
-			$type = \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_DELIVERY;
-			$basket = \Aimeos\Controller\Frontend\Factory::createController( $context, 'basket' )->get();
-			$addresses = $basket->getAddresses();
-
-			if( $context->getUserId() != null && isset( $addresses[$type] ) && $addresses[$type]->getAddressId() == '' )
+			if( $context->getUserId() != null )
 			{
-				$controller = \Aimeos\Controller\Frontend\Factory::createController( $context, 'customer' );
-				$item = $controller->createAddressItem()->copyFrom( $addresses[$type] );
-				$controller->saveAddressItem( $item );
+				$basket = \Aimeos\Controller\Frontend::create( $context, 'basket' )->get();
+				$addresses = $basket->getAddress( \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_DELIVERY );
 
-				$addresses[$type]->setAddressId( $item->getId() );
+				$cntl = \Aimeos\Controller\Frontend::create( $context, 'customer' );
+				$item = $cntl->uses( ['customer/address'] )->get();
+
+				foreach( $addresses as $pos => $address )
+				{
+					if( $address->getAddressId() == '' )
+					{
+						$addrItem = $cntl->createAddressItem( $address->toArray() );
+						$cntl->addAddressItem( $addrItem )->store();
+						$basket->addAddress( $address->setAddressId( $addrItem->getId() ), $pos );
+					}
+				}
 			}
 		}
 		catch( \Exception $e )

@@ -41,7 +41,7 @@ class Standard
 
 			$this->checkSite( $view->access( 'super' ), $id );
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'locale/site' );
+			$manager = \Aimeos\MShop::create( $context, 'locale/site' );
 			$view->item = $manager->getItem( $id );
 
 			$view->itemData = $this->toArray( $view->item, true );
@@ -94,7 +94,7 @@ class Standard
 			$data = $view->param( 'item', [] );
 
 			if( !isset( $view->item ) ) {
-				$view->item = \Aimeos\MShop\Factory::createManager( $context, 'locale/site' )->createItem();
+				$view->item = \Aimeos\MShop::create( $context, 'locale/site' )->createItem();
 			}
 
 			$view->itemSubparts = $this->getSubClientNames();
@@ -140,7 +140,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'locale/site' );
+		$manager = \Aimeos\MShop::create( $context, 'locale/site' );
 		$manager->begin();
 
 		try
@@ -206,7 +206,7 @@ class Standard
 
 			$this->checkSite( $view->access( 'super' ), $id );
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'locale/site' );
+			$manager = \Aimeos\MShop::create( $context, 'locale/site' );
 
 			$view->item = $manager->getItem( $id );
 			$view->itemSubparts = $this->getSubClientNames();
@@ -252,7 +252,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'locale/site' );
+		$manager = \Aimeos\MShop::create( $context, 'locale/site' );
 		$manager->begin();
 
 		try
@@ -310,7 +310,7 @@ class Standard
 		{
 			$total = 0;
 			$params = $this->storeSearchParams( $view->param(), 'locale/site' );
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'locale/site' );
+			$manager = \Aimeos\MShop::create( $context, 'locale/site' );
 			$search = $this->initCriteria( $manager->createSearch(), $params );
 
 			if( $view->access( 'super' ) === false )
@@ -364,7 +364,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/locale/site/template-list';
-		$default = 'locale/site/list-standard.php';
+		$default = 'locale/site/list-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -481,7 +481,7 @@ class Standard
 	protected function getUserSiteId()
 	{
 		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer' );
+		$manager = \Aimeos\MShop::create( $context, 'customer' );
 
 		return $manager->getItem( $context->getUserId() )->getSiteId();
 	}
@@ -534,7 +534,7 @@ class Standard
 	/**
 	 * Creates new and updates existing items using the data array
 	 *
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 * @param boolean $super If current user is a super user
 	 * @return \Aimeos\MShop\Locale\Item\Iface New locale item object
 	 */
@@ -552,7 +552,7 @@ class Standard
 			}
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'locale/site' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'locale/site' );
 
 		if( isset( $data['locale.site.id'] ) && $data['locale.site.id'] != '' )
 		{
@@ -565,7 +565,7 @@ class Standard
 			$item = $manager->createItem();
 		}
 
-		$item->fromArray( $data );
+		$item->fromArray( $data, true );
 		$item->setConfig( $conf );
 
 		if( $item->getId() == null ) {
@@ -630,7 +630,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/locale/site/template-item';
-		$default = 'locale/site/item-standard.php';
+		$default = 'locale/site/item-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

@@ -37,7 +37,7 @@ class Standard
 
 		try
 		{
-			$cntl = \Aimeos\Controller\Frontend\Factory::createController( $this->getContext(), 'subscription' );
+			$cntl = \Aimeos\Controller\Frontend::create( $this->getContext(), 'subscription' );
 
 			$view->items = $cntl->cancel( $view->param( 'id' ) );
 			$view->total = 1;
@@ -77,20 +77,20 @@ class Standard
 
 		try
 		{
-			$cntl = \Aimeos\Controller\Frontend\Factory::createController( $this->getContext(), 'subscription' );
+			$cntl = \Aimeos\Controller\Frontend::create( $this->getContext(), 'subscription' );
 
 			if( ( $id = $view->param( 'id' ) ) != '' )
 			{
-				$view->items = $cntl->getItem( $id );
+				$view->items = $cntl->get( $id );
 				$view->total = 1;
 			}
 			else
 			{
 				$total = 0;
-				$filter = $cntl->createFilter();
-				$this->initCriteria( $filter, $view->param() );
+				$items = $cntl->slice( $view->param( 'page/offset', 0), $view->param( 'page/limit', 25 ) )
+					->sort( $view->param( 'sort' ) )->parse( $view->param( 'filter', [] ) )->search( $total );
 
-				$view->items = $cntl->searchItems( $filter, $total );
+				$view->items = $items;
 				$view->total = $total;
 			}
 
@@ -129,7 +129,7 @@ class Standard
 		$view->attributes = [];
 
 		$tplconf = 'client/jsonapi/standard/template-options';
-		$default = 'options-standard.php';
+		$default = 'options-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -138,26 +138,6 @@ class Standard
 			->withHeader( 'Content-Type', 'application/vnd.api+json' )
 			->withBody( $view->response()->createStreamFromString( $body ) )
 			->withStatus( 200 );
-	}
-
-
-	/**
-	 * Adds and returns a new subscription item for the given subscription base ID
-	 *
-	 * @param string $baseId Unique subscription base ID
-	 * @return \Aimeos\MShop\Subscription\Item\Iface New subscription item
-	 */
-	protected function createSubscription( $baseId )
-	{
-		$context = $this->getContext();
-		$cntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'subscription' );
-
-		$item = $cntl->addItem( $baseId, 'jsonapi' );
-		$cntl->block( $item );
-
-		$context->getSession()->set( 'aimeos/subscriptionid', $item->getId() );
-
-		return $item;
 	}
 
 
@@ -191,7 +171,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'client/jsonapi/subscription/standard/template';
-		$default = 'subscription/standard.php';
+		$default = 'subscription/standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 

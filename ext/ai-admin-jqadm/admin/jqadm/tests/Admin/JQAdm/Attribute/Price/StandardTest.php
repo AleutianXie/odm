@@ -36,7 +36,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCreate()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' );
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 
 		$this->view->item = $manager->createItem();
 		$result = $this->object->create();
@@ -48,7 +48,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopy()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' );
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 
 		$this->view->item = $manager->findItem( 'xs', ['price'], 'product', 'size' );
 		$result = $this->object->copy();
@@ -60,7 +60,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testDelete()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' );
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 
 		$this->view->item = $manager->createItem();
 		$result = $this->object->delete();
@@ -72,7 +72,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGet()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' );
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 
 		$this->view->item = $manager->findItem( 'xs', ['price'], 'product', 'size' );
 		$result = $this->object->get();
@@ -84,13 +84,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSave()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' );
-		$listTypeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute/lists/type' );
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'price/type' );
-
-		$listTypeId = $listTypeManager->findItem( 'default', [], 'price' )->getId();
-		$typeId = $typeManager->findItem( 'default', [], 'attribute' )->getId();
-
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 		$item = $manager->createItem();
 
 		$param = array(
@@ -103,9 +97,8 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 				'price.taxrate' => '20.00',
 				'price.quantity' => '2',
 				'price.currencyid' => 'EUR',
-				'price.typeid' => $typeId,
+				'price.type' => 'default',
 				'attribute.lists.type' => 'default',
-				'attribute.lists.typeid' => $listTypeId
 			]],
 		);
 
@@ -141,7 +134,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$object->expects( $this->once() )->method( 'fromArray' )
 			->will( $this->throwException( new \RuntimeException() ) );
 
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$object->save();
 	}
 
@@ -153,7 +146,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$object->expects( $this->once() )->method( 'fromArray' )
 			->will( $this->throwException( new \Aimeos\MShop\Exception() ) );
 
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$object->save();
 	}
 
@@ -166,20 +159,20 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSubClient()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( 'unknown' );
 	}
 
 
 	public function getClientMock( $method )
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Attribute\Image\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Attribute\Media\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( [$method] )
 			->getMock();
 
 		$view = \TestHelperJqadm::getView();
-		$view->item = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' )->createItem();
+		$view->item = \Aimeos\MShop::create( $this->context, 'attribute' )->createItem();
 
 		$object->setAimeos( \TestHelperJqadm::getAimeos() );
 		$object->setView( $view );

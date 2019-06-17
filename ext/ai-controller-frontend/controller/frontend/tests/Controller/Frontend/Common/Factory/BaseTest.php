@@ -23,16 +23,15 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$config->set( 'controller/frontend/common/decorators/default', [] );
 		$config->set( 'controller/frontend/catalog/decorators/global', [] );
 		$config->set( 'controller/frontend/catalog/decorators/local', [] );
-
 	}
 
 
 	public function testInjectController()
 	{
-		$controller = \Aimeos\Controller\Frontend\Catalog\Factory::createController( $this->context, 'Standard' );
+		$controller = \Aimeos\Controller\Frontend\Catalog\Factory::create( $this->context, 'Standard' );
 		\Aimeos\Controller\Frontend\Catalog\Factory::injectController( '\\Aimeos\\Controller\\Frontend\\Catalog\\Standard', $controller );
 
-		$injectedController = \Aimeos\Controller\Frontend\Catalog\Factory::createController( $this->context, 'Standard' );
+		$injectedController = \Aimeos\Controller\Frontend\Catalog\Factory::create( $this->context, 'Standard' );
 
 		$this->assertSame( $controller, $injectedController );
 	}
@@ -40,11 +39,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testInjectControllerReset()
 	{
-		$controller = \Aimeos\Controller\Frontend\Catalog\Factory::createController( $this->context, 'Standard' );
+		$controller = \Aimeos\Controller\Frontend\Catalog\Factory::create( $this->context, 'Standard' );
 		\Aimeos\Controller\Frontend\Catalog\Factory::injectController( '\\Aimeos\\Controller\\Frontend\\Catalog\\Standard', $controller );
 		\Aimeos\Controller\Frontend\Catalog\Factory::injectController( '\\Aimeos\\Controller\\Frontend\\Catalog\\Standard', null );
 
-		$new = \Aimeos\Controller\Frontend\Catalog\Factory::createController( $this->context, 'Standard' );
+		$new = \Aimeos\Controller\Frontend\Catalog\Factory::create( $this->context, 'Standard' );
 
 		$this->assertNotSame( $controller, $new );
 	}

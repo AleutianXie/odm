@@ -57,14 +57,14 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$output = $this->object->getBody();
 
 		$this->assertStringStartsWith( '<section class="aimeos catalog-filter"', $output );
-		$this->assertEquals( '2022-01-01 00:00:00', $expire );
+		$this->assertEquals( '2098-01-01 00:00:00', $expire );
 		$this->assertGreaterThan( 4, count( $tags ) );
 	}
 
 
 	public function testGetBodyHtmlException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\Html\Catalog\Filter\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\Html\Catalog\Filter\Standard::class )
 			->setConstructorArgs( array( $this->context, [] ) )
 			->setMethods( array( 'addData' ) )
 			->getMock();
@@ -80,7 +80,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetBodyFrontendException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\Html\Catalog\Filter\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\Html\Catalog\Filter\Standard::class )
 			->setConstructorArgs( array( $this->context, [] ) )
 			->setMethods( array( 'addData' ) )
 			->getMock();
@@ -96,7 +96,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetBodyMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\Html\Catalog\Filter\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\Html\Catalog\Filter\Standard::class )
 			->setConstructorArgs( array( $this->context, [] ) )
 			->setMethods( array( 'addData' ) )
 			->getMock();
@@ -112,7 +112,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetBodyException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\Html\Catalog\Filter\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\Html\Catalog\Filter\Standard::class )
 			->setConstructorArgs( array( $this->context, [] ) )
 			->setMethods( array( 'addData' ) )
 			->getMock();

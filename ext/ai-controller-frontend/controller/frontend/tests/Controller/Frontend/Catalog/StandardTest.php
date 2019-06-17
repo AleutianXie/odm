@@ -29,35 +29,93 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	}
 
 
-	public function testCreateFilter()
+	public function testCompare()
 	{
-		$filter = $this->object->createFilter();
+		$list = $this->object->compare( '==', 'catalog.code', 'categories' )->getTree()->toList();
+		$this->assertEquals( 1, count( $list ) );
+	}
 
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
+
+	public function testFind()
+	{
+		$item = $this->object->uses( ['product'] )->find( 'cafe' );
+
+		$this->assertInstanceOf( \Aimeos\MShop\Catalog\Item\Iface::class, $item );
+		$this->assertEquals( 2, count( $item->getRefItems( 'product' ) ) );
+	}
+
+
+	public function testGet()
+	{
+		$item = \Aimeos\MShop::create( $this->context, 'catalog' )->findItem( 'cafe' );
+		$item = $this->object->uses( ['product'] )->get( $item->getId() );
+
+		$this->assertInstanceOf( \Aimeos\MShop\Catalog\Item\Iface::class, $item );
+		$this->assertEquals( 2, count( $item->getRefItems( 'product' ) ) );
 	}
 
 
 	public function testGetPath()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'catalog' );
-		$items = $this->object->getPath( $manager->findItem( 'cafe' )->getId() );
+		$item = \Aimeos\MShop::create( $this->context, 'catalog' )->findItem( 'cafe', [] );
+		$items = $this->object->uses( ['product'] )->getPath( $item->getId() );
 
 		$this->assertEquals( 3, count( $items ) );
+		$this->assertEquals( 2, count( current( array_reverse( $items, true ) )->getRefItems( 'product' ) ) );
 
 		foreach( $items as $item ) {
-			$this->assertInstanceOf( '\\Aimeos\\MShop\\Catalog\\Item\\Iface', $item );
+			$this->assertInstanceOf( \Aimeos\MShop\Catalog\Item\Iface::class, $item );
 		}
 	}
 
 
 	public function testGetTree()
 	{
-		$tree = $this->object->getTree();
+		$tree = $this->object->uses( ['product'] )->getTree();
+
+		foreach( $tree->toList() as $item ) {
+			$this->assertInstanceOf( \Aimeos\MShop\Catalog\Item\Iface::class, $item );
+		}
 
 		$this->assertEquals( 2, count( $tree->getChildren() ) );
+		$this->assertEquals( 4, count( current( array_reverse( $tree->toList(), true ) )->getRefItems( 'product' ) ) );
+	}
 
-		foreach( $tree->getChildren() as $item ) {
-			$this->assertInstanceOf( '\\Aimeos\\MShop\\Catalog\\Item\\Iface', $item );
-		}
+
+	public function testParse()
+	{
+		$cond = ['>' => ['catalog.status' => 0]];
+		$this->assertEquals( 8, count( $this->object->parse( $cond )->getTree()->toList() ) );
+	}
+
+
+	public function testRoot()
+	{
+		$manager = \Aimeos\MShop::create( $this->context, 'catalog' );
+
+		$root = $manager->findItem( 'categories' );
+		$item = $manager->findItem( 'cafe' );
+
+		$this->assertEquals( 2, count( $this->object->root( $root->getId() )->getPath( $item->getId() ) ) );
+	}
+
+
+	public function testUses()
+	{
+		$this->assertSame( $this->object, $this->object->uses( ['text'] ) );
+	}
+
+
+	public function testVisible()
+	{
+		$manager = \Aimeos\MShop::create( $this->context, 'catalog' );
+
+		$root = $manager->findItem( 'root' );
+		$item = $manager->findItem( 'cafe' );
+		$catIds = array_keys( $manager->getPath( $item->getId() ) );
+
+		$result = $this->object->root( $root->getId() )->visible( $catIds )->getTree();
+
+		$this->assertEquals( 6, count( $result->toList() ) );
 	}
 }

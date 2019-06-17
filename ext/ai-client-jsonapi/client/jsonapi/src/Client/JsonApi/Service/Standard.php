@@ -43,13 +43,13 @@ class Standard
 				$ref = explode( ',', $ref );
 			}
 
-			$cntl = \Aimeos\Controller\Frontend\Factory::createController( $this->getContext(), 'service' );
-			$basketCntl = \Aimeos\Controller\Frontend\Factory::createController( $this->getContext(), 'basket' );
+			$cntl = \Aimeos\Controller\Frontend::create( $this->getContext(), 'service' )->uses( $ref );
+			$basketCntl = \Aimeos\Controller\Frontend::create( $this->getContext(), 'basket' );
 			$basket = $basketCntl->get();
 
 			if( ( $id = $view->param( 'id' ) ) != '' )
 			{
-				$provider = $cntl->getProvider( $id, $ref );
+				$provider = $cntl->getProvider( $id );
 
 				if( $provider->isAvailable( $basket ) === true )
 				{
@@ -62,9 +62,9 @@ class Standard
 			else
 			{
 				$attributes = $prices = $items = [];
-				$type = $view->param( 'filter/cs_type' );
+				$cntl->type( $view->param( 'filter/cs_type' ) );
 
-				foreach( $cntl->getProviders( $type, $ref ) as $id => $provider )
+				foreach( $cntl->getProviders() as $id => $provider )
 				{
 					if( $provider->isAvailable( $basket ) === true )
 					{
@@ -113,7 +113,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'client/jsonapi/service/standard/template';
-		$default = 'service/standard.php';
+		$default = 'service/standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -144,7 +144,7 @@ class Standard
 		];
 
 		$tplconf = 'client/jsonapi/standard/template-options';
-		$default = 'options-standard.php';
+		$default = 'options-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 

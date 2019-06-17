@@ -229,12 +229,12 @@ class Standard
 	 */
 	protected function getIntervalItems()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'attribute' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'attribute' );
 
 		$search = $manager->createSearch();
 		$expr = [
-			$search->compare( '==', 'attribute.type.code', 'interval' ),
-			$search->compare( '==', 'attribute.type.domain', 'product' ),
+			$search->compare( '==', 'attribute.type', 'interval' ),
+			$search->compare( '==', 'attribute.domain', 'product' ),
 		];
 		$search->setConditions( $search->combine( '&&', $expr ) );
 		$search->setSortations( [$search->sort( '+', 'attribute.code' )] );
@@ -291,14 +291,14 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
 		$context = $this->getContext();
 
-		$attrManager = \Aimeos\MShop\Factory::createManager( $context, 'attribute' );
-		$listManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists' );
+		$attrManager = \Aimeos\MShop::create( $context, 'attribute' );
+		$listManager = \Aimeos\MShop::create( $context, 'product/lists' );
 
 		$listItems = $item->getListItems( 'attribute', 'config', 'interval', false );
 
@@ -309,13 +309,13 @@ class Standard
 			}
 
 			if( $entry['attribute.id'] == '' || ( $listItem = $item->getListItem( 'attribute', 'config', $entry['attribute.id'], false ) ) === null ) {
-				$listItem = $listManager->createItem( 'config', 'attribute' );
+				$listItem = $listManager->createItem()->setType( 'config' );
 			}
 
 			if( $entry['attribute.id'] == '' || ( $refItem = $listItem->getRefItem() ) === null )
 			{
-				$refItem = $attrManager->createItem( 'interval', 'product' )->setStatus( 1 );
-				$refItem->fromArray( $entry );
+				$refItem = $attrManager->createItem()->setType( 'interval' );
+				$refItem->fromArray( $entry, true );
 			}
 
 			unset( $listItems[$listItem->getId()] );
@@ -404,7 +404,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/subscription/template-item';
-		$default = 'product/item-subscription-standard.php';
+		$default = 'product/item-subscription-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

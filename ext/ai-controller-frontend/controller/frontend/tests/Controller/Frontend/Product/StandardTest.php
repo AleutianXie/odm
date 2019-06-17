@@ -29,318 +29,269 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testAggregate()
 	{
-		$filter = $this->object->createFilter();
-		$list = $this->object->aggregate( $filter, 'index.attribute.id' );
+		$list = $this->object->aggregate( 'index.attribute.id' );
 
 		$this->assertGreaterThan( 0, count( $list ) );
 	}
 
 
-	public function testCreateFilter()
+	public function testAllOf()
 	{
-		$filter = $this->object->createFilter();
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
-		$this->assertEquals( [], $filter->getSortations() );
-		$this->assertEquals( 0, $filter->getSliceStart() );
-		$this->assertEquals( 100, $filter->getSliceSize() );
+		$length = $manager->findItem( '30', [], 'product', 'length' )->getId();
+		$width = $manager->findItem( '29', [], 'product', 'width' )->getId();
+
+		$this->assertEquals( 2, count( $this->object->allOf( [$length, $width] )->search() ) );
 	}
 
 
-	public function testCreateFilterIgnoreDates()
+	public function testCategory()
 	{
-		$this->context->getConfig()->set( 'controller/frontend/product/ignore-dates', true );
+		$manager = \Aimeos\MShop::create( $this->context, 'catalog' );
+		$catId = $manager->findItem( 'cafe' )->getId();
 
-		$filter = $this->object->createFilter();
-
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
+		$this->assertEquals( 2, count( $this->object->category( $catId, 'promotion' )->search() ) );
 	}
 
 
-	public function testAddFilterAttribute()
+	public function testCategoryTree()
 	{
-		$filter = $this->object->createFilter();
-		$filter = $this->object->addFilterAttribute( $filter, array( 1, 2 ), [], [] );
+		$manager = \Aimeos\MShop::create( $this->context, 'catalog' );
 
-		$list = $filter->getConditions()->getExpressions();
+		$catId = $manager->findItem( 'categories' )->getId();
+		$grpId = $manager->findItem( 'group' )->getId();
 
-		if( !isset( $list[0] ) || !( $list[0] instanceof \Aimeos\MW\Criteria\Expression\Compare\Iface ) ) {
-			throw new \RuntimeException( 'Wrong expression' );
-		}
-
-		$this->assertEquals( 'index.attribute:all([1,2])', $list[0]->getName() );
+		$this->object->category( [$catId, $grpId], 'promotion', \Aimeos\MW\Tree\Manager\Base::LEVEL_TREE );
+		$this->assertEquals( 3, count( $this->object->search() ) );
 	}
 
 
-	public function testAddFilterAttributeOptions()
+	public function testCompare()
 	{
-		$filter = $this->object->createFilter();
-		$filter = $this->object->addFilterAttribute( $filter, [], array( 1 ), [] );
-
-		$list = $filter->getConditions()->getExpressions();
-
-		if( !isset( $list[0] ) || !( $list[0] instanceof \Aimeos\MW\Criteria\Expression\Compare\Iface ) ) {
-			throw new \RuntimeException( 'Wrong expression' );
-		}
-
-		$this->assertEquals( 'index.attribute.id', $list[0]->getName() );
-		$this->assertEquals( [1], $list[0]->getValue() );
+		$this->assertEquals( 1, count( $this->object->compare( '==', 'product.type', 'bundle' )->search() ) );
 	}
 
 
-	public function testAddFilterAttributeOne()
+	public function testFind()
 	{
-		$filter = $this->object->createFilter();
-		$filter = $this->object->addFilterAttribute( $filter, [], [], array( 'test' => array( 2 ) ) );
+		$item = $this->object->uses( ['product'] )->find( 'U:BUNDLE' );
 
-		$list = $filter->getConditions()->getExpressions();
-
-		if( !isset( $list[0] ) || !( $list[0] instanceof \Aimeos\MW\Criteria\Expression\Compare\Iface ) ) {
-			throw new \RuntimeException( 'Wrong expression' );
-		}
-
-		$this->assertEquals( 'index.attribute:oneof([2])', $list[0]->getName() );
-		$this->assertEquals( null, $list[0]->getValue() );
+		$this->assertInstanceOf( \Aimeos\MShop\Product\Item\Iface::class, $item );
+		$this->assertEquals( 2, count( $item->getRefItems( 'product' ) ) );
 	}
 
 
-	public function testAddFilterCategory()
+	public function testGet()
 	{
-		$context = \TestHelperFrontend::getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'catalog' );
+		$item = \Aimeos\MShop::create( $this->context, 'product' )->findItem( 'U:BUNDLE' );
+		$item = $this->object->uses( ['product'] )->get( $item->getId() );
 
-		$catId = $manager->findItem( 'root' )->getId();
-		$level = \Aimeos\MW\Tree\Manager\Base::LEVEL_LIST;
-
-		$filter = $this->object->createFilter();
-		$filter = $this->object->addFilterCategory( $filter, $catId, $level );
-
-		$list = $filter->getConditions()->getExpressions();
-
-		if( !isset( $list[0] ) || !( $list[0] instanceof \Aimeos\MW\Criteria\Expression\Compare\Iface ) ) {
-			throw new \RuntimeException( 'Wrong expression' );
-		}
-
-		$this->assertEquals( 'index.catalog.id', $list[0]->getName() );
-		$this->assertEquals( 3, count( $list[0]->getValue() ) );
-		$this->assertEquals( [], $filter->getSortations() );
+		$this->assertInstanceOf( \Aimeos\MShop\Product\Item\Iface::class, $item );
+		$this->assertEquals( 2, count( $item->getRefItems( 'product' ) ) );
 	}
 
 
-	public function testAddFilterSupplier()
+	public function testHas()
 	{
-		$filter = $this->object->createFilter();
-		$filter = $this->object->addFilterSupplier( $filter, [1, 2] );
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
+		$attrId = $manager->findItem( '30', [], 'product', 'length' )->getId();
 
-		$list = $filter->getConditions()->getExpressions();
-
-		if( !isset( $list[0] ) || !( $list[0] instanceof \Aimeos\MW\Criteria\Expression\Compare\Iface ) ) {
-			throw new \RuntimeException( 'Wrong expression' );
-		}
-
-		$this->assertEquals( 'index.supplier.id', $list[0]->getName() );
-		$this->assertEquals( 2, count( $list[0]->getValue() ) );
+		$this->assertEquals( 1, count( $this->object->has( 'attribute', 'variant', $attrId )->search() ) );
 	}
 
 
-	public function testAddFilterText()
+	public function testOneOf()
 	{
-		$filter = $this->object->createFilter();
-		$filter = $this->object->addFilterText( $filter, 'Espresso' );
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
+		$length = $manager->findItem( '30', [], 'product', 'length' )->getId();
+		$width = $manager->findItem( '30', [], 'product', 'width' )->getId();
 
-		$list = $filter->getConditions()->getExpressions();
-
-
-		if( !isset( $list[0] ) || !( $list[0] instanceof \Aimeos\MW\Criteria\Expression\Compare\Iface ) ) {
-			throw new \RuntimeException( 'Wrong expression' );
-		}
-		$this->assertEquals( 'index.text:relevance("default","de","Espresso")', $list[0]->getName() );
-		$this->assertEquals( 0, $list[0]->getValue() );
-
-		$this->assertEquals( [], $filter->getSortations() );
-		$this->assertEquals( 0, $filter->getSliceStart() );
-		$this->assertEquals( 100, $filter->getSliceSize() );
+		$this->assertEquals( 3, count( $this->object->oneOf( [$length, $width] )->search() ) );
 	}
 
 
-	public function testCreateFilterSortRelevanceCategory()
+	public function testOneOfList()
 	{
-		$level = \Aimeos\MW\Tree\Manager\Base::LEVEL_ONE;
+		$manager = \Aimeos\MShop::create( $this->context, 'attribute' );
 
-		$filter = $this->object->createFilter();
-		$filter = $this->object->addFilterCategory( $filter, 0, $level, 'relevance', '-', 'test' );
+		$length = $manager->findItem( '30', [], 'product', 'length' )->getId();
+		$width = $manager->findItem( '30', [], 'product', 'width' )->getId();
 
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
-
-		$sort = $filter->getSortations();
-		if( ( $item = reset( $sort ) ) === false ) {
-			throw new \RuntimeException( 'Sortation not set' );
-		}
-
-		$this->assertEquals( 'sort:index.catalog:position("test",["0"],0,100)', $item->getName() );
-		$this->assertEquals( '-', $item->getOperator() );
+		$this->assertEquals( 1, count( $this->object->oneOf( [[$length], [$width]] )->search() ) );
 	}
 
 
-	public function testCreateFilterSortRelevanceText()
+	public function testParse()
 	{
-		$filter = $this->object->createFilter( 'relevance', '-', 1, 2, 'test' );
-		$filter = $this->object->addFilterText( $filter, 'Espresso' );
-
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
-		$this->assertEquals( [], $filter->getSortations() );
-		$this->assertEquals( 1, $filter->getSliceStart() );
-		$this->assertEquals( 2, $filter->getSliceSize() );
+		$cond = ['&&' => [['>' => ['product.status' => 0]], ['==' => ['product.type' => 'default']]]];
+		$this->assertEquals( 4, count( $this->object->parse( $cond )->search() ) );
 	}
 
 
-	public function testCreateFilterSortCode()
+	public function testProduct()
 	{
-		$filter = $this->object->createFilter( 'code' );
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
+		$cncId = $manager->findItem( 'CNC' )->getId();
+		$cneId = $manager->findItem( 'CNE' )->getId();
 
-		$sort = $filter->getSortations();
-		if( ( $item = reset( $sort ) ) === false ) {
-			throw new \RuntimeException( 'Sortation not set' );
-		}
-
-		$this->assertEquals( 'product.code', $item->getName() );
+		$this->assertEquals( 2, count( $this->object->product( [$cncId, $cneId] )->search() ) );
 	}
 
 
-	public function testCreateFilterSortCtime()
+	public function testProperty()
 	{
-		$filter = $this->object->createFilter( 'ctime' );
-
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
-
-		$sort = $filter->getSortations();
-		if( ( $item = reset( $sort ) ) === false ) {
-			throw new \RuntimeException( 'Sortation not set' );
-		}
-
-		$this->assertEquals( 'product.ctime', $item->getName() );
+		$this->assertEquals( 1, count( $this->object->property( 'package-weight', '1.25' )->search() ) );
 	}
 
 
-	public function testCreateFilterSortName()
+	public function testResolve()
 	{
-		$filter = $this->object->createFilter( 'name' );
+		$item = $this->object->resolve( 'Cafe_Noire_Cappuccino' );
 
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
-
-		$sort = $filter->getSortations();
-		if( ( $item = reset( $sort ) ) === false ) {
-			throw new \RuntimeException( 'Sortation not set' );
-		}
-
-		$this->assertEquals( 'sort:index.text:name("de")', $item->getName() );
+		$this->assertInstanceOf( \Aimeos\MShop\Product\Item\Iface::class, $item );
+		$this->assertEquals( 'Cafe Noire Cappuccino', $item->getLabel() );
 	}
 
 
-	public function testCreateFilterSortPrice()
+	public function testSearch()
 	{
-		$filter = $this->object->createFilter( 'price' );
+		$total = 0;
+		$items = $this->object->uses( ['price'] )->sort( 'code' )->search( $total );
 
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
-
-		$sort = $filter->getSortations();
-		if( ( $item = reset( $sort ) ) === false ) {
-			throw new \RuntimeException( 'Sortation not set' );
-		}
-
-		$this->assertStringStartsWith( 'sort:index.price:value("default","EUR","default")', $item->getName() );
+		$this->assertEquals( 8, count( $items ) );
+		$this->assertEquals( 8, $total );
+		$this->assertEquals( 2, count( current( $items )->getRefItems( 'price' ) ) );
 	}
 
 
-	public function testCreateFilterSortInvalid()
+	public function testSlice()
 	{
-		$filter = $this->object->createFilter( '', 'failure' );
-
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
-		$this->assertEquals( [], $filter->getSortations() );
+		$this->assertEquals( 2, count( $this->object->slice( 0, 2 )->search() ) );
 	}
 
 
-	public function testGetItem()
+	public function testSort()
 	{
-		$context = \TestHelperFrontend::getContext();
-		$id = \Aimeos\MShop\Factory::createManager( $context, 'product' )->findItem( 'CNC' )->getId();
-
-		$result = $this->object->getItem( $id );
-
-		$this->assertInstanceOf( '\Aimeos\MShop\Product\Item\Iface', $result );
-		$this->assertGreaterThan( 0, $result->getPropertyItems() );
-		$this->assertGreaterThan( 0, $result->getRefItems( 'attribute' ) );
-		$this->assertGreaterThan( 0, $result->getRefItems( 'media' ) );
-		$this->assertGreaterThan( 0, $result->getRefItems( 'price' ) );
-		$this->assertGreaterThan( 0, $result->getRefItems( 'product' ) );
-		$this->assertGreaterThan( 0, $result->getRefItems( 'text' ) );
+		$this->assertEquals( 8, count( $this->object->sort( '+relevance' )->search() ) );
 	}
 
 
-	public function testGetItems()
+	public function testSortGeneric()
 	{
-		$context = \TestHelperFrontend::getContext();
-		$context->getConfig()->set( 'controller/frontend/product/ignore-dates', true );
-
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'product' );
-
-		$search = $manager->createSearch();
-		$search->setConditions( $search->compare( '==', 'product.code', array( 'CNC', 'CNE' ) ) );
-
-		$ids = [];
-		foreach( $manager->searchItems( $search ) as $productItem ) {
-			$ids[] = $productItem->getId();
-		}
+		$this->assertEquals( 8, count( $this->object->sort( '-product.status' )->search() ) );
+	}
 
 
-		$result = $this->object->getItems( $ids );
+	public function testSortMultiple()
+	{
+		$this->assertEquals( 8, count( $this->object->sort( '-product.status,product.id' )->search() ) );
+	}
+
+
+	public function testSortCode()
+	{
+		$result = $this->object->sort( 'code' )->search();
+		$this->assertEquals( 'CNC', reset( $result )->getCode() );
+	}
+
+
+	public function testSortCodeDesc()
+	{
+		$result = $this->object->sort( '-code' )->search();
+		$this->assertStringStartsWith( 'U:', reset( $result )->getCode() );
+	}
+
+
+	public function testSortCtime()
+	{
+		$this->assertEquals( 8, count( $this->object->sort( 'ctime' )->search() ) );
+	}
+
+
+	public function testSortCtimeDesc()
+	{
+		$this->assertEquals( 8, count( $this->object->sort( '-ctime' )->search() ) );
+	}
+
+
+	public function testSortName()
+	{
+		$result = $this->object->uses( ['text'] )->sort( 'name' )->search();
+		$this->assertEquals( 'Cafe Noire Cappuccino', reset( $result )->getName() );
+	}
+
+
+	public function testSortNameDesc()
+	{
+		$result = $this->object->uses( ['text'] )->sort( '-name' )->search();
+		$this->assertEquals( 'Unterproduct 3', reset( $result )->getName() );
+	}
+
+
+	public function testSortPrice()
+	{
+		$result = $this->object->uses( ['price'] )->sort( 'price' )->search();
+		$prices = reset( $result )->getRefItems( 'price', 'default', 'default' );
+
+		$this->assertEquals( '12.00', reset( $prices )->getValue() );
+	}
+
+
+	public function testSortPriceDesc()
+	{
+		$result = $this->object->uses( ['price'] )->sort( '-price' )->search();
+		$prices = reset( $result )->getRefItems( 'price', 'default', 'default' );
+
+		$this->assertEquals( '600.00', reset( $prices )->getValue() );
+	}
+
+
+	public function testSortRelevanceCategory()
+	{
+		$manager = \Aimeos\MShop::create( $this->context, 'catalog' );
+		$catId = $manager->findItem( 'new' )->getId();
+
+		$result = $this->object->category( $catId )->sort( 'relevance' )->search();
+
+		$this->assertEquals( 3, count( $result ) );
+		$this->assertEquals( 'CNE', reset( $result )->getCode() );
+		$this->assertEquals( 'U:BUNDLE', end( $result )->getCode() );
+	}
+
+
+	public function testSortRelevanceSupplier()
+	{
+		$manager = \Aimeos\MShop::create( $this->context, 'supplier' );
+		$supId = $manager->findItem( 'unitCode001' )->getId();
+
+		$result = $this->object->supplier( $supId )->sort( 'relevance' )->search();
 
 		$this->assertEquals( 2, count( $result ) );
-
-		foreach( $result as $productItem ) {
-			$this->assertInstanceOf( '\Aimeos\MShop\Product\Item\Iface', $productItem );
-		}
+		$this->assertEquals( 'CNC', reset( $result )->getCode() );
+		$this->assertEquals( 'CNE', end( $result )->getCode() );
 	}
 
 
-	public function testSearchItemsCategory()
+	public function testSupplier()
 	{
-		$catalogManager = \Aimeos\MShop\Catalog\Manager\Factory::createManager( \TestHelperFrontend::getContext() );
-		$search = $catalogManager->createSearch();
+		$manager = \Aimeos\MShop::create( $this->context, 'supplier' );
+		$supId = $manager->findItem( 'unitCode001' )->getId();
 
-		$search->setConditions( $search->compare( '==', 'catalog.code', 'new' ) );
-		$search->setSlice( 0, 1 );
-		$items = $catalogManager->searchItems( $search );
-
-		if( ( $item = reset( $items ) ) === false ) {
-			throw new \RuntimeException( 'Product item not found' );
-		}
-
-		$filter = $this->object->createFilter( 'position', '+', 1, 1 );
-		$filter = $this->object->addFilterCategory( $filter, $item->getId() );
-
-		$total = 0;
-		$results = $this->object->searchItems( $filter, [], $total );
-
-		$this->assertEquals( 3, $total );
-		$this->assertEquals( 1, count( $results ) );
+		$this->assertEquals( 2, count( $this->object->supplier( $supId )->search() ) );
 	}
 
 
-	public function testSearchItemsText()
+	public function testText()
 	{
-		$filter = $this->object->createFilter( 'relevance', '+', 0, 1, 'unittype13' );
-		$filter = $this->object->addFilterText( $filter, 'Expresso', 'relevance', '+', 'unittype13' );
+		$this->assertEquals( 3, count( $this->object->text( 'Cafe' )->search() ) );
+	}
 
-		$total = 0;
-		$results = $this->object->searchItems( $filter, [], $total );
 
-		$this->assertEquals( 2, $total );
-		$this->assertEquals( 1, count( $results ) );
+	public function testUses()
+	{
+		$this->assertSame( $this->object, $this->object->uses( ['text'] ) );
 	}
 }

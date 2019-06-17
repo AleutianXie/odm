@@ -37,7 +37,7 @@ class Standard
 	{
 		parent::__construct( $context, $path );
 
-		$this->controller = \Aimeos\Controller\Frontend\Basket\Factory::createController( $this->getContext() );
+		$this->controller = \Aimeos\Controller\Frontend\Basket\Factory::create( $this->getContext() );
 	}
 
 
@@ -87,6 +87,12 @@ class Standard
 
 			$view->item = $this->controller->get();
 			$status = 200;
+		}
+		catch( \Aimeos\MShop\Plugin\Provider\Exception $e )
+		{
+			$status = 409;
+			$errors = $this->translatePluginErrorCodes( $e->getErrorCodes() );
+			$view->errors = $this->getErrorDetails( $e, 'mshop' ) + $errors;
 		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
@@ -142,6 +148,12 @@ class Standard
 			$view->item = $this->controller->get();
 			$status = 201;
 		}
+		catch( \Aimeos\MShop\Plugin\Provider\Exception $e )
+		{
+			$status = 409;
+			$errors = $this->translatePluginErrorCodes( $e->getErrorCodes() );
+			$view->errors = $this->getErrorDetails( $e, 'mshop' ) + $errors;
+		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
 			$status = 404;
@@ -181,7 +193,7 @@ class Standard
 	protected function render( ResponseInterface $response, \Aimeos\MW\View\Iface $view, $status )
 	{
 		$tplconf = 'client/jsonapi/basket/standard/template';
-		$default = 'basket/standard.php';
+		$default = 'basket/standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 

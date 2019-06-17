@@ -22,15 +22,13 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 		$this->object = new \Aimeos\Controller\Jobs\Subscription\Process\Begin\Standard( $this->context, $aimeos );
 
-		\Aimeos\MShop\Factory::setCache( true );
+		\Aimeos\MShop::cache( true );
 	}
 
 
 	protected function tearDown()
 	{
-		\Aimeos\MShop\Factory::setCache( false );
-		\Aimeos\MShop\Factory::clear();
-
+		\Aimeos\MShop::cache( false );
 		unset( $this->object, $this->context );
 	}
 
@@ -57,7 +55,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->setMethods( ['searchItems', 'saveItem'] )
 			->getMock();
 
-		\Aimeos\MShop\Factory::injectManager( $this->context, 'subscription', $managerStub );
+		\Aimeos\MShop::inject( 'subscription', $managerStub );
 
 		$managerStub->expects( $this->once() )->method( 'searchItems' )
 			->will( $this->returnValue( [$item] ) );
@@ -78,7 +76,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->setMethods( ['searchItems', 'saveItem'] )
 			->getMock();
 
-		\Aimeos\MShop\Factory::injectManager( $this->context, 'subscription', $managerStub );
+		\Aimeos\MShop::inject( 'subscription', $managerStub );
 
 		$managerStub->expects( $this->once() )->method( 'searchItems' )
 			->will( $this->returnValue( [$managerStub->createItem()] ) );
@@ -92,7 +90,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getSubscription()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'subscription' );
+		$manager = \Aimeos\MShop::create( $this->context, 'subscription' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'subscription.dateend', '2010-01-01' ) );

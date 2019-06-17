@@ -14,7 +14,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function setUp()
 	{
-		$this->context = \TestHelperJobs::getContext('unitperf');
+		$this->context = \TestHelperJobs::getContext( 'unitperf' );
 
 		$config = $this->context->getConfig();
 		$config->set( 'controller/jobs/product/import/csv/location', 'tmp/product-import.zip' );
@@ -62,7 +62,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	public function testImport()
 	{
 		$aimeos = \TestHelperJobs::getAimeos();
-		$cntl = \Aimeos\Controller\Jobs\Product\Import\Csv\Factory::createController( $this->context, $aimeos, 'Standard' );
+		$cntl = \Aimeos\Controller\Jobs\Product\Import\Csv\Factory::create( $this->context, $aimeos, 'Standard' );
 
 		$start = microtime( true );
 
@@ -76,11 +76,11 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	protected function addAttribute( array $data, $cnt )
 	{
 		$data[] = 'length'; // type
-		$data[] = 'import-' . ($cnt % 30); // code
+		$data[] = 'import-' . ( $cnt % 30 ); // code
 		$data[] = 'width'; // type
-		$data[] = 'import-' . ($cnt % 30); // code
+		$data[] = 'import-' . ( $cnt % 30 ); // code
 		$data[] = 'size'; // type
-		$data[] = 'import-' . ($cnt % 5); // code
+		$data[] = 'import-' . ( $cnt % 5 ); // code
 
 		return $data;
 	}
@@ -118,7 +118,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function addProductRef( array $data, $cnt )
 	{
-		$data[] = 'import-' . ($cnt % 100); // code
+		$data[] = 'import-' . ( $cnt % 100 ); // code
 		$data[] = 'suggestion'; // type
 
 		return $data;
@@ -149,7 +149,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function cleanupAttribute()
 	{
-		$manager = \Aimeos\MShop\Attribute\Manager\Factory::createManager( $this->context );
+		$manager = \Aimeos\MShop\Attribute\Manager\Factory::create( $this->context );
 
 		$search = $manager->createSearch();
 		$expr = array(
@@ -176,7 +176,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function cleanupMedia()
 	{
-		$manager = \Aimeos\MShop\Media\Manager\Factory::createManager( $this->context );
+		$manager = \Aimeos\MShop\Media\Manager\Factory::create( $this->context );
 
 		$search = $manager->createSearch();
 		$expr = array(
@@ -203,7 +203,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function cleanupPrice()
 	{
-		$manager = \Aimeos\MShop\Price\Manager\Factory::createManager( $this->context );
+		$manager = \Aimeos\MShop\Price\Manager\Factory::create( $this->context );
 
 		$search = $manager->createSearch();
 		$expr = array(
@@ -230,7 +230,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function cleanupProduct()
 	{
-		$manager = \Aimeos\MShop\Product\Manager\Factory::createManager( $this->context );
+		$manager = \Aimeos\MShop\Product\Manager\Factory::create( $this->context );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'product.code', 'import-%' ) );
@@ -253,7 +253,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function cleanupText()
 	{
-		$manager = \Aimeos\MShop\Text\Manager\Factory::createManager( $this->context );
+		$manager = \Aimeos\MShop\Text\Manager\Factory::create( $this->context );
 
 		$search = $manager->createSearch();
 		$expr = array(

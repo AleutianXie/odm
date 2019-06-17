@@ -21,140 +21,222 @@ class Standard
 	extends \Aimeos\Controller\Frontend\Base
 	implements Iface, \Aimeos\Controller\Frontend\Common\Iface
 {
+	private $domains = [];
+	private $manager;
+	private $item;
+
+
 	/**
-	 * Adds and returns a new customer item object
+	 * Initializes the controller
 	 *
-	 * @param array $values Values added to the newly created customer item like "customer.birthday"
-	 * @return \Aimeos\MShop\Customer\Item\Iface Customer item
-	 * @since 2017.04
+	 * @param \Aimeos\MShop\Context\Item\Iface $context Common MShop context object
 	 */
-	public function addItem( array $values )
+	public function __construct( \Aimeos\MShop\Context\Item\Iface $context )
 	{
-		$list = [];
-		$context = $this->getContext();
-		$config = $context->getConfig();
+		parent::__construct( $context );
 
-		// Show only generated passwords in account creation e-mails
-		$pass = ( isset( $values['customer.password'] ) ? false : true );
+		/** controller/frontend/customer/groupids
+		 * List of groups new customers should be assigned to
+		 *
+		 * Newly created customers will be assigned automatically to the groups
+		 * given by their IDs. This is especially useful if those groups limit
+		 * functionality for those users.
+		 *
+		 * @param array List of group IDs
+		 * @since 2017.07
+		 * @category User
+		 * @category Developer
+		 */
+		$groupIds = (array) $context->getConfig()->get( 'controller/frontend/customer/groupids', [] );
 
-		foreach( $values as $key => $val ) {
-			$list[str_replace( 'order.base.address', 'customer', $key )] = $val;
-		}
+		$this->manager = \Aimeos\MShop::create( $context, 'customer' );
+		$this->item = $this->manager->createItem()->setGroups( $groupIds );
+	}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer' );
-		$list = $this->addItemDefaults( $list );
 
-		try
-		{
-			$item = $manager->findItem( $list['customer.code'], [], true );
-		}
-		catch( \Aimeos\MShop\Exception $e )
-		{
-			$this->checkLimit( $list );
-
-			$item = $manager->createItem();
-			$item->fromArray( $list );
-			$item->setId( null );
-
-			/** controller/frontend/customer/groupids
-			 * List of groups new customers should be assigned to
-			 *
-			 * Newly created customers will be assigned automatically to the groups
-			 * given by their IDs. This is especially useful if those groups limit
-			 * functionality for those users.
-			 *
-			 * @param array List of group IDs
-			 * @since 2017.07
-			 * @category User
-			 * @category Developer
-			 */
-			$item->setGroups( (array) $config->get( 'controller/frontend/customer/groupids', [] ) );
-
-			$item = $manager->saveItem( $item );
-
-			$msg = $item->toArray();
-			$msg['customer.password'] = ( $pass ? $list['customer.password'] : null );
-			$context->getMessageQueue( 'mq-email', 'customer/email/account' )->add( json_encode( $msg ) );
-		}
-
-		return $item;
+	/**
+	 * Clones objects in controller and resets values
+	 */
+	public function __clone()
+	{
+		$this->item = clone $this->item;
 	}
 
 
 	/**
 	 * Creates a new customer item object pre-filled with the given values but not yet stored
 	 *
-	 * @return \Aimeos\MShop\Customer\Item\Iface Customer item
+	 * @param array $values Values added to the customer item (new or existing) like "customer.code"
+	 * @return \Aimeos\Controller\Frontend\Customer\Iface Customer controller for fluent interface
+	 * @since 2019.04
 	 */
-	public function createItem( array $values = [] )
+	public function add( array $values )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer' );
+		$item = $this->item->fromArray( $values );
+		$addrItem = $item->getPaymentAddress();
 
-		$item = $manager->createItem();
-		$item->fromArray( $values );
-		$item->setId( null );
-		$item->setStatus( 1 );
+		if( $item->getLabel() === '' )
+		{
+			$label = $addrItem->getLastname();
 
-		return $item;
+			if( ( $firstName = $addrItem->getFirstname() ) !== '' ) {
+				$label = $firstName . ' ' . $label;
+			}
+
+			if( ( $company = $addrItem->getCompany() ) !== '' ) {
+				$label .= ' (' . $company . ')';
+			}
+
+			$item = $item->setLabel( $label );
+		}
+
+		if( $item->getCode() === '' ) {
+			$item = $item->setCode( $addrItem->getEmail() );
+		}
+
+		$this->item = $item;
+		return $this;
+	}
+
+
+	/**
+	 * Adds the given address item to the customer object (not yet stored)
+	 *
+	 * @param \Aimeos\MShop\Common\Item\Address\Iface $item Address item to add
+	 * @param integer|null $idx Key in the list of address items or null to add the item at the end
+	 * @return \Aimeos\Controller\Frontend\Customer\Iface Customer controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function addAddressItem( \Aimeos\MShop\Common\Item\Address\Iface $item, $idx = null )
+	{
+		$this->item = $this->item->addAddressItem( $item, $idx );
+		return $this;
+	}
+
+
+	/**
+	 * Adds the given list item to the customer object (not yet stored)
+	 *
+	 * @param string $domain Domain name the referenced item belongs to
+	 * @param \Aimeos\MShop\Common\Item\Lists\Iface $item List item to add
+	 * @param \Aimeos\MShop\Common\Item\Iface|null $refItem Referenced item to add or null if list item contains refid value
+	 * @return \Aimeos\Controller\Frontend\Customer\Iface Customer controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function addListItem( $domain, \Aimeos\MShop\Common\Item\Lists\Iface $item, \Aimeos\MShop\Common\Item\Iface $refItem = null )
+	{
+		$this->item = $this->item->addListItem( $domain, $item, $refItem );
+		return $this;
+	}
+
+
+	/**
+	 * Adds the given property item to the customer object (not yet stored)
+	 *
+	 * @param \Aimeos\MShop\Common\Item\Property\Iface $item Property item to add
+	 * @return \Aimeos\Controller\Frontend\Customer\Iface Customer controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function addPropertyItem( \Aimeos\MShop\Common\Item\Property\Iface $item )
+	{
+		$this->item = $this->item->addPropertyItem( $item );
+		return $this;
+	}
+
+
+	/**
+	 * Creates a new address item object pre-filled with the given values
+	 *
+	 * @return \Aimeos\MShop\Customer\Item\Address\Iface Address item
+	 * @since 2019.04
+	 */
+	public function createAddressItem( array $values = [] )
+	{
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'customer/address' );
+		return $manager->createItem()->fromArray( $values );
+	}
+
+
+	/**
+	 * Creates a new list item object pre-filled with the given values
+	 *
+	 * @return \Aimeos\MShop\Common\Item\Lists\Iface List item
+	 * @since 2019.04
+	 */
+	public function createListItem( array $values = [] )
+	{
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'customer/lists' );
+		return $manager->createItem()->fromArray( $values );
+	}
+
+
+	/**
+	 * Creates a new property item object pre-filled with the given values
+	 *
+	 * @return \Aimeos\MShop\Common\Item\Property\Iface Property item
+	 * @since 2019.04
+	 */
+	public function createPropertyItem( array $values = [] )
+	{
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'customer/property' );
+		return $manager->createItem()->fromArray( $values );
 	}
 
 
 	/**
 	 * Deletes a customer item that belongs to the current authenticated user
 	 *
-	 * @param string $id Unique customer ID
-	 * @since 2017.04
-	 */
-	public function deleteItem( $id )
-	{
-		$this->checkUser( $id );
-
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer' );
-		$manager->deleteItem( $id );
-	}
-
-
-	/**
-	 * Updates the customer item identified by its ID
-	 *
-	 * @param string $id Unique customer ID
-	 * @param array $values Values added to the customer item like "customer.birthday" or "customer.city"
-	 * @return \Aimeos\MShop\Customer\Item\Iface Customer item
-	 * @since 2017.04
-	 */
-	public function editItem( $id, array $values )
-	{
-		$this->checkUser( $id );
-
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer' );
-		$item = $manager->getItem( $id, ['customer/group'], true );
-
-		unset( $values['customer.id'] );
-		$item->fromArray( $values );
-
-		return $manager->saveItem( $item );
-	}
-
-
-	/**
-	 * Returns the customer item for the given customer ID
-	 *
-	 * @param string|null $id Unique customer ID or null for current customer item
-	 * @param string[] $domains Domain names of items that are associated with the customers and that should be fetched too
 	 * @return \Aimeos\MShop\Customer\Item\Iface Customer item including the referenced domains items
-	 * @since 2017.04
+	 * @since 2019.04
 	 */
-	public function getItem( $id = null, array $domains = [] )
+	public function delete()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer' );
-
-		if( $id == null ) {
-			return $manager->getItem( $this->getContext()->getUserId(), $domains, true );
+		if( $this->item && $this->item->getId() ) {
+			\Aimeos\MShop::create( $this->getContext(), 'customer' )->deleteItem( $this->item->getId() );
 		}
 
-		$this->checkUser( $id );
+		return $this;
+	}
 
-		return $manager->getItem( $id, $domains, true );
+
+	/**
+	 * Removes the given address item from the customer object (not yet stored)
+	 *
+	 * @param \Aimeos\MShop\Common\Item\Address\Iface $item Address item to remove
+	 * @return \Aimeos\Controller\Frontend\Customer\Iface Customer controller for fluent interface
+	 */
+	public function deleteAddressItem( \Aimeos\MShop\Common\Item\Address\Iface $item )
+	{
+		$this->item = $this->item->deleteAddressItem( $item );
+		return $this;
+	}
+
+
+	/**
+	 * Removes the given list item from the customer object (not yet stored)
+	 *
+	 * @param string $domain Domain name the referenced item belongs to
+	 * @param \Aimeos\MShop\Common\Item\Lists\Iface $item List item to remove
+	 * @param \Aimeos\MShop\Common\Item\Iface|null $refItem Referenced item to remove or null if only list item should be removed
+	 * @return \Aimeos\Controller\Frontend\Customer\Iface Customer controller for fluent interface
+	 */
+	public function deleteListItem( $domain, \Aimeos\MShop\Common\Item\Lists\Iface $listItem, \Aimeos\MShop\Common\Item\Iface $refItem = null )
+	{
+		$this->item = $this->item->deleteListItem( $domain, $listItem, $refItem );
+		return $this;
+	}
+
+
+	/**
+	 * Removes the given property item from the customer object (not yet stored)
+	 *
+	 * @param \Aimeos\MShop\Common\Item\Property\Iface $item Property item to remove
+	 * @return \Aimeos\Controller\Frontend\Customer\Iface Customer controller for fluent interface
+	 */
+	public function deletePropertyItem( \Aimeos\MShop\Common\Item\Property\Iface $item )
+	{
+		$this->item = $this->item->deletePropertyItem( $item );
+		return $this;
 	}
 
 
@@ -164,329 +246,81 @@ class Standard
 	 * This method doesn't check if the customer item belongs to the logged in user!
 	 *
 	 * @param string $code Unique customer code
-	 * @param string[] $domains Domain names of items that are associated with the customers and that should be fetched too
 	 * @return \Aimeos\MShop\Customer\Item\Iface Customer item including the referenced domains items
-	 * @since 2017.04
+	 * @since 2019.04
 	 */
-	public function findItem( $code, array $domains = [] )
+	public function find( $code )
 	{
-		return \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer' )->findItem( $code, $domains, true );
+		return $this->manager->findItem( $code, $this->domains, true );
 	}
 
 
 	/**
-	 * Stores a modified customer item
+	 * Returns the customer item for the current authenticated user
 	 *
-	 * @param \Aimeos\MShop\Customer\Item\Iface $item Customer item
-	 * @return \Aimeos\MShop\Customer\Item\Address\Iface Customer address item including the generated ID
+	 * @return \Aimeos\MShop\Customer\Item\Iface Customer item including the referenced domains items
+	 * @since 2019.04
 	 */
-	public function saveItem( \Aimeos\MShop\Customer\Item\Iface $item )
+	public function get()
 	{
-		return \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer' )->saveItem( $item );
+		return $this->item;
 	}
 
 
 	/**
-	 * Creates and returns a new item object
+	 * Adds or updates a modified customer item in the storage
 	 *
-	 * @param array $values Values added to the newly created customer item like "customer.birthday"
-	 * @return \Aimeos\MShop\Customer\Item\Address\Iface Customer address item
-	 * @since 2017.04
+	 * @return \Aimeos\Controller\Frontend\Customer\Iface Customer controller for fluent interface
+	 * @since 2019.04
 	 */
-	public function addAddressItem( array $values )
+	public function store()
 	{
+		( $id = $this->item->getId() ) !== null ? $this->checkId( $id ) : $this->checkLimit();
 		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer/address' );
 
-		$item = $manager->createItem();
-		$item->fromArray( $values );
-		$item->setId( null );
-		$item->setParentId( $context->getUserId() );
-
-		return $manager->saveItem( $item );
-	}
-
-
-	/**
-	 * Creates a new customer address item object pre-filled with the given values but not yet stored
-	 *
-	 * @return \Aimeos\MShop\Customer\Item\Address\Iface Customer address item
-	 */
-	public function createAddressItem( array $values = [] )
-	{
-		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer/address' );
-
-		$item = $manager->createItem();
-		$item->fromArray( $values );
-		$item->setId( null );
-
-		$item->setParentId( $context->getUserId() );
-
-		return $item;
-	}
-
-
-	/**
-	 * Deletes a customer item that belongs to the current authenticated user
-	 *
-	 * @param string $id Unique customer address ID
-	 * @since 2017.04
-	 */
-	public function deleteAddressItem( $id )
-	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer/address' );
-
-		$this->checkUser( $manager->getItem( $id, [], true )->getParentId() );
-
-		$manager->deleteItem( $id );
-	}
-
-
-	/**
-	 * Saves a modified customer item object
-	 *
-	 * @param string $id Unique customer address ID
-	 * @param array $values Values added to the customer item like "customer.address.city"
-	 * @return \Aimeos\MShop\Customer\Item\Address\Iface Customer address item
-	 * @since 2017.04
-	 */
-	public function editAddressItem( $id, array $values )
-	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer/address' );
-
-		$item = $manager->getItem( $id, [], true );
-		$this->checkUser( $item->getParentId() );
-
-		unset( $values['customer.address.id'] );
-		$item->fromArray( $values );
-
-		return $manager->saveItem( $item );
-	}
-
-
-	/**
-	 * Returns the customer item for the given customer ID
-	 *
-	 * @param string $id Unique customer address ID
-	 * @return \Aimeos\MShop\Customer\Item\Address\Iface Customer address item
-	 * @since 2017.04
-	 */
-	public function getAddressItem( $id )
-	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer/address' );
-
-		$item = $manager->getItem( $id );
-		$this->checkUser( $item->getParentId() );
-
-		return $item;
-	}
-
-
-	/**
-	 * Stores a modified customer address item
-	 *
-	 * @param \Aimeos\MShop\Customer\Item\Address\Iface $item Customer address item
-	 * @return \Aimeos\MShop\Customer\Item\Address\Iface Customer address item including the generated ID
-	 */
-	public function saveAddressItem( \Aimeos\MShop\Customer\Item\Address\Iface $item )
-	{
-		return \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer/address' )->saveItem( $item );
-	}
-
-
-	/**
-	 * Creates and returns a new list item object
-	 *
-	 * @param array $values Values added to the newly created customer item like "customer.lists.refid"
-	 * @return \Aimeos\MShop\Common\Item\Lists\Iface Customer lists item
-	 * @since 2017.06
-	 */
-	public function addListItem( array $values )
-	{
-		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists' );
-
-		if( !isset( $values['customer.lists.typeid'] ) )
+		if( $id === null )
 		{
-			if( !isset( $values['customer.lists.type'] ) ) {
-				throw new \Aimeos\Controller\Frontend\Customer\Exception( sprintf( 'No customer lists type code' ) );
+			$msg = $this->item->toArray();
+			$msg['customer.password'] = null;
+
+			// Show only generated passwords in account creation e-mails
+			if( $this->item->getPassword() === '' ) {
+				$msg['customer.password'] = substr( sha1( microtime( true ) . getmypid() . rand() ), -8 );
 			}
 
-			if( !isset( $values['customer.lists.domain'] ) ) {
-				throw new \Aimeos\Controller\Frontend\Customer\Exception( sprintf( 'No customer lists domain' ) );
-			}
-
-			$typeManager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists/type' );
-			$typeItem = $typeManager->findItem( $values['customer.lists.type'], [], $values['customer.lists.domain'] );
-			$values['customer.lists.typeid'] = $typeItem->getId();
+			$context->getMessageQueue( 'mq-email', 'customer/email/account' )->add( json_encode( $msg ) );
 		}
 
-		$item = $manager->createItem();
-		$item->fromArray( $values );
-		$item->setId( null );
-		$item->setParentId( $context->getUserId() );
-
-		return $manager->saveItem( $item );
+		$this->item = $this->manager->saveItem( $this->item );
+		return $this;
 	}
 
 
 	/**
-	 * Returns a new customer lists filter criteria object
+	 * Sets the domains that will be used when working with the customer item
 	 *
-	 * @return \Aimeos\MW\Criteria\Iface New filter object
-	 * @since 2017.06
+	 * @param array $domains Domain names of the referenced items that should be fetched too
+	 * @return \Aimeos\Controller\Frontend\Customer\Iface Customer controller for fluent interface
+	 * @since 2019.04
 	 */
-	public function createListsFilter()
+	public function uses( array $domains )
 	{
-		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists' );
+		$this->domains = $domains;
 
-		$filter = $manager->createSearch();
-		$filter->setConditions( $filter->compare( '==', 'customer.lists.parentid', $context->getUserId() ) );
-
-		return $filter;
-	}
-
-
-	/**
-	 * Deletes a customer item that belongs to the current authenticated user
-	 *
-	 * @param string $id Unique customer address ID
-	 * @since 2017.06
-	 */
-	public function deleteListItem( $id )
-	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer/lists' );
-
-		$this->checkUser( $manager->getItem( $id )->getParentId() );
-
-		$manager->deleteItem( $id );
-	}
-
-
-	/**
-	 * Saves a modified customer lists item object
-	 *
-	 * @param string $id Unique customer lists ID
-	 * @param array $values Values added to the customer lists item like "customer.lists.refid"
-	 * @return \Aimeos\MShop\Common\Item\Lists\Iface Customer lists item
-	 * @since 2017.06
-	 */
-	public function editListItem( $id, array $values )
-	{
-		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists' );
-
-		$item = $manager->getItem( $id, [], true );
-		$this->checkUser( $item->getParentId() );
-
-		if( !isset( $values['customer.lists.typeid'] ) )
-		{
-			if( !isset( $values['customer.lists.type'] ) ) {
-				throw new \Aimeos\Controller\Frontend\Customer\Exception( sprintf( 'No customer lists type code' ) );
-			}
-
-			if( !isset( $values['customer.lists.domain'] ) ) {
-				throw new \Aimeos\Controller\Frontend\Customer\Exception( sprintf( 'No customer lists domain' ) );
-			}
-
-			$typeManager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists/type' );
-			$typeItem = $typeManager->findItem( $values['customer.lists.type'], [], $values['customer.lists.domain'], true );
-			$values['customer.lists.typeid'] = $typeItem->getId();
+		if( ( $id = $this->getContext()->getUserId() ) !== null ) {
+			$this->item = $this->manager->getItem( $id, $domains, true );
 		}
 
-		unset( $values['customer.lists.id'] );
-		$item->fromArray( $values );
-
-		return $manager->saveItem( $item );
-	}
-
-
-	/**
-	 * Returns the customer item for the given customer ID
-	 *
-	 * @param string $id Unique customer address ID
-	 * @return \Aimeos\MShop\Customer\Item\Address\Iface Customer address item
-	 * @since 2017.06
-	 */
-	public function getListItem( $id )
-	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer/lists' );
-		$item = $manager->getItem( $id );
-
-		$this->checkUser( $item->getParentId() );
-
-		return $item;
-	}
-
-
-	/**
-	 * Returns the customer lists items filtered by the given criteria
-	 *
-	 * @param \Aimeos\MW\Criteria\Iface $filter Criteria object which contains the filter conditions
-	 * @param integer &$total Parameter where the total number of found attributes will be stored in
-	 * @return \Aimeos\MShop\Common\Item\Lists\Iface[] Customer list items
-	 * @since 2017.06
-	 */
-	public function searchListItems( \Aimeos\MW\Criteria\Iface $filter, &$total = null )
-	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer/lists' );
-
-		return $manager->searchItems( $filter, [], $total );
-	}
-
-
-	/**
-	 * Adds the default values for customer items if not yet available
-	 *
-	 * @param string[] $values Associative list of customer keys (e.g. "customer.label") and their values
-	 * @return string[] Associative list of customer key/value pairs with default values set
-	 */
-	protected function addItemDefaults( array $values )
-	{
-		if( !isset( $values['customer.label'] ) || $values['customer.label'] == '' )
-		{
-			$label = '';
-
-			if( isset( $values['customer.lastname'] ) ) {
-				$label = $values['customer.lastname'];
-			}
-
-			if( isset( $values['customer.firstname'] ) && $values['customer.firstname'] != '' ) {
-				$label = $values['customer.firstname'] . ' ' . $label;
-			}
-
-			if( isset( $values['customer.company'] ) && $values['customer.company'] != '' ) {
-				$label .= ' (' . $values['customer.company'] . ')';
-			}
-
-			$values['customer.label'] = $label;
-		}
-
-		if( !isset( $values['customer.code'] ) && isset( $values['customer.email'] ) ) {
-			$values['customer.code'] = $values['customer.email'];
-		}
-
-		if( !isset( $values['customer.status'] ) ) {
-			$values['customer.status'] = 1;
-		}
-
-		if( !isset( $values['customer.password'] ) ) {
-			$values['customer.password'] = substr( md5( microtime( true ) . getmypid() . rand() ), -8 );
-		}
-
-		return $values;
+		return $this;
 	}
 
 
 	/**
 	 * Checks if the current user is allowed to create more customer accounts
 	 *
-	 * @param string[] $values Associative list of customer keys (e.g. "customer.label") and their values
 	 * @throws \Aimeos\Controller\Frontend\Customer\Exception If access isn't allowed
 	 */
-	protected function checkLimit( array $values )
+	protected function checkLimit()
 	{
 		$total = 0;
 		$context = $this->getContext();
@@ -527,20 +361,17 @@ class Standard
 		 */
 		$seconds = $config->get( 'controller/frontend/customer/limit-seconds', 300 );
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer' );
-
-		$search = $manager->createSearch();
+		$search = $this->manager->createSearch()->setSlice( 0, 0 );
 		$expr = [
 			$search->compare( '==', 'customer.editor', $context->getEditor() ),
 			$search->compare( '>=', 'customer.ctime', date( 'Y-m-d H:i:s', time() - $seconds ) ),
 		];
 		$search->setConditions( $search->combine( '&&', $expr ) );
-		$search->setSlice( 0, 0 );
 
-		$manager->searchItems( $search, [], $total );
+		$this->manager->searchItems( $search, [], $total );
 
 		if( $total > $count ) {
-			throw new \Aimeos\Controller\Frontend\Basket\Exception( sprintf( 'Temporary limit reached' ) );
+			throw new \Aimeos\Controller\Frontend\Customer\Exception( sprintf( 'Temporary limit reached' ) );
 		}
 	}
 
@@ -549,14 +380,17 @@ class Standard
 	 * Checks if the current user is allowed to retrieve the customer data for the given ID
 	 *
 	 * @param string $id Unique customer ID
+	 * @return string Unique customer ID
 	 * @throws \Aimeos\Controller\Frontend\Customer\Exception If access isn't allowed
 	 */
-	protected function checkUser( $id )
+	protected function checkId( $id )
 	{
 		if( $id != $this->getContext()->getUserId() )
 		{
 			$msg = sprintf( 'Not allowed to access customer data for ID "%1$s"', $id );
 			throw new \Aimeos\Controller\Frontend\Customer\Exception( $msg );
 		}
+
+		return $id;
 	}
 }

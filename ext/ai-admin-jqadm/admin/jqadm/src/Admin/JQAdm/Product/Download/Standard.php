@@ -317,19 +317,19 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
 		$context = $this->getContext();
 		$fs = $context->getFilesystemManager()->get( 'fs-secure' );
 
-		$attrManager = \Aimeos\MShop\Factory::createManager( $context, 'attribute' );
-		$typeManager = \Aimeos\MShop\Factory::createManager( $context, 'attribute/type' );
-		$listManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists' );
+		$attrManager = \Aimeos\MShop::create( $context, 'attribute' );
+		$typeManager = \Aimeos\MShop::create( $context, 'attribute/type' );
+		$listManager = \Aimeos\MShop::create( $context, 'product/lists' );
 
-		$attrItem = $attrManager->createItem( 'download', 'product' );
-		$listItem = $listManager->createItem( 'hidden', 'attribute' );
+		$attrItem = $attrManager->createItem()->setType( 'download' );
+		$listItem = $listManager->createItem()->setType( 'hidden' );
 		$listItems = $item->getListItems( 'attribute', 'hidden', 'download', false );
 
 		if( $this->getValue( $data, 'attribute.label' ) != '' )
@@ -346,8 +346,8 @@ class Standard
 				$refItem = clone $attrItem;
 			}
 
-			$litem->fromArray( $data );
-			$refItem->fromArray( $data );
+			$litem->fromArray( $data, true );
+			$refItem->fromArray( $data, true );
 
 			if( ( $file = $this->getValue( (array) $this->getView()->request()->getUploadedFiles(), 'download/file' ) ) !== null
 				&& $file->getError() === UPLOAD_ERR_OK
@@ -442,7 +442,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/download/template-item';
-		$default = 'product/item-download-standard.php';
+		$default = 'product/item-download-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

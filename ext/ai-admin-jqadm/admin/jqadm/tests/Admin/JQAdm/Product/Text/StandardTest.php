@@ -21,10 +21,10 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$this->view = \TestHelperJqadm::getView();
 		$this->context = \TestHelperJqadm::getContext();
 
-		$langManager = \Aimeos\MShop\Factory::createManager( $this->context, 'locale/language' );
+		$langManager = \Aimeos\MShop::create( $this->context, 'locale/language' );
 
 		$this->view->pageLanguages = $langManager->searchItems( $langManager->createSearch() );
-		$this->view->item = \Aimeos\MShop\Factory::createManager( $this->context, 'product' )->createItem();
+		$this->view->item = \Aimeos\MShop::create( $this->context, 'product' )->createItem();
 
 		$this->object = new \Aimeos\Admin\JQAdm\Product\Text\Standard( $this->context );
 		$this->object = new \Aimeos\Admin\JQAdm\Common\Decorator\Page( $this->object, $this->context );
@@ -41,7 +41,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCreate()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'product' );
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 
 		$this->view->item = $manager->createItem();
 		$result = $this->object->create();
@@ -53,7 +53,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopy()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'product' );
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 
 		$this->view->item = $manager->findItem( 'ABCD', array( 'text' ) );
 		$result = $this->object->copy();
@@ -65,7 +65,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testDelete()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'product' );
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 
 		$this->view->item = $manager->createItem();
 		$result = $this->object->delete();
@@ -77,7 +77,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGet()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'product' );
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 
 		$this->view->item = $manager->findItem( 'ABCD', array( 'text' ) );
 		$result = $this->object->get();
@@ -89,13 +89,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSave()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'product' );
-		$listTypeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'product/lists/type' );
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'text/type' );
-
-		$listTypeId = $listTypeManager->findItem( 'default', [], 'text' )->getId();
-		$typeId = $typeManager->findItem( 'name', [], 'product' )->getId();
-
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 		$item = $manager->createItem();
 
 		$param = array(
@@ -105,25 +99,22 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 					'text.id' => '',
 					'text.content' => 'test name',
 					'text.languageid' => 'de',
-					'text.typeid' => $typeId,
+					'text.type' => 'name',
 					'product.lists.type' => 'default',
-					'product.lists.typeid' => $listTypeId
 				),
 				array(
 					'text.id' => '',
 					'text.content' => 'short desc',
 					'text.languageid' => 'de',
-					'text.typeid' => $typeId,
+					'text.type' => 'name',
 					'product.lists.type' => 'default',
-					'product.lists.typeid' => $listTypeId
 				),
 				array(
 					'text.id' => '',
 					'text.content' => 'long desc',
 					'text.languageid' => 'de',
-					'text.typeid' => $typeId,
+					'text.type' => 'name',
 					'product.lists.type' => 'default',
-					'product.lists.typeid' => $listTypeId
 				),
 			),
 		);
@@ -150,7 +141,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSaveException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Product\Text\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Product\Text\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'fromArray' ) )
 			->getMock();
@@ -159,18 +150,18 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->will( $this->throwException( new \RuntimeException() ) );
 
 		$this->view = \TestHelperJqadm::getView();
-		$this->view->item = \Aimeos\MShop\Factory::createManager( $this->context, 'product' )->createItem();
+		$this->view->item = \Aimeos\MShop::create( $this->context, 'product' )->createItem();
 
 		$object->setView( $this->view );
 
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$object->save();
 	}
 
 
 	public function testSaveMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Product\Text\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Product\Text\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'fromArray' ) )
 			->getMock();
@@ -179,11 +170,11 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->will( $this->throwException( new \Aimeos\MShop\Exception() ) );
 
 		$this->view = \TestHelperJqadm::getView();
-		$this->view->item = \Aimeos\MShop\Factory::createManager( $this->context, 'product' )->createItem();
+		$this->view->item = \Aimeos\MShop::create( $this->context, 'product' )->createItem();
 
 		$object->setView( $this->view );
 
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$object->save();
 	}
 
@@ -196,7 +187,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSubClient()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( 'unknown' );
 	}
 }

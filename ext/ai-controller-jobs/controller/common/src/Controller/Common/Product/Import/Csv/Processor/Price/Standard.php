@@ -33,6 +33,7 @@ class Standard
 	 */
 
 	private $listTypes;
+	private $types = [];
 
 
 	/**
@@ -66,7 +67,35 @@ class Standard
 		 * @see controller/common/product/import/csv/processor/product/listtypes
 		 * @see controller/common/product/import/csv/processor/text/listtypes
 		 */
-		$this->listTypes = $context->getConfig()->get( 'controller/common/product/import/csv/processor/price/listtypes' );
+		$key = 'controller/common/product/import/csv/processor/price/listtypes';
+		$this->listTypes = $context->getConfig()->get( $key );
+
+		if( $this->listTypes === null )
+		{
+			$this->listTypes = [];
+			$manager = \Aimeos\MShop::create( $context, 'product/lists/type' );
+
+			$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+			$search->setConditions( $search->compare( '==', 'product.lists.type.domain', 'price' ) );
+
+			foreach( $manager->searchItems( $search ) as $item ) {
+				$this->listTypes[$item->getCode()] = $item->getCode();
+			}
+		}
+		else
+		{
+			$this->listTypes = array_flip( $this->listTypes );
+		}
+
+
+		$manager = \Aimeos\MShop::create( $context, 'price/type' );
+
+		$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+		$search->setConditions( $search->compare( '==', 'price.type.domain', 'product' ) );
+
+		foreach( $manager->searchItems( $search ) as $item ) {
+			$this->types[$item->getCode()] = $item->getCode();
+		}
 	}
 
 
@@ -79,8 +108,8 @@ class Standard
 	 */
 	public function process( \Aimeos\MShop\Product\Item\Iface $product, array $data )
 	{
-		$listManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/lists' );
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'price' );
+		$listManager = \Aimeos\MShop::create( $this->getContext(), 'product/lists' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'price' );
 
 		$listMap = [];
 		$map = $this->getMappedChunk( $data, $this->getMapping() );
@@ -89,7 +118,7 @@ class Standard
 		foreach( $listItems as $listItem )
 		{
 			if( ( $refItem = $listItem->getRefItem() ) !== null ) {
-				$listMap[ $refItem->getValue() ][ $refItem->getType() ][ $listItem->getType() ] = $listItem;
+				$listMap[$refItem->getValue()][$refItem->getType()][$listItem->getType()] = $listItem;
 			}
 		}
 
@@ -99,25 +128,26 @@ class Standard
 				continue;
 			}
 
-			$value = trim( isset( $list['price.value'] ) ? $list['price.value'] : '0.00' );
-			$type = trim( isset( $list['price.type'] ) ? $list['price.type'] : 'default' );
-			$typecode = trim( isset( $list['product.lists.type'] ) ? $list['product.lists.type'] : 'default' );
+			$value = $this->getValue( $list, 'price.value', '0.00' );
+			$type = $this->getValue( $list, 'price.type', 'default' );
+			$listtype = $this->getValue( $list, 'product.lists.type', 'default' );
 
-			if( isset( $listMap[$value][$type][$typecode] ) )
+			if( isset( $listMap[$value][$type][$listtype] ) )
 			{
-				$listItem = $listMap[$value][$type][$typecode];
+				$listItem = $listMap[$value][$type][$listtype];
 				$refItem = $listItem->getRefItem();
-				unset( $listItems[ $listItem->getId() ] );
+				unset( $listItems[$listItem->getId()] );
 			}
 			else
 			{
-				$listItem = $listManager->createItem( $typecode, 'price' );
-				$refItem = $manager->createItem( $type, 'product' );
+				$listItem = $listManager->createItem()->setType( $listtype );
+				$refItem = $manager->createItem()->setType( $type );
 			}
 
+			$listItem = $listItem->setPosition( $pos )->fromArray( $list );
 
-			$refItem->fromArray( $this->addItemDefaults( $list ) );
-			$listItem->fromArray( $this->addListItemDefaults( $list, $pos ) );
+			$label = $this->getValue( $list, 'price.currencyid', '' ) . ' ' . $this->getValue( $list, 'price.value', '' );
+			$refItem = $refItem->setLabel( $label )->fromArray( $list );
 
 			$product->addListItem( 'price', $listItem, $refItem );
 		}
@@ -129,37 +159,27 @@ class Standard
 
 
 	/**
-	 * Adds the text item default values and returns the resulting array
-	 *
-	 * @param array $list Associative list of domain item keys and their values, e.g. "price.status" => 1
-	 * @return array Given associative list enriched by default values if they were not already set
-	 */
-	protected function addItemDefaults( array $list )
-	{
-		if( !isset( $list['price.label'] ) ) {
-			$list['price.label'] = $list['price.currencyid'] . ' ' . $list['price.value'];
-		}
-
-		if( !isset( $list['price.status'] ) ) {
-			$list['price.status'] = 1;
-		}
-
-		return $list;
-	}
-
-
-	/**
-	 * Checks if an entry can be used for updating a media item
+	 * Checks if an entry can be used for updating a price item
 	 *
 	 * @param array $list Associative list of key/value pairs from the mapping
 	 * @return boolean True if valid, false if not
 	 */
 	protected function checkEntry( array $list )
 	{
-		if( !isset( $list['price.value'] ) || trim( $list['price.value'] ) === '' || isset( $list['product.lists.type'] )
-			&& $this->listTypes !== null && !in_array( trim( $list['product.lists.type'] ), (array) $this->listTypes )
-		) {
+		if( $this->getValue( $list, 'price.value' ) === null ) {
 			return false;
+		}
+
+		if( ( $type = $this->getValue( $list, 'product.lists.type' ) ) && !isset( $this->listTypes[$type] ) )
+		{
+			$msg = sprintf( 'Invalid type "%1$s" (%2$s)', $type, 'product list' );
+			throw new \Aimeos\Controller\Common\Exception( $msg );
+		}
+
+		if( ( $type = $this->getValue( $list, 'price.type' ) ) && !isset( $this->types[$type] ) )
+		{
+			$msg = sprintf( 'Invalid type "%1$s" (%2$s)', $type, 'price' );
+			throw new \Aimeos\Controller\Common\Exception( $msg );
 		}
 
 		return true;

@@ -48,7 +48,7 @@ class Standard
 			return $this->prodmap[$code];
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'product.code', $code ) );
@@ -70,6 +70,6 @@ class Standard
 	 */
 	public function set( \Aimeos\MShop\Common\Item\Iface $item )
 	{
-		$this->prodmap[ $item->getCode() ] = $item->getId();
+		$this->prodmap[$item->getCode()] = $item->getId();
 	}
 }

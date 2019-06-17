@@ -93,7 +93,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'catalog/lists' );
+		$manager = \Aimeos\MShop::create( $context, 'catalog/lists' );
 
 		$search = $manager->createSearch();
 		$expr = array(
@@ -148,7 +148,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists' );
+		$manager = \Aimeos\MShop::create( $context, 'product/lists' );
 		$manager->begin();
 
 		try
@@ -326,7 +326,7 @@ class Standard
 			$ids[] = $listItem->getParentId();
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'catalog' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'catalog' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'catalog.id', $ids ) );
@@ -343,13 +343,12 @@ class Standard
 	 */
 	protected function getListItems( $prodid )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'catalog/lists' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'catalog/lists' );
 
 		$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
 		$expr = array(
 			$search->compare( '==', 'catalog.lists.refid', $prodid ),
 			$search->compare( '==', 'catalog.lists.domain', 'product' ),
-			$search->compare( '==', 'catalog.lists.type.domain', 'product' ),
 		);
 		$search->setConditions( $search->combine( '&&', $expr ) );
 
@@ -360,22 +359,17 @@ class Standard
 	/**
 	 * Returns the available catalog list types
 	 *
-	 * @return array Associative list of catalog list type codes as keys and list type IDs as values
+	 * @return array Associative list of catalog list type codes as keys and list type items as values
 	 */
 	protected function getListTypes()
 	{
-		$list = [];
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'catalog/lists/type' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'catalog/lists/type' );
 
-		$search = $manager->createSearch();
+		$search = $manager->createSearch( true )->setSlice( 0, 10000 );
 		$search->setConditions( $search->compare( '==', 'catalog.lists.type.domain', 'product' ) );
-		$search->setSlice( 0, 0x7fffffff );
+		$search->setSortations( [$search->sort( '+', 'catalog.lists.type.position' )] );
 
-		foreach( $manager->searchItems( $search ) as $item ) {
-			$list[$item->getCode()] = $item->getId();
-		}
-
-		return $list;
+		return $this->map( $manager->searchItems( $search ) );
 	}
 
 
@@ -383,11 +377,11 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'catalog/lists' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'catalog/lists' );
 		$listIds = (array) $this->getValue( $data, 'catalog.lists.id', [] );
 		$listItems = $map = $this->getListItems( $item->getId() );
 
@@ -413,7 +407,7 @@ class Standard
 			$litem->setDomain( 'product' );
 			$litem->setRefId( $item->getId() );
 			$litem->setParentId( $this->getValue( $data, 'catalog.id/' . $idx ) );
-			$litem->setTypeId( $this->getValue( $data, 'catalog.lists.typeid/' . $idx ) );
+			$litem->setType( $this->getValue( $data, 'catalog.lists.type/' . $idx ) );
 
 			$manager->saveItem( $litem, false );
 		}
@@ -491,7 +485,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/category/template-item';
-		$default = 'product/item-category-standard.php';
+		$default = 'product/item-category-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

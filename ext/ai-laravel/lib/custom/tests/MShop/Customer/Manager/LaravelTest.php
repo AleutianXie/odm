@@ -63,14 +63,14 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 	{
 		$search = $this->object->createSearch();
 		$conditions = array(
-			$search->compare( '==', 'customer.code', 'UTC003' ),
+			$search->compare( '==', 'customer.code', 'test3@example.com' ),
 			$search->compare( '==', 'customer.editor', $this->editor )
 		);
 		$search->setConditions( $search->combine( '&&', $conditions ) );
 		$items = $this->object->searchItems( $search, array( 'text' ) );
 
 		if( ( $expected = reset( $items ) ) === false ) {
-			throw new \RuntimeException( 'No customer item with code "UTC003" found' );
+			throw new \RuntimeException( 'No customer item with code "test3@example.com" found' );
 		}
 
 		$actual = $this->object->getItem( $expected->getId(), array( 'text' ) );
@@ -85,18 +85,22 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 	{
 		$item = $this->object->createItem();
 
-		$item->setCode( 'unitTest' );
+		$item->setCode( 'unitTest@example.com' );
 		$item->setLabel( 'unitTest' );
-		$resultSaved = $this->object->saveItem( $item );
+		$item = $this->object->saveItem( $item );
 		$itemSaved = $this->object->getItem( $item->getId() );
 
 		$itemExp = clone $itemSaved;
-		$itemExp->setCode( 'unitTest2' );
+		$itemExp->setCode( 'unitTest2@example.com' );
 		$itemExp->setLabel( 'unitTest2' );
-		$resultUpd = $this->object->saveItem( $itemExp );
+		$itemExp = $this->object->saveItem( $itemExp );
 		$itemUpd = $this->object->getItem( $itemExp->getId() );
 
 		$this->object->deleteItem( $item->getId() );
+
+
+		$this->assertInstanceOf( \Aimeos\MShop\Common\Item\Iface::class, $item );
+		$this->assertInstanceOf( \Aimeos\MShop\Common\Item\Iface::class, $itemExp );
 
 		$this->assertTrue( $item->getId() !== null );
 		$this->assertEquals( $item->getId(), $itemSaved->getId() );
@@ -104,7 +108,6 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( $item->getStatus(), $itemSaved->getStatus() );
 		$this->assertEquals( $item->getCode(), $itemSaved->getCode() );
 		$this->assertEquals( $item->getLabel(), $itemSaved->getLabel() );
-		$this->assertEquals( $item->getPaymentAddress(), $itemSaved->getPaymentAddress() );
 		$this->assertEquals( $item->getBirthday(), $itemSaved->getBirthday() );
 		$this->assertEquals( $item->getPassword(), $itemSaved->getPassword() );
 
@@ -117,7 +120,6 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( $itemExp->getStatus(), $itemUpd->getStatus() );
 		$this->assertEquals( $itemExp->getCode(), $itemUpd->getCode() );
 		$this->assertEquals( $itemExp->getLabel(), $itemUpd->getLabel() );
-		$this->assertEquals( $itemExp->getPaymentAddress(), $itemUpd->getPaymentAddress() );
 		$this->assertEquals( $itemExp->getBirthday(), $itemUpd->getBirthday() );
 		$this->assertEquals( $itemExp->getPassword(), $itemUpd->getPassword() );
 
@@ -125,8 +127,6 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( $itemExp->getTimeCreated(), $itemUpd->getTimeCreated() );
 		$this->assertRegExp( '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/', $itemUpd->getTimeModified() );
 
-		$this->assertInstanceOf( '\Aimeos\MShop\Common\Item\Iface', $resultSaved );
-		$this->assertInstanceOf( '\Aimeos\MShop\Common\Item\Iface', $resultUpd );
 
 		$this->setExpectedException( '\\Aimeos\\MShop\\Exception' );
 		$this->object->getItem( $item->getId() );
@@ -135,14 +135,14 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSaveAddressItems()
 	{
-		$item = $this->object->findItem( 'UTC001', ['customer/address'] );
+		$item = $this->object->findItem( 'test@example.com', ['customer/address'] );
 
-		$item->setId( null )->setCode( 'xyz' );
+		$item->setId( null )->setCode( 'unittest@xyz.com' );
 		$item->getPaymentAddress()->setEmail( 'unittest@xyz.com' );
 		$item->addAddressItem( new \Aimeos\MShop\Common\Item\Address\Standard( 'customer.address.' ) );
 		$this->object->saveItem( $item );
 
-		$item2 = $this->object->findItem( 'xyz', ['customer/address'] );
+		$item2 = $this->object->findItem( 'unittest@xyz.com', ['customer/address'] );
 
 		$this->object->deleteItem( $item->getId() );
 
@@ -153,13 +153,13 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSavePropertyItems()
 	{
-		$item = $this->object->findItem( 'UTC001', ['customer/property'] );
+		$item = $this->object->findItem( 'test@example.com', ['customer/property'] );
 
-		$item->setId( null )->setCode( 'xyz' );
+		$item->setId( null )->setCode( 'unittest@xyz.com' );
 		$item->getPaymentAddress()->setEmail( 'unittest@xyz.com' );
 		$this->object->saveItem( $item );
 
-		$item2 = $this->object->findItem( 'xyz', ['customer/property'] );
+		$item2 = $this->object->findItem( 'unittest@xyz.com', ['customer/property'] );
 
 		$this->object->deleteItem( $item->getId() );
 
@@ -176,72 +176,99 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 
 	public function testSearchItems()
 	{
-		$total = 0;
+		$item = $this->object->findItem( 'test@example.com', ['text'] );
+
+		if( ( $listItem = current( $item->getListItems( 'text', 'default' ) ) ) === false ) {
+			throw new \RuntimeException( 'No list item found' );
+		}
+
 		$search = $this->object->createSearch();
 
 		$expr = [];
 		$expr[] = $search->compare( '!=', 'customer.id', null );
-		$expr[] = $search->compare( '==', 'customer.label', 'unitCustomer2' );
-		$expr[] = $search->compare( '==', 'customer.code', 'UTC002' );
-
-		$expr[] = $search->compare( '>=', 'customer.salutation', '' );
-		$expr[] = $search->compare( '>=', 'customer.company', '' );
-		$expr[] = $search->compare( '>=', 'customer.vatid', '' );
-		$expr[] = $search->compare( '>=', 'customer.title', '' );
-		$expr[] = $search->compare( '>=', 'customer.firstname', '' );
-		$expr[] = $search->compare( '>=', 'customer.lastname', '' );
-		$expr[] = $search->compare( '>=', 'customer.address1', '' );
-		$expr[] = $search->compare( '>=', 'customer.address2', '' );
-		$expr[] = $search->compare( '>=', 'customer.address3', '' );
-		$expr[] = $search->compare( '>=', 'customer.postal', '' );
-		$expr[] = $search->compare( '>=', 'customer.city', '' );
-		$expr[] = $search->compare( '>=', 'customer.state', '' );
-		$expr[] = $search->compare( '!=', 'customer.languageid', null );
-		$expr[] = $search->compare( '>=', 'customer.countryid', '' );
-		$expr[] = $search->compare( '>=', 'customer.telephone', '' );
-		$expr[] = $search->compare( '>=', 'customer.email', '' );
-		$expr[] = $search->compare( '>=', 'customer.telefax', '' );
-		$expr[] = $search->compare( '>=', 'customer.website', '' );
-		$expr[] = $search->compare( '>=', 'customer.longitude', '10.0' );
-		$expr[] = $search->compare( '>=', 'customer.latitude', '50.0' );
-
-		$expr[] = $search->compare( '==', 'customer.birthday', '1970-01-01' );
+		$expr[] = $search->compare( '==', 'customer.label', 'unitCustomer001' );
+		$expr[] = $search->compare( '==', 'customer.code', 'test@example.com' );
+		$expr[] = $search->compare( '==', 'customer.birthday', null );
 		$expr[] = $search->compare( '>=', 'customer.password', '' );
-		$expr[] = $search->compare( '==', 'customer.status', 0 );
-		$expr[] = $search->compare( '!=', 'customer.mtime', '1970-01-01 00:00:00' );
-		$expr[] = $search->compare( '!=', 'customer.ctime', '1970-01-01 00:00:00' );
+		$expr[] = $search->compare( '==', 'customer.status', 1 );
+		$expr[] = $search->compare( '>', 'customer.mtime', '1970-01-01 00:00:00' );
+		$expr[] = $search->compare( '>', 'customer.ctime', '1970-01-01 00:00:00' );
 		$expr[] = $search->compare( '==', 'customer.editor', $this->editor );
+
+		$expr[] = $search->compare( '==', 'customer.salutation', 'mr' );
+		$expr[] = $search->compare( '==', 'customer.company', 'Example company' );
+		$expr[] = $search->compare( '==', 'customer.vatid', 'DE999999999' );
+		$expr[] = $search->compare( '==', 'customer.title', 'Dr' );
+		$expr[] = $search->compare( '==', 'customer.firstname', 'Our' );
+		$expr[] = $search->compare( '==', 'customer.lastname', 'Unittest' );
+		$expr[] = $search->compare( '==', 'customer.address1', 'Pickhuben' );
+		$expr[] = $search->compare( '==', 'customer.address2', '2-4' );
+		$expr[] = $search->compare( '==', 'customer.address3', '' );
+		$expr[] = $search->compare( '==', 'customer.postal', '20457' );
+		$expr[] = $search->compare( '==', 'customer.city', 'Hamburg' );
+		$expr[] = $search->compare( '==', 'customer.state', 'Hamburg' );
+		$expr[] = $search->compare( '==', 'customer.languageid', 'de' );
+		$expr[] = $search->compare( '==', 'customer.countryid', 'DE' );
+		$expr[] = $search->compare( '==', 'customer.telephone', '055544332211' );
+		$expr[] = $search->compare( '==', 'customer.email', 'test@example.com' );
+		$expr[] = $search->compare( '==', 'customer.telefax', '055544332212' );
+		$expr[] = $search->compare( '==', 'customer.website', 'www.example.com' );
+		$expr[] = $search->compare( '==', 'customer.longitude', '10.0' );
+		$expr[] = $search->compare( '==', 'customer.latitude', '50.0' );
+
+		$param = ['text','default', 0];
+		$expr[] = $search->compare( '==', $search->createFunction( 'customer:has', $param ), null );
+
+		$param = ['text','default', $listItem->getRefId()];
+		$expr[] = $search->compare( '!=', $search->createFunction( 'customer:has', $param ), null );
+
+		$param = ['text','default'];
+		$expr[] = $search->compare( '!=', $search->createFunction( 'customer:has', $param ), null );
+
+		$param = ['text'];
+		$expr[] = $search->compare( '!=', $search->createFunction( 'customer:has', $param ), null );
+
+		$param = ['newsletter', null, '0'];
+		$expr[] = $search->compare( '==', $search->createFunction( 'customer:prop', $param ), null );
+
+		$param = ['newsletter', null, '1'];
+		$expr[] = $search->compare( '!=', $search->createFunction( 'customer:prop', $param ), null );
+
+		$param = ['newsletter', null];
+		$expr[] = $search->compare( '!=', $search->createFunction( 'customer:prop', $param ), null );
+
+		$param = ['newsletter'];
+		$expr[] = $search->compare( '!=', $search->createFunction( 'customer:prop', $param ), null );
 
 		$expr[] = $search->compare( '!=', 'customer.address.id', null );
 		$expr[] = $search->compare( '!=', 'customer.address.parentid', null );
-		$expr[] = $search->compare( '==', 'customer.address.company', 'ABC GmbH' );
-		$expr[] = $search->compare( '==', 'customer.address.vatid', 'DE999999999' );
 		$expr[] = $search->compare( '==', 'customer.address.salutation', 'mr' );
-		$expr[] = $search->compare( '==', 'customer.address.title', 'Dr.' );
-		$expr[] = $search->compare( '==', 'customer.address.firstname', 'Good' );
+		$expr[] = $search->compare( '==', 'customer.address.company', 'Example company' );
+		$expr[] = $search->compare( '==', 'customer.address.vatid', 'DE999999999' );
+		$expr[] = $search->compare( '==', 'customer.address.title', 'Dr' );
+		$expr[] = $search->compare( '==', 'customer.address.firstname', 'Our' );
 		$expr[] = $search->compare( '==', 'customer.address.lastname', 'Unittest' );
 		$expr[] = $search->compare( '==', 'customer.address.address1', 'Pickhuben' );
 		$expr[] = $search->compare( '==', 'customer.address.address2', '2-4' );
 		$expr[] = $search->compare( '==', 'customer.address.address3', '' );
-		$expr[] = $search->compare( '==', 'customer.address.postal', '11099' );
-		$expr[] = $search->compare( '==', 'customer.address.city', 'Berlin' );
-		$expr[] = $search->compare( '==', 'customer.address.state', 'Berlin' );
+		$expr[] = $search->compare( '==', 'customer.address.postal', '20457' );
+		$expr[] = $search->compare( '==', 'customer.address.city', 'Hamburg' );
+		$expr[] = $search->compare( '==', 'customer.address.state', 'Hamburg' );
 		$expr[] = $search->compare( '==', 'customer.address.languageid', 'de' );
 		$expr[] = $search->compare( '==', 'customer.address.countryid', 'DE' );
-		$expr[] = $search->compare( '==', 'customer.address.telephone', '055544332221' );
-		$expr[] = $search->compare( '==', 'customer.address.email', 'unitCustomer2@aimeos.org' );
-		$expr[] = $search->compare( '==', 'customer.address.telefax', '055544333212' );
-		$expr[] = $search->compare( '==', 'customer.address.website', 'unittest.aimeos.org' );
-		$expr[] = $search->compare( '>=', 'customer.address.longitude', '10.0' );
-		$expr[] = $search->compare( '>=', 'customer.address.latitude', '50.0' );
-		$expr[] = $search->compare( '==', 'customer.address.flag', 0 );
-		$expr[] = $search->compare( '==', 'customer.address.position', 1 );
-		$expr[] = $search->compare( '!=', 'customer.address.mtime', '1970-01-01 00:00:00' );
-		$expr[] = $search->compare( '!=', 'customer.address.ctime', '1970-01-01 00:00:00' );
+		$expr[] = $search->compare( '==', 'customer.address.telephone', '055544332211' );
+		$expr[] = $search->compare( '==', 'customer.address.email', 'test@example.com' );
+		$expr[] = $search->compare( '==', 'customer.address.telefax', '055544332212' );
+		$expr[] = $search->compare( '==', 'customer.address.website', 'www.example.com' );
+		$expr[] = $search->compare( '==', 'customer.address.longitude', '10.0' );
+		$expr[] = $search->compare( '==', 'customer.address.latitude', '50.0' );
+		$expr[] = $search->compare( '==', 'customer.address.position', 0 );
+		$expr[] = $search->compare( '>=', 'customer.address.mtime', '1970-01-01 00:00:00' );
+		$expr[] = $search->compare( '>=', 'customer.address.ctime', '1970-01-01 00:00:00' );
 		$expr[] = $search->compare( '==', 'customer.address.editor', $this->editor );
 
 		$search->setConditions( $search->combine( '&&', $expr ) );
-		$result = $this->object->searchItems( $search, [], $total );
+		$result = $this->object->searchItems( $search );
 		$this->assertEquals( 1, count( $result ) );
 	}
 
@@ -258,7 +285,7 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( 2, count( $results ) );
 		$this->assertEquals( 3, $total );
 
-		foreach($results as $itemId => $item) {
+		foreach( $results as $itemId => $item ) {
 			$this->assertEquals( $itemId, $item->getId() );
 		}
 	}
@@ -279,12 +306,12 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 	public function testSearchItemsRef()
 	{
 		$search = $this->object->createSearch();
-		$search->setConditions( $search->compare( '==', 'customer.code', 'UTC001' ) );
+		$search->setConditions( $search->compare( '==', 'customer.code', 'test@example.com' ) );
 
 		$results = $this->object->searchItems( $search, ['customer/address', 'text'] );
 
 		if( ( $item = reset( $results ) ) === false ) {
-			throw new \Exception( 'No customer item for "UTC001" available' );
+			throw new \Exception( 'No customer item for "test@example.com" available' );
 		}
 
 		$this->assertEquals( 1, count( $item->getRefItems( 'text' ) ) );

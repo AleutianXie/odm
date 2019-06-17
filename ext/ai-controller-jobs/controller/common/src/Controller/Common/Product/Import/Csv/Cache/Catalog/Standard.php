@@ -44,11 +44,11 @@ class Standard
 	{
 		parent::__construct( $context );
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'catalog' );
+		$manager = \Aimeos\MShop::create( $context, 'catalog' );
 		$result = $manager->searchItems( $manager->createSearch() );
 
 		foreach( $result as $id => $item ) {
-			$this->categories[ $item->getCode() ] = $id;
+			$this->categories[$item->getCode()] = $id;
 		}
 	}
 
@@ -66,7 +66,7 @@ class Standard
 			return $this->categories[$code];
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'catalog' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'catalog' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'catalog.code', $code ) );
@@ -88,6 +88,6 @@ class Standard
 	 */
 	public function set( \Aimeos\MShop\Common\Item\Iface $item )
 	{
-		$this->categories[ $item->getCode() ] = $item->getId();
+		$this->categories[$item->getCode()] = $item->getId();
 	}
 }

@@ -18,7 +18,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function setUp()
 	{
-		\Aimeos\MShop\Factory::setCache( true );
+		\Aimeos\MShop::cache( true );
 
 		$this->context = \TestHelperJobs::getContext();
 		$this->aimeos = \TestHelperJobs::getAimeos();
@@ -32,9 +32,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function tearDown()
 	{
-		\Aimeos\MShop\Factory::setCache( false );
-		\Aimeos\MShop\Factory::clear();
-
+		\Aimeos\MShop::cache( false );
 		unset( $this->object );
 	}
 
@@ -54,7 +52,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testRun()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'coupon' );
+		$manager = \Aimeos\MShop::create( $this->context, 'coupon' );
 		$coupon = $manager->saveItem( $manager->createItem()->setProvider( 'Example' ) );
 
 		$dir = 'tmp/import/couponcode/unittest';
@@ -75,7 +73,7 @@ jobccimport2,5,,';
 		$this->object->run();
 
 
-		$codeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'coupon/code' );
+		$codeManager = \Aimeos\MShop::create( $this->context, 'coupon/code' );
 		$code1 = $codeManager->findItem( 'jobccimport1' );
 		$code2 = $codeManager->findItem( 'jobccimport2' );
 
@@ -93,7 +91,7 @@ jobccimport2,5,,';
 
 	public function testRunException()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'coupon' );
+		$manager = \Aimeos\MShop::create( $this->context, 'coupon' );
 
 		$dir = 'tmp/import/couponcode/unittest';
 		$filepath = $dir . '/0.csv';

@@ -76,12 +76,12 @@ class TestHelper
 		$ctx->setSession( $session );
 
 
-		$localeManager = \Aimeos\MShop\Locale\Manager\Factory::createManager( $ctx );
+		$localeManager = \Aimeos\MShop\Locale\Manager\Factory::create( $ctx );
 		$localeItem = $localeManager->bootstrap( $site, '', '', false );
 
 		$ctx->setLocale( $localeItem );
 
-		$ctx->setEditor( 'ai-laravel:unittest' );
+		$ctx->setEditor( 'ai-laravel:lib/custom' );
 
 		return $ctx;
 	}

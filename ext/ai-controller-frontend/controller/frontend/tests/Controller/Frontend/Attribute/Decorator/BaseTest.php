@@ -20,11 +20,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	{
 		$this->context = \TestHelperFrontend::getContext();
 
-		$this->stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Attribute\Standard' )
+		$this->stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Attribute\Standard::class )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$this->object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Attribute\Decorator\Base' )
+		$this->object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Attribute\Decorator\Base::class )
 			->setConstructorArgs( [$this->stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -38,11 +38,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testConstructException()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Iface' )->getMock();
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Iface::class )->getMock();
 
-		$this->setExpectedException( '\Aimeos\MW\Common\Exception' );
+		$this->setExpectedException( \Aimeos\MW\Common\Exception::class );
 
-		$this->getMockBuilder( '\Aimeos\Controller\Frontend\Attribute\Decorator\Base' )
+		$this->getMockBuilder( \Aimeos\Controller\Frontend\Attribute\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -50,12 +50,12 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCall()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Attribute\Standard' )
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Attribute\Standard::class )
 			->disableOriginalConstructor()
 			->setMethods( ['invalid'] )
 			->getMock();
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Attribute\Decorator\Base' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Attribute\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 
@@ -65,56 +65,94 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	}
 
 
-	public function testAddFilterTypes()
+	public function testAttribute()
 	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' )->createSearch();
-
-		$this->stub->expects( $this->once() )->method( 'addFilterTypes' )
-			->will( $this->returnArgument( 0 ) );
-
-		$this->assertInstanceOf( '\Aimeos\MW\Criteria\Iface', $this->object->addFilterTypes( $search, [] ) );
+		$this->assertSame( $this->object, $this->object->attribute( [1, 3] ) );
 	}
 
 
-	public function testCreateFilter()
+	public function testDomain()
 	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' )->createSearch();
-
-		$this->stub->expects( $this->once() )->method( 'createFilter' )
-			->will( $this->returnValue( $search ) );
-
-		$this->assertInstanceOf( '\Aimeos\MW\Criteria\Iface', $this->object->createFilter() );
+		$this->assertSame( $this->object, $this->object->domain( 'catalog' ) );
 	}
 
 
-	public function testGetItem()
+	public function testCompare()
 	{
-		$item = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' )->createItem();
+		$this->assertSame( $this->object, $this->object->compare( '==', 'attribute.code', 'test' ) );
+	}
 
-		$this->stub->expects( $this->once() )->method( 'getItem' )
+
+	public function testFind()
+	{
+		$item = \Aimeos\MShop::create( $this->context, 'attribute' )->createItem();
+		$expected = \Aimeos\MShop\Attribute\Item\Iface::class;
+
+		$this->stub->expects( $this->once() )->method( 'find' )
 			->will( $this->returnValue( $item ) );
 
-		$this->assertInstanceOf( '\Aimeos\MShop\Attribute\Item\Iface', $this->object->getItem( -1 ) );
+		$this->assertInstanceOf( $expected, $this->object->find( 'test', 'color' ) );
 	}
 
 
-	public function testGetItems()
+	public function testGet()
 	{
-		$this->stub->expects( $this->once() )->method( 'getItems' )
-			->will( $this->returnValue( [] ) );
+		$item = \Aimeos\MShop::create( $this->context, 'attribute' )->createItem();
+		$expected = \Aimeos\MShop\Attribute\Item\Iface::class;
 
-		$this->assertEquals( [], $this->object->getItems( [-1], ['media'] ) );
+		$this->stub->expects( $this->once() )->method( 'get' )
+			->will( $this->returnValue( $item ) );
+
+		$this->assertInstanceOf( $expected, $this->object->get( 1 ) );
 	}
 
 
-	public function testSearchItems()
+	public function testHas()
 	{
-		$filter = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' )->createSearch();
+		$this->assertSame( $this->object, $this->object->has( 'price', 'default', -1 ) );
+	}
 
-		$this->stub->expects( $this->once() )->method( 'searchItems' )
-			->will( $this->returnValue( [] ) );
 
-		$this->assertEquals( [], $this->object->searchItems( $filter, ['media'] ) );
+	public function testParse()
+	{
+		$this->assertSame( $this->object, $this->object->parse( [] ) );
+	}
+
+
+	public function testProperty()
+	{
+		$this->assertSame( $this->object, $this->object->property( 'test', 'value' ) );
+	}
+
+
+	public function testSearch()
+	{
+		$item = \Aimeos\MShop::create( $this->context, 'attribute' )->createItem();
+		$expected = \Aimeos\MShop\Attribute\Item\Iface::class;
+		$total = 0;
+
+		$this->stub->expects( $this->once() )->method( 'search' )
+			->will( $this->returnValue( [$item] ) );
+
+		$this->assertEquals( [$item], $this->object->search( $total ) );
+	}
+
+
+	public function testSlice()
+	{
+		$this->assertSame( $this->object, $this->object->slice( 0, 100 ) );
+	}
+
+
+	public function testSort()
+	{
+		$this->assertSame( $this->object, $this->object->sort( 'position' ) );
+	}
+
+
+	public function testUses()
+	{
+		$this->assertSame( $this->object, $this->object->uses( ['text'] ) );
 	}
 
 
@@ -128,7 +166,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	protected function access( $name )
 	{
-		$class = new \ReflectionClass( '\Aimeos\Controller\Frontend\Attribute\Decorator\Base' );
+		$class = new \ReflectionClass( \Aimeos\Controller\Frontend\Attribute\Decorator\Base::class );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 

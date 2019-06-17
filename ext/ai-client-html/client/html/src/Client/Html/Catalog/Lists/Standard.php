@@ -163,7 +163,7 @@ class Standard
 			 * @see client/html/catalog/lists/type/standard/template-body
 			 */
 			$tplconf = 'client/html/catalog/lists/standard/template-body';
-			$default = 'catalog/lists/body-standard.php';
+			$default = 'catalog/lists/body-standard';
 
 			try
 			{
@@ -267,7 +267,7 @@ class Standard
 			 * @see client/html/catalog/lists/type/standard/template-body
 			 */
 			$tplconf = 'client/html/catalog/lists/standard/template-header';
-			$default = 'catalog/lists/header-standard.php';
+			$default = 'catalog/lists/header-standard';
 
 			try
 			{
@@ -402,10 +402,12 @@ class Standard
 			$site = $context->getLocale()->getSite()->getCode();
 			$params = $this->getClientParams( $view->param() );
 
-			if( ( !isset( $params['f_catid'] ) || $params['f_catid'] == '' )
-				&& ( $value = $context->getConfig()->get( 'client/html/catalog/lists/catid-default', '' ) ) != ''
-			) {
-				$params['f_catid'] = $value;
+			$catId = $context->getConfig()->get( 'client/html/catalog/lists/catid-default' );
+
+			if( ( $catId = $view->param( 'f_catid', $catId ) ) )
+			{
+				$params['f_name'] = $view->param( 'f_name' );
+				$params['f_catid'] = $catId;
 			}
 
 			$context->getSession()->set( 'aimeos/catalog/lists/params/last/' . $site, $params );
@@ -457,26 +459,206 @@ class Standard
 	 */
 	public function addData( \Aimeos\MW\View\Iface $view, array &$tags = [], &$expire = null )
 	{
+		$total = 0;
 		$context = $this->getContext();
 		$config = $context->getConfig();
-		$sort = $config->get( 'client/html/catalog/lists/sort', 'relevance' );
 
-		$products = $this->getProductList( $view );
 
-		$text = (string) $view->param( 'f_search' );
-		$catid = (string) $view->param( 'f_catid' );
+		/** client/html/catalog/domains
+		 * A list of domain names whose items should be available in the catalog view templates
+		 *
+		 * The templates rendering catalog related data usually add the images and
+		 * texts associated to each item. If you want to display additional
+		 * content like the attributes, you can configure your own list of
+		 * domains (attribute, media, price, product, text, etc. are domains)
+		 * whose items are fetched from the storage. Please keep in mind that
+		 * the more domains you add to the configuration, the more time is required
+		 * for fetching the content!
+		 *
+		 * This configuration option can be overwritten by the "client/html/catalog/lists/domains"
+		 * configuration option that allows to configure the domain names of the
+		 * items fetched specifically for all types of product listings.
+		 *
+		 * @param array List of domain names
+		 * @since 2014.03
+		 * @category Developer
+		 * @see client/html/catalog/lists/domains
+		 * @see client/html/catalog/lists/catid-default
+		 * @see client/html/catalog/lists/size
+		 * @see client/html/catalog/lists/levels
+		 * @see client/html/catalog/lists/sort
+		 * @see client/html/catalog/lists/pages
+		 */
+		$domains = $config->get( 'client/html/catalog/domains', ['media', 'price', 'text'] );
 
-		if( $catid == '' ) {
-			$catid = $config->get( 'client/html/catalog/lists/catid-default', '' );
-		}
+		/** client/html/catalog/lists/domains
+		 * A list of domain names whose items should be available in the product list view template
+		 *
+		 * The templates rendering product lists usually add the images, prices
+		 * and texts associated to each product item. If you want to display additional
+		 * content like the product attributes, you can configure your own list of
+		 * domains (attribute, media, price, product, text, etc. are domains)
+		 * whose items are fetched from the storage. Please keep in mind that
+		 * the more domains you add to the configuration, the more time is required
+		 * for fetching the content!
+		 *
+		 * This configuration option overwrites the "client/html/catalog/domains"
+		 * option that allows to configure the domain names of the items fetched
+		 * for all catalog related data.
+		 *
+		 * @param array List of domain names
+		 * @since 2014.03
+		 * @category Developer
+		 * @see client/html/catalog/domains
+		 * @see client/html/catalog/detail/domains
+		 * @see client/html/catalog/stage/domains
+		 * @see client/html/catalog/lists/catid-default
+		 * @see client/html/catalog/lists/size
+		 * @see client/html/catalog/lists/levels
+		 * @see client/html/catalog/lists/sort
+		 * @see client/html/catalog/lists/pages
+		 */
+		$domains = $config->get( 'client/html/catalog/lists/domains', $domains );
 
-		if( $text === '' && $catid !== '' )
+		/** client/html/catalog/lists/pages
+		 * Maximum number of product pages shown in pagination
+		 *
+		 * Limits the number of product pages that are shown in the navigation.
+		 * The user is able to move to the next page (or previous one if it's not
+		 * the first) to display the next (or previous) products.
+		 *
+		 * The value must be a positive integer number. Negative values are not
+		 * allowed. The value can't be overwritten per request.
+		 *
+		 * @param integer Number of pages
+		 * @since 2019.04
+		 * @category User
+		 * @category Developer
+		 * @see client/html/catalog/lists/catid-default
+		 * @see client/html/catalog/lists/domains
+		 * @see client/html/catalog/lists/levels
+		 * @see client/html/catalog/lists/sort
+		 * @see client/html/catalog/lists/size
+		 */
+		$pages = $config->get( 'client/html/catalog/lists/pages', 100 );
+
+		/** client/html/catalog/lists/size
+		 * The number of products shown in a list page
+		 *
+		 * Limits the number of products that are shown in the list pages to the
+		 * given value. If more products are available, the products are split
+		 * into bunches which will be shown on their own list page. The user is
+		 * able to move to the next page (or previous one if it's not the first)
+		 * to display the next (or previous) products.
+		 *
+		 * The value must be an integer number from 1 to 100. Negative values as
+		 * well as values above 100 are not allowed. The value can be overwritten
+		 * per request if the "l_size" parameter is part of the URL.
+		 *
+		 * @param integer Number of products
+		 * @since 2014.03
+		 * @category User
+		 * @category Developer
+		 * @see client/html/catalog/lists/catid-default
+		 * @see client/html/catalog/lists/domains
+		 * @see client/html/catalog/lists/levels
+		 * @see client/html/catalog/lists/sort
+		 * @see client/html/catalog/lists/pages
+		 */
+		$size = $config->get( 'client/html/catalog/lists/size', 48 );
+
+		/** client/html/catalog/lists/levels
+		 * Include products of sub-categories in the product list of the current category
+		 *
+		 * Sometimes it may be useful to show products of sub-categories in the
+		 * current category product list, e.g. if the current category contains
+		 * no products at all or if there are only a few products in all categories.
+		 *
+		 * Possible constant values for this setting are:
+		 * * 1 : Only products from the current category
+		 * * 2 : Products from the current category and the direct child categories
+		 * * 3 : Products from the current category and the whole category sub-tree
+		 *
+		 * Caution: Please keep in mind that displaying products of sub-categories
+		 * can slow down your shop, especially if it contains more than a few
+		 * products! You have no real control over the positions of the products
+		 * in the result list too because all products from different categories
+		 * with the same position value are placed randomly.
+		 *
+		 * Usually, a better way is to associate products to all categories they
+		 * should be listed in. This can be done manually if there are only a few
+		 * ones or during the product import automatically.
+		 *
+		 * @param integer Tree level constant
+		 * @since 2015.11
+		 * @category Developer
+		 * @see client/html/catalog/lists/catid-default
+		 * @see client/html/catalog/lists/domains
+		 * @see client/html/catalog/lists/size
+		 * @see client/html/catalog/lists/sort
+		 * @see client/html/catalog/lists/pages
+		 */
+		$level = $config->get( 'client/html/catalog/lists/levels', \Aimeos\MW\Tree\Manager\Base::LEVEL_ONE );
+
+
+		/** client/html/catalog/lists/catid-default
+		 * The default category ID used if none is given as parameter
+		 *
+		 * If users view a product list page without a category ID in the
+		 * parameter list, the first found products are displayed with a
+		 * random order. You can circumvent this by configuring a default
+		 * category ID that should be used in this case (the ID of the root
+		 * category is best for this). In most cases you can set this value
+		 * via the administration interface of the shop application.
+		 *
+		 * @param string Category ID
+		 * @since 2014.03
+		 * @category User
+		 * @category Developer
+		 * @see client/html/catalog/lists/sort
+		 * @see client/html/catalog/lists/size
+		 * @see client/html/catalog/lists/domains
+		 * @see client/html/catalog/lists/levels
+		 * @see client/html/catalog/detail/prodid-default
+		 */
+		$catids = $view->param( 'f_search' ) == '' ? $config->get( 'client/html/catalog/lists/catid-default' ) : null;
+		$catids = $view->param( 'f_catid' ) ?: $catids;
+
+		/** client/html/catalog/lists/sort
+		 * Default sorting of product list if no other sorting is given by parameter
+		 *
+		 * Configures the standard sorting of products in list views. This sorting is used
+		 * as long as it's not overwritten by an URL parameter. Except "relevance", all
+		 * other sort codes can be prefixed by a "-" (minus) sign to sort the products in
+		 * a descending order. By default, the sorting is ascending.
+		 *
+		 * @param string Sort code "relevance", "name", "-name", "price", "-price", "ctime" or "-ctime"
+		 * @since 2018.07
+		 * @category User
+		 * @category Developer
+		 * @see client/html/catalog/lists/catid-default
+		 * @see client/html/catalog/lists/domains
+		 * @see client/html/catalog/lists/levels
+		 * @see client/html/catalog/lists/size
+		 */
+		$sort = $view->param( 'f_sort', $config->get( 'client/html/catalog/lists/sort', 'relevance' ) );
+		$size = min( max( $view->param( 'l_size', $size ), 1 ), 100 );
+		$page = min( max( $view->param( 'l_page', 1 ), 1 ), $pages );
+
+		$products = \Aimeos\Controller\Frontend::create( $context, 'product' )
+			->allOf( $view->param( 'f_attrid', [] ) )
+			->oneOf( $view->param( 'f_optid', [] ) )
+			->oneOf( $view->param( 'f_oneid', [] ) )
+			->category( $catids, 'default', $level )
+			->text( $view->param( 'f_search' ) )
+			->slice( ($page - 1) * $size, $size )->sort( $sort )
+			->uses( $domains )
+			->search( $total );
+
+		if( $catids != null )
 		{
-			$domains = $config->get( 'client/html/catalog/domains', array( 'media', 'text' ) );
-			$controller = \Aimeos\Controller\Frontend\Factory::createController( $context, 'catalog' );
-
-			$catids = ( !is_array( $catid ) ? explode( ',', $catid ) : $catid );
-			$listCatPath = $controller->getPath( reset( $catids ), $domains );
+			$controller = \Aimeos\Controller\Frontend::create( $context, 'catalog' );
+			$listCatPath = $controller->getPath( is_array( $catids ) ? reset( $catids ) : $catids, $domains );
 
 			if( ( $categoryItem = end( $listCatPath ) ) !== false ) {
 				$view->listCurrentCatItem = $categoryItem;
@@ -493,14 +675,14 @@ class Standard
 		$view->listParams = $this->getClientParams( $view->param() );
 
 		$view->listProductItems = $products;
-		$view->listProductSort = $view->param( 'f_sort', $sort );
-		$view->listProductTotal = $this->getProductListTotal( $view );
+		$view->listProductSort = $sort;
+		$view->listProductTotal = $total;
 
-		$view->listPageSize = $this->getProductListSize( $view );
-		$view->listPageCurr = $this->getProductListPage( $view );
-		$view->listPagePrev = ( $view->listPageCurr > 1 ? $view->listPageCurr - 1 : 1 );
-		$view->listPageLast = ( $view->listProductTotal != 0 ? ceil( $view->listProductTotal / $view->listPageSize ) : 1 );
-		$view->listPageNext = ( $view->listPageCurr < $view->listPageLast ? $view->listPageCurr + 1 : $view->listPageLast );
+		$view->listPageSize = $size;
+		$view->listPageCurr = $page;
+		$view->listPagePrev = ( $page > 1 ? $page - 1 : 1 );
+		$view->listPageLast = ( $total != 0 ? ceil( $total / $size ) : 1 );
+		$view->listPageNext = ( $page < $view->listPageLast ? $page + 1 : $view->listPageLast );
 
 		return parent::addData( $view, $tags, $expire );
 	}

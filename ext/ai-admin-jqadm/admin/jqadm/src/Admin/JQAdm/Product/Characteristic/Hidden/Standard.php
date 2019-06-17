@@ -249,13 +249,13 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
-		$listManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/lists' );
+		$listManager = \Aimeos\MShop::create( $this->getContext(), 'product/lists' );
 
-		$listItem = $listManager->createItem( 'hidden', 'attribute' );
+		$listItem = $listManager->createItem()->setType( 'hidden' );
 		$listItems = $item->getListItems( 'attribute', 'hidden', null, false );
 
 		foreach( $this->getValue( $data, 'product.lists.id', [] ) as $idx => $id )
@@ -340,7 +340,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/characteristic/hidden/template-item';
-		$default = 'product/item-characteristic-hidden-standard.php';
+		$default = 'product/item-characteristic-hidden-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

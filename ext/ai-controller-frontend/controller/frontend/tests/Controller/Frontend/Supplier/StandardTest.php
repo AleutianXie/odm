@@ -12,63 +12,92 @@ namespace Aimeos\Controller\Frontend\Supplier;
 class StandardTest extends \PHPUnit\Framework\TestCase
 {
 	private $object;
+	private $context;
 
 
 	protected function setUp()
 	{
-		$this->object = new \Aimeos\Controller\Frontend\Supplier\Standard( \TestHelperFrontend::getContext() );
+		$this->context = \TestHelperFrontend::getContext();
+		$this->object = new \Aimeos\Controller\Frontend\Supplier\Standard( $this->context );
 	}
 
 
 	protected function tearDown()
 	{
-		unset( $this->object );
+		unset( $this->object, $this->context );
 	}
 
 
-	public function testCreateFilter()
+	public function testCompare()
 	{
-		$filter = $this->object->createFilter();
-
-		$this->assertInstanceOf( '\\Aimeos\\MW\\Criteria\\Iface', $filter );
-		$this->assertEquals( 0, $filter->getSliceStart() );
-		$this->assertEquals( 100, $filter->getSliceSize() );
+		$this->assertEquals( 2, count( $this->object->compare( '=~', 'supplier.label', 'unit' )->search() ) );
 	}
 
 
-	public function testGetItem()
+	public function testFind()
 	{
-		$context = \TestHelperFrontend::getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'supplier' );
-		$id = $manager->findItem( 'unitCode001' )->getId();
+		$item = $this->object->uses( ['product'] )->find( 'unitCode001' );
 
-		$result = $this->object->getItem( $id );
-
-		$this->assertInstanceOf( '\Aimeos\MShop\Supplier\Item\Iface', $result );
+		$this->assertInstanceOf( \Aimeos\MShop\Supplier\Item\Iface::class, $item );
+		$this->assertEquals( 2, count( $item->getRefItems( 'product' ) ) );
 	}
 
 
-	public function testGetItems()
+	public function testGet()
 	{
-		$context = \TestHelperFrontend::getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'supplier' );
-		$id = $manager->findItem( 'unitCode001' )->getId();
+		$item = \Aimeos\MShop::create( $this->context, 'supplier' )->findItem( 'unitCode001' );
+		$item = $this->object->uses( ['product'] )->get( $item->getId() );
 
-		$result = $this->object->getItems( [$id] );
-
-		$this->assertInternalType( 'array', $result );
-		$this->assertEquals( 1, count( $result ) );
+		$this->assertInstanceOf( \Aimeos\MShop\Supplier\Item\Iface::class, $item );
+		$this->assertEquals( 2, count( $item->getRefItems( 'product' ) ) );
 	}
 
 
-	public function testSearchItems()
+	public function testParse()
 	{
-		$filter = $this->object->createFilter();
+		$cond = ['&&' => [['==' => ['supplier.status' => 1]], ['=~' => ['supplier.label' => 'unit']]]];
+		$this->assertEquals( 2, count( $this->object->parse( $cond )->search() ) );
+	}
 
+
+	public function testSearch()
+	{
 		$total = 0;
-		$results = $this->object->searchItems( $filter, [], $total );
+		$items = $this->object->uses( ['product'] )->compare( '=~', 'supplier.code', 'unit' )
+			->sort( 'supplier.code' )->search( $total );
 
+		$this->assertGreaterThanOrEqual( 2, count( $items ) );
 		$this->assertGreaterThanOrEqual( 2, $total );
-		$this->assertGreaterThanOrEqual( 2, count( $results ) );
+		$this->assertEquals( 2, count( current( $items )->getRefItems( 'product' ) ) );
+	}
+
+
+	public function testSlice()
+	{
+		$this->assertEquals( 1, count( $this->object->slice( 0, 1 )->search() ) );
+	}
+
+
+	public function testSort()
+	{
+		$this->assertGreaterThanOrEqual( 2, count( $this->object->sort()->search() ) );
+	}
+
+
+	public function testSortGeneric()
+	{
+		$this->assertGreaterThanOrEqual( 2, count( $this->object->sort( 'supplier.label' )->search() ) );
+	}
+
+
+	public function testSortMultiple()
+	{
+		$this->assertGreaterThanOrEqual( 2, count( $this->object->sort( 'supplier.label,-supplier.id' )->search() ) );
+	}
+
+
+	public function testUses()
+	{
+		$this->assertSame( $this->object, $this->object->uses( ['text'] ) );
 	}
 }

@@ -42,7 +42,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCreateException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'getSubClients' ) )
 			->getMock();
@@ -58,7 +58,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCreateMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'getSubClients' ) )
 			->getMock();
@@ -74,7 +74,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopy()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'customer/group' );
+		$manager = \Aimeos\MShop::create( $this->context, 'customer/group' );
 
 		$param = ['type' => 'unittest', 'id' => $manager->findItem( 'unitgroup' )->getId()];
 		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $this->view, $param );
@@ -88,7 +88,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopyException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'getSubClients' ) )
 			->getMock();
@@ -104,7 +104,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopyMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'getSubClients' ) )
 			->getMock();
@@ -126,7 +126,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testDeleteException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'getSubClients', 'search' ) )
 			->getMock();
@@ -142,7 +142,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testDeleteMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'getSubClients', 'search' ) )
 			->getMock();
@@ -158,7 +158,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGet()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'customer/group' );
+		$manager = \Aimeos\MShop::create( $this->context, 'customer/group' );
 
 		$param = ['type' => 'unittest', 'id' => $manager->findItem( 'unitgroup' )->getId()];
 		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $this->view, $param );
@@ -172,7 +172,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'getSubClients' ) )
 			->getMock();
@@ -188,7 +188,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'getSubClients' ) )
 			->getMock();
@@ -206,14 +206,14 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	{
 		$object = new \Aimeos\Admin\JQAdm\Group\Standard( $this->context, [] );
 
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$object->getView();
 	}
 
 
 	public function testSave()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'customer/group' );
+		$manager = \Aimeos\MShop::create( $this->context, 'customer/group' );
 
 		$param = array(
 			'type' => 'unittest',
@@ -235,7 +235,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSaveException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'fromArray' ) )
 			->getMock();
@@ -251,7 +251,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSaveMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'fromArray' ) )
 			->getMock();
@@ -267,7 +267,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSaveJQAdmException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'fromArray' ) )
 			->getMock();
@@ -303,7 +303,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSearchException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'initCriteria' ) )
 			->getMock();
@@ -319,7 +319,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSearchMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Group\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Group\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( array( 'initCriteria' ) )
 			->getMock();
@@ -335,26 +335,26 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSubClientInvalid()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( '$unknown$' );
 	}
 
 
 	public function testGetSubClientUnknown()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( 'unknown' );
 	}
 
 
 	protected function getViewNoRender()
 	{
-		$view = $this->getMockBuilder( '\Aimeos\MW\View\Standard' )
+		$view = $this->getMockBuilder( \Aimeos\MW\View\Standard::class )
 			->setConstructorArgs( array( [] ) )
 			->setMethods( array( 'render', 'config' ) )
 			->getMock();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'customer/group' );
+		$manager = \Aimeos\MShop::create( $this->context, 'customer/group' );
 
 		$param = ['type' => 'unittest', 'id' => $manager->findItem( 'unitgroup' )->getId()];
 		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $view, $param );

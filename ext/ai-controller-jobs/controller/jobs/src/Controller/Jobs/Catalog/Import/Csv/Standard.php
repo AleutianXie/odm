@@ -58,6 +58,11 @@ class Standard
 		$mappings = $this->getDefaultMapping();
 
 
+		if( file_exists( $config->get( 'controller/jobs/catalog/import/csv/location' ) ) === false ) {
+			return;
+		}
+
+
 		/** controller/common/catalog/import/csv/domains
 		 * List of item domain names that should be retrieved along with the catalog items
 		 *
@@ -105,10 +110,7 @@ class Standard
 		 * and the MShop domain item key (e.g. "catalog.code") it represents.
 		 *
 		 * You can use all domain item keys which are used in the fromArray()
-		 * methods of the item classes. The "*.type" item keys will be
-		 * automatically converted to their "*.typeid" representation. You only
-		 * need to make sure that the corresponding type is available in the
-		 * database.
+		 * methods of the item classes.
 		 *
 		 * These mappings are grouped together by their processor names, which
 		 * are responsible for importing the data, e.g. all mappings in "item"
@@ -510,7 +512,7 @@ class Standard
 	protected function getCatalogMap( array $domains )
 	{
 		$map = [];
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'catalog' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'catalog' );
 		$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
 
 		foreach( $manager->searchItems( $search, $domains ) as $item ) {
@@ -565,7 +567,7 @@ class Standard
 	{
 		$errors = 0;
 		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'catalog' );
+		$manager = \Aimeos\MShop::create( $context, 'catalog' );
 
 		foreach( $data as $code => $list )
 		{
@@ -575,10 +577,10 @@ class Standard
 			{
 				$code = trim( $code );
 
-				if( isset( $catalogMap[$code] )  ) {
-					$catalogItem = $catalogMap[$code];
+				if( isset( $catalogMap[$code] ) ) {
+					$item = $catalogMap[$code];
 				} else {
-					$catalogItem = $manager->createItem();
+					$item = $manager->createItem();
 				}
 
 				$map = $this->getMappedChunk( $list, $mapping );
@@ -587,22 +589,22 @@ class Standard
 				{
 					$map = $map[0]; // there can only be one chunk for the base catalog data
 					$parentid = $this->getParentId( $catalogMap, $map, $code );
-					$catalogItem->fromArray( $this->addItemDefaults( $map ) );
+					$item->fromArray( $map, true );
 
 					if( isset( $catalogMap[$code] ) )
 					{
-						$manager->moveItem( $catalogItem->getId(), $catalogItem->getParentId(), $parentid );
-						$catalogItem = $manager->saveItem( $catalogItem );
+						$manager->moveItem( $item->getId(), $item->getParentId(), $parentid );
+						$item = $manager->saveItem( $item );
 					}
 					else
 					{
-						$catalogItem = $manager->insertItem( $catalogItem, $parentid );
+						$item = $manager->insertItem( $item, $parentid );
 					}
 
-					$list = $processor->process( $catalogItem, $list );
-					$catalogMap[$code] = $catalogItem;
+					$list = $processor->process( $item, $list );
+					$catalogMap[$code] = $item;
 
-					$manager->saveItem( $catalogItem );
+					$manager->saveItem( $item );
 				}
 
 				$manager->commit();
@@ -623,21 +625,5 @@ class Standard
 		}
 
 		return $errors;
-	}
-
-
-	/**
-	 * Adds the catalog item default values and returns the resulting array
-	 *
-	 * @param array $list Associative list of domain item keys and their values, e.g. "catalog.status" => 1
-	 * @return array Given associative list enriched by default values if they were not already set
-	 */
-	protected function addItemDefaults( array $list )
-	{
-		if( !isset( $list['catalog.status'] ) ) {
-			$list['catalog.status'] = 1;
-		}
-
-		return $list;
 	}
 }

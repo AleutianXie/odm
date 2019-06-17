@@ -15,8 +15,6 @@ class TestHelperFrontend
 	public static function bootstrap()
 	{
 		self::getAimeos();
-		\Aimeos\MShop\Factory::setCache( false );
-		\Aimeos\Controller\Frontend\Factory::setCache( false );
 	}
 
 
@@ -84,12 +82,12 @@ class TestHelperFrontend
 		$ctx->setSession( $session );
 
 
-		$localeManager = \Aimeos\MShop\Locale\Manager\Factory::createManager( $ctx );
+		$localeManager = \Aimeos\MShop\Locale\Manager\Factory::create( $ctx );
 		$locale = $localeManager->bootstrap( $site, '', '', false );
 		$ctx->setLocale( $locale );
 
 
-		$ctx->setEditor( 'core:controller/frontend' );
+		$ctx->setEditor( 'ai-controller-frontend:frontend' );
 
 		return $ctx;
 	}

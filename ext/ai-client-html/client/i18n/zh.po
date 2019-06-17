@@ -10,9 +10,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: aimeos-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-27 08:31+0200\n"
-"PO-Revision-Date: 2018-10-02 14:24+0000\n"
-"Last-Translator: stevechen <steve.stevechen@gmail.com>\n"
+"POT-Creation-Date: 2019-04-27 17:50+0200\n"
+"PO-Revision-Date: 2019-04-27 15:50+0000\n"
+"Last-Translator: Aimeos\n"
 "Language-Team: Chinese (http://www.transifex.com/aimeos/aimeos-core/language/zh/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -227,6 +227,10 @@ msgid "Client HTML type is empty"
 msgstr "client HTML 類型是空的"
 
 #, php-format
+msgid "Client path is empty"
+msgstr ""
+
+#, php-format
 msgid "Client type \"%1$s\" must consist of two parts separated by \"/\""
 msgstr "client 類型 \"%1$s\" 必須由兩個部份組成並以\"/\"隔開"
 
@@ -259,8 +263,24 @@ msgid "Customer with ID \"%1$s\" not found"
 msgstr "找不到ID為 \"%1$s\" 的顧客"
 
 #, php-format
+msgid "Dear %1$s %2$s"
+msgstr ""
+
+#, php-format
 msgid "Dear %1$s %2$s %3$s"
 msgstr "親愛的 %1$s %2$s %3$s"
+
+#, php-format
+msgid "Dear Miss %1$s %2$s"
+msgstr ""
+
+#, php-format
+msgid "Dear Mr %1$s %2$s"
+msgstr ""
+
+#, php-format
+msgid "Dear Mrs %1$s %2$s"
+msgstr ""
 
 msgid "Dear Sir or Madam"
 msgstr "親愛的先生或女士"
@@ -270,6 +290,10 @@ msgstr "運送"
 
 msgid "Delivery address"
 msgstr "收件地址"
+
+#, php-format
+msgid "Delivery address deleted successfully"
+msgstr ""
 
 #, php-format
 msgid "Delivery address part \"%1$s\" is invalid"
@@ -898,6 +922,9 @@ msgstr "您的訂單 %1$s"
 #, php-format
 msgid "Your order %1$s from %2$s has been dispatched."
 msgstr "您從%2$s下訂的訂單%1$s已出貨。"
+
+msgid "Your reference number"
+msgstr ""
 
 msgid "Your search result"
 msgstr "您的搜尋結果"

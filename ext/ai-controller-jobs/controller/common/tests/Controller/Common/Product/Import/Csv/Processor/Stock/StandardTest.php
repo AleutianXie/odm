@@ -17,7 +17,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function setUp()
 	{
-		\Aimeos\MShop\Factory::setCache( true );
+		\Aimeos\MShop::cache( true );
 
 		$this->context = \TestHelperCntl::getContext();
 		$this->endpoint = new \Aimeos\Controller\Common\Product\Import\Csv\Processor\Done( $this->context, [] );
@@ -26,8 +26,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function tearDown()
 	{
-		\Aimeos\MShop\Factory::setCache( false );
-		\Aimeos\MShop\Factory::clear();
+		\Aimeos\MShop::cache( false );
 	}
 
 
@@ -190,19 +189,10 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	 */
 	protected function create( $code )
 	{
-		$manager = \Aimeos\MShop\Product\Manager\Factory::createManager( $this->context );
-		$typeManager = $manager->getSubManager( 'type' );
-
-		$typeSearch = $typeManager->createSearch();
-		$typeSearch->setConditions( $typeSearch->compare( '==', 'product.type.code', 'default' ) );
-		$typeResult = $typeManager->searchItems( $typeSearch );
-
-		if( ( $typeItem = reset( $typeResult ) ) === false ) {
-			throw new \RuntimeException( 'No product type "default" found' );
-		}
+		$manager = \Aimeos\MShop\Product\Manager\Factory::create( $this->context );
 
 		$item = $manager->createItem();
-		$item->setTypeid( $typeItem->getId() );
+		$item->setType( 'default' );
 		$item->setCode( $code );
 
 		return $manager->saveItem( $item );
@@ -211,14 +201,19 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function delete( \Aimeos\MShop\Product\Item\Iface $product )
 	{
-		$manager = \Aimeos\MShop\Product\Manager\Factory::createManager( $this->context );
+		$manager = \Aimeos\MShop\Stock\Manager\Factory::create( $this->context );
+		$search = $manager->createSearch();
+		$search->setConditions( $search->compare( '==', 'stock.productcode', $product->getCode() ) );
+		$manager->deleteItems( array_keys( $manager->searchItems( $search ) ) );
+
+		$manager = \Aimeos\MShop\Product\Manager\Factory::create( $this->context );
 		$manager->deleteItem( $product->getId() );
 	}
 
 
 	protected function getStockItems( $code )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'stock' );
+		$manager = \Aimeos\MShop::create( $this->context, 'stock' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'stock.productcode', $code ) );

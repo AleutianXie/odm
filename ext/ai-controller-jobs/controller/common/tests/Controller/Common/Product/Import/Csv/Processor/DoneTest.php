@@ -17,7 +17,7 @@ class DoneTest extends \PHPUnit\Framework\TestCase
 
 	protected function setUp()
 	{
-		\Aimeos\MShop\Factory::setCache( true );
+		\Aimeos\MShop::cache( true );
 
 		$this->context = \TestHelperCntl::getContext();
 		$this->object = new \Aimeos\Controller\Common\Product\Import\Csv\Processor\Done( $this->context, [] );
@@ -26,16 +26,14 @@ class DoneTest extends \PHPUnit\Framework\TestCase
 
 	protected function tearDown()
 	{
-		\Aimeos\MShop\Factory::setCache( false );
-		\Aimeos\MShop\Factory::clear();
-
+		\Aimeos\MShop::cache( false );
 		$this->object = null;
 	}
 
 
 	public function testProcess()
 	{
-		$product = \Aimeos\MShop\Factory::createManager( $this->context, 'product' )->createItem();
+		$product = \Aimeos\MShop::create( $this->context, 'product' )->createItem();
 
 		$result = $this->object->process( $product, array( 'test' ) );
 

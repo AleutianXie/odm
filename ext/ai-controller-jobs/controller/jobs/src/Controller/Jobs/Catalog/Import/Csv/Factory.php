@@ -29,7 +29,7 @@ class Factory
 	 * @param string|null $name Name of the controller or "Standard" if null
 	 * @return \Aimeos\Controller\Jobs\Iface New controller object
 	 */
-	public static function createController( \Aimeos\MShop\Context\Item\Iface $context, \Aimeos\Bootstrap $aimeos, $name = null )
+	public static function create( \Aimeos\MShop\Context\Item\Iface $context, \Aimeos\Bootstrap $aimeos, $name = null )
 	{
 		/** controller/jobs/catalog/import/csv/name
 		 * Class name of the used catalog suggestions scheduler controller implementation
@@ -64,20 +64,20 @@ class Factory
 		 * @since 2018.04
 		 * @category Developer
 		 */
-		if ( $name === null ) {
-			$name = $context->getConfig()->get('controller/jobs/catalog/import/csv/name', 'Standard');
+		if( $name === null ) {
+			$name = $context->getConfig()->get( 'controller/jobs/catalog/import/csv/name', 'Standard' );
 		}
 
-		if ( ctype_alnum($name) === false )
+		if( ctype_alnum( $name ) === false )
 		{
-			$classname = is_string($name) ? '\\Aimeos\\Controller\\Jobs\\Catalog\\Import\\Csv\\' . $name : '<not a string>';
+			$classname = is_string( $name ) ? '\\Aimeos\\Controller\\Jobs\\Catalog\\Import\\Csv\\' . $name : '<not a string>';
 			throw new \Aimeos\Controller\Jobs\Exception( sprintf( 'Invalid characters in class name "%1$s"', $classname ) );
 		}
 
 		$iface = '\\Aimeos\\Controller\\Jobs\\Iface';
 		$classname = '\\Aimeos\\Controller\\Jobs\\Catalog\\Import\\Csv\\' . $name;
 
-		$controller = self::createControllerBase( $context, $aimeos, $classname, $iface );
+		$controller = self::createController( $context, $aimeos, $classname, $iface );
 
 		/** controller/jobs/catalog/import/csv/decorators/excludes
 		 * Excludes decorators added by the "common" option from the catalog import CSV job controller

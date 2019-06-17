@@ -249,13 +249,13 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
-		$listManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/lists' );
+		$listManager = \Aimeos\MShop::create( $this->getContext(), 'product/lists' );
 
-		$listItem = $listManager->createItem( 'config', 'attribute' );
+		$listItem = $listManager->createItem()->setType( 'config' );
 		$listItems = $item->getListItems( 'attribute', 'config', null, false );
 
 		foreach( $this->getValue( $data, 'product.lists.id', [] ) as $idx => $id )
@@ -271,8 +271,6 @@ class Standard
 			$litem->setRefId( $this->getValue( $data, 'product.lists.refid/' . $idx ) );
 
 			$item->addListItem( 'attribute', $litem, $litem->getRefItem() );
-
-
 		}
 
 		return $item->deleteListItems( $listItems );
@@ -342,7 +340,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/option/config/template-item';
-		$default = 'product/item-option-config-standard.php';
+		$default = 'product/item-option-config-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

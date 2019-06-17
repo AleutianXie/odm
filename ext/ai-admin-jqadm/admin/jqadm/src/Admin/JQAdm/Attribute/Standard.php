@@ -39,7 +39,7 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'attribute' );
+			$manager = \Aimeos\MShop::create( $context, 'attribute' );
 			$view->item = $manager->getItem( $id, $this->getDomains() );
 
 			$view->itemData = $this->toArray( $view->item, true );
@@ -85,7 +85,7 @@ class Standard
 			$data = $view->param( 'item', [] );
 
 			if( !isset( $view->item ) ) {
-				$view->item = \Aimeos\MShop\Factory::createManager( $context, 'attribute' )->createItem();
+				$view->item = \Aimeos\MShop::create( $context, 'attribute' )->createItem();
 			}
 
 			$data['attribute.siteid'] = $view->item->getSiteId();
@@ -128,7 +128,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'attribute' );
+		$manager = \Aimeos\MShop::create( $context, 'attribute' );
 		$manager->begin();
 
 		try
@@ -185,7 +185,7 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'attribute' );
+			$manager = \Aimeos\MShop::create( $context, 'attribute' );
 
 			$view->item = $manager->getItem( $id, $this->getDomains() );
 			$view->itemSubparts = $this->getSubClientNames();
@@ -226,7 +226,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'attribute' );
+		$manager = \Aimeos\MShop::create( $context, 'attribute' );
 		$manager->begin();
 
 		try
@@ -282,7 +282,7 @@ class Standard
 		{
 			$total = 0;
 			$params = $this->storeSearchParams( $view->param(), 'attribute' );
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'attribute' );
+			$manager = \Aimeos\MShop::create( $context, 'attribute' );
 			$search = $this->initCriteria( $manager->createSearch(), $params );
 
 			$view->items = $manager->searchItems( $search, $this->getDomains(), $total );
@@ -329,7 +329,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/attribute/template-list';
-		$default = 'attribute/list-standard.php';
+		$default = 'attribute/list-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -496,33 +496,32 @@ class Standard
 	 */
 	protected function getTypeItems()
 	{
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'attribute/type' );
+		$typeManager = \Aimeos\MShop::create( $this->getContext(), 'attribute/type' );
 
-		$search = $typeManager->createSearch()->setSlice( 0, 0x7fffffff );
-		$search->setSortations( array( $search->sort( '+', 'attribute.type.code' ) ) );
+		$search = $typeManager->createSearch( true )->setSlice( 0, 10000 );
+		$search->setSortations( [$search->sort( '+', 'attribute.type.position' )] );
 
-		return $typeManager->searchItems( $search );
+		return $this->map( $typeManager->searchItems( $search ) );
 	}
 
 
 	/**
 	 * Creates new and updates existing items using the data array
 	 *
-	 * @param string[] Data array
+	 * @param array $data Data array
 	 * @return \Aimeos\MShop\Attribute\Item\Iface New attribute item object
 	 */
 	protected function fromArray( array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'attribute' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'attribute' );
 
 		if( isset( $data['attribute.id'] ) && $data['attribute.id'] != '' ) {
 			$item = $manager->getItem( $data['attribute.id'], $this->getDomains() );
 		} else {
-			$typeManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'attribute/type' );
-			$item = $manager->createItem( $typeManager->getItem( $data['attribute.typeid'] )->getCode(), $data['attribute.domain'] );
+			$item = $manager->createItem();
 		}
 
-		$item->fromArray( $data );
+		$item->fromArray( $data, true );
 
 		return $item;
 	}
@@ -577,7 +576,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/attribute/template-item';
-		$default = 'attribute/item-standard.php';
+		$default = 'attribute/item-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

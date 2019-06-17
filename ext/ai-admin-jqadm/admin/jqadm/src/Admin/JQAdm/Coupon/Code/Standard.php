@@ -105,7 +105,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'coupon/code' );
+		$manager = \Aimeos\MShop::create( $context, 'coupon/code' );
 		$manager->begin();
 
 		try
@@ -267,9 +267,9 @@ class Standard
 	 * @param integer $total Value/result parameter that will contain the item total afterwards
 	 * @return \Aimeos\MShop\Coupon\Item\Code\Iface[] Coupon code items associated to the coupon item
 	 */
-	protected function getCodeItems( \Aimeos\MShop\Coupon\Item\Iface $item, array $params = [], &$total )
+	protected function getCodeItems( \Aimeos\MShop\Coupon\Item\Iface $item, array $params = [], &$total = null )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'coupon/code' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'coupon/code' );
 
 		$search = $manager->createSearch();
 		$search->setSortations( [$search->sort( '+', 'coupon.code.code' )] );
@@ -333,11 +333,11 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Coupon\Item\Iface $item Coupon item object
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Coupon\Item\Iface $item, array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'coupon/code' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'coupon/code' );
 
 		foreach( $this->getValue( $data, 'coupon.code.id', [] ) as $idx => $id )
 		{
@@ -432,7 +432,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/coupon/code/template-item';
-		$default = 'coupon/item-code-standard.php';
+		$default = 'coupon/item-code-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

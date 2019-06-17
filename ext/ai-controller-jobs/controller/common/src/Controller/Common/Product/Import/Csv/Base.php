@@ -20,9 +20,6 @@ namespace Aimeos\Controller\Common\Product\Import\Csv;
 class Base
 	extends \Aimeos\Controller\Jobs\Base
 {
-	private static $types = [];
-
-
 	/**
 	 * Converts the CSV field data using the available converter objects
 	 *
@@ -60,8 +57,8 @@ class Base
 
 		if( ctype_alnum( $type ) === false )
 		{
-			$classname = is_string($name) ? '\\Aimeos\\Controller\\Common\\Product\\Import\\Csv\\Cache\\' . $type : '<not a string>';
-			throw new \Aimeos\Controller\Jobs\Exception( sprintf( 'Invalid characters in class name "%1$s"', $classname ) );
+			$classname = is_string( $name ) ? '\\Aimeos\\Controller\\Common\\Product\\Import\\Csv\\Cache\\' . $type : '<not a string>';
+			throw new \Aimeos\Controller\Common\Exception( sprintf( 'Invalid characters in class name "%1$s"', $classname ) );
 		}
 
 		if( $name === null ) {
@@ -70,14 +67,14 @@ class Base
 
 		if( ctype_alnum( $name ) === false )
 		{
-			$classname = is_string($name) ? '\\Aimeos\\Controller\\Common\\Product\\Import\\Csv\\Cache\\' . $type . '\\' . $name : '<not a string>';
-			throw new \Aimeos\Controller\Jobs\Exception( sprintf( 'Invalid characters in class name "%1$s"', $classname ) );
+			$classname = is_string( $name ) ? '\\Aimeos\\Controller\\Common\\Product\\Import\\Csv\\Cache\\' . $type . '\\' . $name : '<not a string>';
+			throw new \Aimeos\Controller\Common\Exception( sprintf( 'Invalid characters in class name "%1$s"', $classname ) );
 		}
 
 		$classname = '\\Aimeos\\Controller\\Common\\Product\\Import\\Csv\\Cache\\' . ucfirst( $type ) . '\\' . $name;
 
 		if( class_exists( $classname ) === false ) {
-			throw new \Aimeos\Controller\Jobs\Exception( sprintf( 'Class "%1$s" not found', $classname ) );
+			throw new \Aimeos\Controller\Common\Exception( sprintf( 'Class "%1$s" not found', $classname ) );
 		}
 
 		$object = new $classname( $context );
@@ -122,7 +119,7 @@ class Base
 		while( $content->valid() && $count++ < $maxcnt )
 		{
 			$row = $content->current();
-			$data[ $row[$codePos] ] = $row;
+			$data[$row[$codePos]] = $row;
 			$content->next();
 		}
 
@@ -259,22 +256,22 @@ class Base
 		{
 			if( ctype_alnum( $type ) === false )
 			{
-				$classname = is_string($type) ? '\\Aimeos\\Controller\\Common\\Product\\Import\\Csv\\Processor\\' . $type : '<not a string>';
-				throw new \Aimeos\Controller\Jobs\Exception( sprintf( 'Invalid characters in class name "%1$s"', $classname ) );
+				$classname = is_string( $type ) ? '\\Aimeos\\Controller\\Common\\Product\\Import\\Csv\\Processor\\' . $type : '<not a string>';
+				throw new \Aimeos\Controller\Common\Exception( sprintf( 'Invalid characters in class name "%1$s"', $classname ) );
 			}
 
 			$name = $config->get( 'controller/common/product/import/csv/processor/' . $type . '/name', 'Standard' );
 
 			if( ctype_alnum( $name ) === false )
 			{
-				$classname = is_string($name) ? '\\Aimeos\\Controller\\Common\\Product\\Import\\Csv\\Processor\\' . $type . '\\' . $name : '<not a string>';
-				throw new \Aimeos\Controller\Jobs\Exception( sprintf( 'Invalid characters in class name "%1$s"', $classname ) );
+				$classname = is_string( $name ) ? '\\Aimeos\\Controller\\Common\\Product\\Import\\Csv\\Processor\\' . $type . '\\' . $name : '<not a string>';
+				throw new \Aimeos\Controller\Common\Exception( sprintf( 'Invalid characters in class name "%1$s"', $classname ) );
 			}
 
 			$classname = '\\Aimeos\\Controller\\Common\\Product\\Import\\Csv\\Processor\\' . ucfirst( $type ) . '\\' . $name;
 
 			if( class_exists( $classname ) === false ) {
-				throw new \Aimeos\Controller\Jobs\Exception( sprintf( 'Class "%1$s" not found', $classname ) );
+				throw new \Aimeos\Controller\Common\Exception( sprintf( 'Class "%1$s" not found', $classname ) );
 			}
 
 			$object = new $classname( $context, $mapping, $object );
@@ -296,47 +293,16 @@ class Base
 	protected function getProducts( array $codes, array $domains )
 	{
 		$result = [];
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'product.code', $codes ) );
 		$search->setSlice( 0, count( $codes ) );
 
 		foreach( $manager->searchItems( $search, $domains ) as $item ) {
-			$result[ $item->getCode() ] = $item;
+			$result[$item->getCode()] = $item;
 		}
 
 		return $result;
-	}
-
-
-	/**
-	 * Returns the ID of the type item with the given code
-	 *
-	 * @param string $path Item/manager path separated by slashes, e.g. "product/lists/type"
-	 * @param string $domain Domain the type items needs to be from
-	 * @param string $code Unique code of the type item
-	 * @return string Unique ID of the type item
-	 */
-	protected function getTypeId( $path, $domain, $code )
-	{
-		if( !isset( self::$types[$path][$domain] ) )
-		{
-			$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), $path );
-			$key = str_replace( '/', '.', $path );
-
-			$search = $manager->createSearch();
-			$search->setConditions( $search->compare( '==', $key . '.domain', $domain ) );
-
-			foreach( $manager->searchItems( $search ) as $id => $item ) {
-				self::$types[$path][$domain][ $item->getCode() ] = $id;
-			}
-		}
-
-		if( !isset( self::$types[$path][$domain][$code] ) ) {
-			throw new \Aimeos\Controller\Jobs\Exception( sprintf( 'No type item for "%1$s/%2$s" in "%3$s" found', $domain, $code, $path ) );
-		}
-
-		return self::$types[$path][$domain][$code];
 	}
 }

@@ -6,7 +6,7 @@
  */
 
 
-namespace Aimeos\Admin\JQAdm\Product\Image;
+namespace Aimeos\Admin\JQAdm\Product\Media;
 
 
 class StandardTest extends \PHPUnit\Framework\TestCase
@@ -21,7 +21,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$this->view = \TestHelperJqadm::getView();
 		$this->context = \TestHelperJqadm::getContext();
 
-		$this->object = new \Aimeos\Admin\JQAdm\Product\Image\Standard( $this->context );
+		$this->object = new \Aimeos\Admin\JQAdm\Product\Media\Standard( $this->context );
 		$this->object = new \Aimeos\Admin\JQAdm\Common\Decorator\Page( $this->object, $this->context );
 		$this->object->setAimeos( \TestHelperJqadm::getAimeos() );
 		$this->object->setView( $this->view );
@@ -36,19 +36,19 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testCreate()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'product' );
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 
 		$this->view->item = $manager->createItem();
 		$result = $this->object->create();
 
-		$this->assertContains( 'item-image', $result );
+		$this->assertContains( 'item-media', $result );
 		$this->assertNull( $this->view->get( 'errors' ) );
 	}
 
 
 	public function testCopy()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'product' );
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 
 		$this->view->item = $manager->findItem( 'CNC', ['media'] );
 		$result = $this->object->copy();
@@ -60,7 +60,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testDelete()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'product' );
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 
 		$this->view->item = $manager->createItem();
 		$result = $this->object->delete();
@@ -72,7 +72,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGet()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'product' );
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 
 		$this->view->item = $manager->findItem( 'CNC', ['media'] );
 		$result = $this->object->get();
@@ -84,41 +84,33 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testSave()
 	{
-		$listTypeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'product/lists/type' );
-		$listTypeId = $listTypeManager->findItem( 'default', [], 'media' )->getId();
-
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->context, 'media/type' );
-		$typeId = $typeManager->findItem( 'default', [], 'product' )->getId();
-
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'product' );
+		$manager = \Aimeos\MShop::create( $this->context, 'product' );
 		$this->view->item = $manager->createItem();
-
 
 		$param = array(
 			'site' => 'unittest',
-			'image' => [[
+			'media' => [[
 				'media.id' => '',
-				'media.typeid' => $typeId,
+				'media.type' => 'default',
 				'media.languageid' => 'de',
 				'media.label' => 'test',
 				'product.lists.type' => 'default',
-				'product.lists.typeid' => $listTypeId
 			]],
 		);
 
 		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $this->view, $param );
 		$this->view->addHelper( 'param', $helper );
 
-		$file = $this->getMockBuilder( '\Psr\Http\Message\UploadedFileInterface' )->getMock();
-		$request = $this->getMockBuilder( '\Psr\Http\Message\ServerRequestInterface' )->getMock();
+		$file = $this->getMockBuilder( \Psr\Http\Message\UploadedFileInterface::class )->getMock();
+		$request = $this->getMockBuilder( \Psr\Http\Message\ServerRequestInterface::class )->getMock();
 		$request->expects( $this->any() )->method( 'getUploadedFiles' )
-			->will( $this->returnValue( ['image' => [0 => ['file' => $file] ] ] ) );
+			->will( $this->returnValue( ['media' => [0 => ['file' => $file] ] ] ) );
 
 		$helper = new \Aimeos\MW\View\Helper\Request\Standard( $this->view, $request, '127.0.0.1', 'test' );
 		$this->view ->addHelper( 'request', $helper );
 
 
-		$name = 'AdminJQAdmProductImageSave';
+		$name = 'AdminJQAdmProductMediaSave';
 		$this->context->getConfig()->set( 'controller/common/media/name', $name );
 
 		$cntlStub = $this->getMockBuilder( '\\Aimeos\\Controller\\Common\\Media\\Standard' )
@@ -126,7 +118,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->setMethods( array( 'add' ) )
 			->getMock();
 
-		\Aimeos\Controller\Common\Media\Factory::injectController( '\\Aimeos\\Controller\\Common\\Media\\' . $name, $cntlStub );
+		\Aimeos\Controller\Common\Media\Factory::inject( '\\Aimeos\\Controller\\Common\\Media\\' . $name, $cntlStub );
 
 		$cntlStub->expects( $this->once() )->method( 'add' );
 
@@ -148,7 +140,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		}
 
 
-		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $this->view, ['site' => 'unittest', 'image' => []] );
+		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $this->view, ['site' => 'unittest', 'media' => []] );
 		$this->view->addHelper( 'param', $helper );
 
 		$result = $this->object->save();
@@ -166,7 +158,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$object->expects( $this->once() )->method( 'fromArray' )
 			->will( $this->throwException( new \RuntimeException() ) );
 
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$object->save();
 	}
 
@@ -178,7 +170,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$object->expects( $this->once() )->method( 'fromArray' )
 			->will( $this->throwException( new \Aimeos\MShop\Exception() ) );
 
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$object->save();
 	}
 
@@ -191,20 +183,20 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetSubClient()
 	{
-		$this->setExpectedException( '\Aimeos\Admin\JQAdm\Exception' );
+		$this->setExpectedException( \Aimeos\Admin\JQAdm\Exception::class );
 		$this->object->getSubClient( 'unknown' );
 	}
 
 
 	public function getClientMock( $method )
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Admin\JQAdm\Product\Image\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Admin\JQAdm\Product\Media\Standard::class )
 			->setConstructorArgs( array( $this->context, \TestHelperJqadm::getTemplatePaths() ) )
 			->setMethods( [$method] )
 			->getMock();
 
 		$view = \TestHelperJqadm::getView();
-		$view->item = \Aimeos\MShop\Factory::createManager( $this->context, 'product' )->createItem();
+		$view->item = \Aimeos\MShop::create( $this->context, 'product' )->createItem();
 
 		$object->setAimeos( \TestHelperJqadm::getAimeos() );
 		$object->setView( $view );

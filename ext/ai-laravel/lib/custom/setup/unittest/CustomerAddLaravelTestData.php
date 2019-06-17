@@ -15,69 +15,109 @@ namespace Aimeos\MW\Setup\Task;
 class CustomerAddLaravelTestData extends \Aimeos\MW\Setup\Task\CustomerAddTestData
 {
 	/**
-	 * Returns the list of task names which this task depends on.
+	 * Returns the list of task names which this task depends on
 	 *
 	 * @return string[] List of task names
 	 */
 	public function getPreDependencies()
 	{
-		return array( 'TablesAddLaravelTestData' );
+		return ['MShopSetLocale'];
 	}
 
 
 	/**
-	 * Adds attribute test data.
+	 * Returns the list of task names which depends on this task.
+	 *
+	 * @return string[] List of task names
+	 */
+	public function getPostDependencies()
+	{
+		return ['CustomerAddTestData'];
+	}
+
+
+	/**
+	 * Adds customer test data
 	 */
 	public function migrate()
 	{
-		\Aimeos\MW\Common\Base::checkClass( '\\Aimeos\\MShop\\Context\\Item\\Iface', $this->additional );
+		\Aimeos\MW\Common\Base::checkClass( \Aimeos\MShop\Context\Item\Iface::class, $this->additional );
 
 		$this->msg( 'Adding Laravel customer test data', 0 );
-		$this->additional->setEditor( 'ai-laravel:unittest' );
 
-		$parentIds = [];
-		$ds = DIRECTORY_SEPARATOR;
-		$path = __DIR__ . $ds . 'data' . $ds . 'customer.php';
-
-		if( ( $testdata = include( $path ) ) == false ){
-			throw new \Aimeos\MShop\Exception( sprintf( 'No file "%1$s" found for customer domain', $path ) );
-		}
-
-
-		$customerManager = \Aimeos\MShop\Customer\Manager\Factory::createManager( $this->additional, 'Laravel' );
-		$customerAddressManager = $customerManager->getSubManager( 'address', 'Laravel' );
-
-		$this->cleanupCustomerData( $customerManager, $customerAddressManager );
-
-		$this->conn->begin();
-
-		$parentIds = $this->addCustomerData( $testdata, $customerManager, $customerAddressManager->createItem() );
-		$this->addCustomerAddressData( $testdata, $customerAddressManager, $parentIds );
-
-		$this->conn->commit();
-
+		$this->additional->setEditor( 'ai-laravel:lib/custom' );
+		$this->process( __DIR__ . DIRECTORY_SEPARATOR . 'data' . DIRECTORY_SEPARATOR . 'customer.php' );
 
 		$this->status( 'done' );
 	}
 
 
 	/**
-	 * Removes all customer unit test entries
+	 * Adds the customer data
 	 *
-	 * @param \Aimeos\MShop\Common\Manager\Iface $customerManager Customer manager
-	 * @param \Aimeos\MShop\Common\Manager\Iface $customerAddressManager Customer address manager
+	 * @param string $path Path to data file
+	 * @throws \Aimeos\MShop\Exception
 	 */
-	protected function cleanupCustomerData( \Aimeos\MShop\Common\Manager\Iface $customerManager, \Aimeos\MShop\Common\Manager\Iface $customerAddressManager )
+	protected function process( $path )
 	{
-		$search = $customerManager->createSearch();
-		$search->setConditions( $search->compare( '=~', 'customer.code', 'UTC00' ) );
-		$customerItems = $customerManager->searchItems( $search );
+		if( ( $testdata = include( $path ) ) == false ) {
+			throw new \Aimeos\MShop\Exception( sprintf( 'No file "%1$s" found for customer domain', $path ) );
+		}
 
-		$search = $customerAddressManager->createSearch();
-		$search->setConditions( $search->compare( '=~', 'customer.address.email', 'unitCustomer' ) );
-		$addressItems = $customerAddressManager->searchItems( $search );
+		$manager = $this->getManager( 'customer' );
+		$listManager = $manager->getSubManager( 'lists' );
+		$groupManager = $manager->getSubManager( 'group' );
+		$addrManager = $manager->getSubManager( 'address' );
+		$propManager = $manager->getSubManager( 'property' );
 
-		$customerAddressManager->deleteItems( array_keys( $addressItems ) );
-		$customerManager->deleteItems( array_keys( $customerItems ) );
+		$manager->begin();
+
+		$search = $manager->createSearch();
+		$search->setConditions( $search->compare( '=~', 'customer.code', 'test' ) );
+		$manager->deleteItems( array_keys( $manager->searchItems( $search ) ) );
+
+		$this->storeTypes( $testdata, ['customer/lists/type', 'customer/property/type'] );
+		$this->addGroupItems( $groupManager, $testdata );
+
+		$items = [];
+		foreach( $testdata['customer'] as $entry )
+		{
+			$item = $manager->createItem()->fromArray( $entry, true );
+			$item = $this->addGroupData( $groupManager, $item, $entry );
+			$item = $this->addPropertyData( $propManager, $item, $entry );
+			$item = $this->addAddressData( $addrManager, $item, $entry );
+			$items[] = $this->addListData( $listManager, $item, $entry );
+		}
+
+		$manager->saveItems( $items );
+		$manager->commit();
+	}
+
+
+	/**
+	 * Returns the manager for the current setup task
+	 *
+	 * @param string $domain Domain name of the manager
+	 * @return \Aimeos\MShop\Common\Manager\Iface Manager object
+	 */
+	protected function getManager( $domain )
+	{
+		if( $domain === 'customer' ) {
+			return \Aimeos\MShop\Customer\Manager\Factory::create( $this->additional, 'Laravel' );
+		}
+
+		return parent::getManager( $domain );
+	}
+
+
+	/**
+	 * Adds the customer group test data.
+	 *
+	 * @param array $testdata Associative list of key/list pairs
+	 * @param \Aimeos\MShop\Common\Manager\Iface $customerGroupManager Customer group manager
+	 * @throws \Aimeos\MW\Setup\Exception If a required ID is not available
+	 */
+	protected function addCustomerGroupData( array $testdata, \Aimeos\MShop\Common\Manager\Iface $customerGroupManager )
+	{
 	}
 }

@@ -76,7 +76,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'client/jsonapi/attribute/standard/template';
-		$default = 'attribute/standard.php';
+		$default = 'attribute/standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -117,9 +117,9 @@ class Standard
 			$ref = explode( ',', $ref );
 		}
 
-		$cntl = \Aimeos\Controller\Frontend\Factory::createController( $this->getContext(), 'attribute' );
+		$cntl = \Aimeos\Controller\Frontend::create( $this->getContext(), 'attribute' );
 
-		$view->items = $cntl->getItem( $view->param( 'id' ), $ref );
+		$view->items = $cntl->uses( $ref )->get( $view->param( 'id' ) );
 		$view->total = 1;
 
 		return $response;
@@ -165,13 +165,11 @@ class Standard
 			$ref = explode( ',', $ref );
 		}
 
-		$cntl = \Aimeos\Controller\Frontend\Factory::createController( $this->getContext(), 'attribute' );
-
-		$filter = $cntl->createFilter();
-		$filter = $this->initCriteriaConditions( $filter, $view->param() );
-		$filter = $cntl->addFilterTypes( $filter, $attrTypes );
-
-		$items = $cntl->searchItems( $filter, $ref, $total );
+		$items = \Aimeos\Controller\Frontend::create( $this->getContext(), 'attribute' )
+			->slice( $view->param( 'page/offset', 0 ), $view->param( 'page/limit', 25 ) )
+			->type( $attrTypes )->parse( (array) $view->param( 'filter', [] ) )
+			->sort( $view->param( 'sort', 'position' ) )
+			->uses( $ref )->search( $total );
 
 		foreach( $items as $id => $item ) {
 			$attrMap[$item->getType()][$id] = $item;

@@ -155,7 +155,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists' );
+		$manager = \Aimeos\MShop::create( $context, 'customer/lists' );
 
 		$manager->begin();
 
@@ -174,13 +174,13 @@ class Standard
 		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
-			$error = array( 'customer-item-image' => $context->getI18n()->dt( 'mshop', $e->getMessage() ) );
+			$error = array( 'customer-item-media' => $context->getI18n()->dt( 'mshop', $e->getMessage() ) );
 			$view->errors = $view->get( 'errors', [] ) + $error;
 			$this->logException( $e );
 		}
 		catch( \Exception $e )
 		{
-			$error = array( 'customer-item-image' => $e->getMessage() . ', ' . $e->getFile() . ':' . $e->getLine() );
+			$error = array( 'customer-item-media' => $e->getMessage() . ', ' . $e->getFile() . ':' . $e->getLine() );
 			$view->errors = $view->get( 'errors', [] ) + $error;
 			$this->logException( $e );
 		}
@@ -285,9 +285,9 @@ class Standard
 	 * @param integer $total Value/result parameter that will contain the item total afterwards
 	 * @return \Aimeos\MShop\Common\Item\List\Iface[] Customer list items referencing the products
 	 */
-	protected function getListItems( \Aimeos\MShop\Customer\Item\Iface $item, array $params = [], &$total )
+	protected function getListItems( \Aimeos\MShop\Customer\Item\Iface $item, array $params = [], &$total = null )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer/lists' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'customer/lists' );
 
 		$search = $manager->createSearch();
 		$search->setSortations( [$search->sort( '-', 'customer.lists.ctime' )] );
@@ -311,18 +311,13 @@ class Standard
 	 */
 	protected function getListTypes()
 	{
-		$list = [];
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer/lists/type' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'customer/lists/type' );
 
-		$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+		$search = $manager->createSearch( true )->setSlice( 0, 10000 );
 		$search->setConditions( $search->compare( '==', 'customer.lists.type.domain', 'product' ) );
-		$search->setSortations( [$search->sort( '+', 'customer.lists.type.code' )] );
+		$search->setSortations( [$search->sort( '+', 'customer.lists.type.position' )] );
 
-		foreach( $manager->searchItems( $search ) as $id => $item ) {
-			$list[$id] = $item->getCode();
-		}
-
-		return $list;
+		return $this->map( $manager->searchItems( $search ) );
 	}
 
 
@@ -340,11 +335,10 @@ class Standard
 			$list[] = $listItem->getRefId();
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product' );
 
-		$search = $manager->createSearch();
+		$search = $manager->createSearch()->setSlice( 0, count( $list ) );
 		$search->setConditions( $search->compare( '==', 'product.id', $list ) );
-		$search->setSlice( 0, 0x7fffffff );
 
 		return $manager->searchItems( $search );
 	}
@@ -398,18 +392,17 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Customer\Item\Iface $item Customer item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Customer\Item\Iface $item, array $data )
 	{
 		$context = $this->getContext();
 		$listIds = $this->getValue( $data, 'customer.lists.id', [] );
 
-		$listManager = \Aimeos\MShop\Factory::createManager( $context, 'customer/lists' );
+		$listManager = \Aimeos\MShop::create( $context, 'customer/lists' );
 
-		$search = $listManager->createSearch();
+		$search = $listManager->createSearch()->setSlice( 0, count( $listIds ) );
 		$search->setConditions( $search->compare( '==', 'customer.lists.id', $listIds ) );
-		$search->setSlice( 0, 0x7fffffff );
 
 		$listItems = $listManager->searchItems( $search );
 
@@ -433,8 +426,8 @@ class Standard
 				$litem->setStatus( $this->getValue( $data, 'customer.lists.status/' . $idx ) );
 			}
 
-			if( isset( $data['customer.lists.typeid'][$idx] ) ) {
-				$litem->setTypeId( $this->getValue( $data, 'customer.lists.typeid/' . $idx ) );
+			if( isset( $data['customer.lists.type'][$idx] ) ) {
+				$litem->setType( $this->getValue( $data, 'customer.lists.type/' . $idx ) );
 			}
 
 			if( isset( $data['customer.lists.position'][$idx] ) ) {
@@ -523,7 +516,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/customer/product/template-item';
-		$default = 'customer/item-product-standard.php';
+		$default = 'customer/item-product-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

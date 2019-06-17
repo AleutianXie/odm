@@ -12,6 +12,7 @@ $detailTarget = $this->config( 'client/html/catalog/detail/url/target' );
 $detailController = $this->config( 'client/html/catalog/detail/url/controller', 'catalog' );
 $detailAction = $this->config( 'client/html/catalog/detail/url/action', 'detail' );
 $detailConfig = $this->config( 'client/html/catalog/detail/url/config', [] );
+$detailProdid = $this->config( 'client/html/catalog/detail/url/d_prodid', false );
 
 
 /** client/html/catalog/detail/metatags
@@ -34,9 +35,7 @@ $detailConfig = $this->config( 'client/html/catalog/detail/url/config', [] );
 
 ?>
 <?php if( (bool) $this->config( 'client/html/catalog/detail/metatags', true ) === true ) : ?>
-
 	<?php if( isset( $this->detailProductItem ) ) : ?>
-
 		<title><?= $enc->html( $this->detailProductItem->getName() ); ?></title>
 
 		<?php foreach( $this->detailProductItem->getRefItems( 'text', 'meta-keyword', 'default' ) as $textItem ) : ?>
@@ -47,7 +46,10 @@ $detailConfig = $this->config( 'client/html/catalog/detail/url/config', [] );
 			<meta name="description" content="<?= $enc->attr( strip_tags( $textItem->getContent() ) ); ?>" />
 		<?php endforeach; ?>
 
-		<?php $params = array( 'd_name' => $this->detailProductItem->getName( 'url' ), 'd_prodid' => $this->detailProductItem->getId() ); ?>
+		<?php
+			$params = ['d_name' => $this->detailProductItem->getName( 'url' )];
+			$detailProdid == false ?: $params['d_prodid'] = $this->detailProductItem->getId();
+		?>
 		<link rel="canonical" href="<?= $enc->attr( $this->url( $detailTarget, $detailController, $detailAction, $params, [], $detailConfig ) ); ?>" />
 
 	<?php endif; ?>

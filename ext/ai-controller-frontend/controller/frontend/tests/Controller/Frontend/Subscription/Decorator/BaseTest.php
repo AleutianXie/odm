@@ -20,11 +20,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	{
 		$this->context = \TestHelperFrontend::getContext();
 
-		$this->stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Subscription\Standard' )
+		$this->stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Subscription\Standard::class )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$this->object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Subscription\Decorator\Base' )
+		$this->object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Subscription\Decorator\Base::class )
 			->setConstructorArgs( [$this->stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -38,11 +38,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testConstructException()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Iface' )->getMock();
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Iface::class )->getMock();
 
-		$this->setExpectedException( '\Aimeos\MW\Common\Exception' );
+		$this->setExpectedException( \Aimeos\MW\Common\Exception::class );
 
-		$this->getMockBuilder( '\Aimeos\Controller\Frontend\Subscription\Decorator\Base' )
+		$this->getMockBuilder( \Aimeos\Controller\Frontend\Subscription\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -50,12 +50,12 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCall()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Subscription\Standard' )
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Subscription\Standard::class )
 			->disableOriginalConstructor()
 			->setMethods( ['invalid'] )
 			->getMock();
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Subscription\Decorator\Base' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Subscription\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 
@@ -67,73 +67,90 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCancel()
 	{
-		$item = \Aimeos\MShop\Factory::createManager( $this->context, 'subscription' )->createItem();
+		$item = \Aimeos\MShop::create( $this->context, 'subscription' )->createItem();
 
-		$this->stub->expects( $this->once() )->method( 'cancel' )->will( $this->returnValue( $item ) );
+		$this->stub->expects( $this->once() )->method( 'cancel' )
+			->will( $this->returnValue( $item ) );
 
-		$this->assertInstanceOf( '\Aimeos\MShop\Subscription\Item\Iface', $this->object->cancel( -1, '' ) );
+		$this->assertInstanceOf( \Aimeos\MShop\Subscription\Item\Iface::class, $this->object->cancel( -1 ) );
 	}
 
 
-	public function testCreateFilter()
+	public function testCompare()
 	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'subscription' )->createSearch();
-
-		$this->stub->expects( $this->once() )->method( 'createFilter' )->will( $this->returnValue( $search ) );
-
-		$this->assertInstanceOf( '\Aimeos\MW\Criteria\Iface', $this->object->createFilter() );
+		$this->assertSame( $this->object, $this->object->compare( '==', 'supplier.status', 1 ) );
 	}
 
 
-	public function testGetItem()
+	public function testGet()
 	{
-		$item = \Aimeos\MShop\Factory::createManager( $this->context, 'subscription' )->createItem();
+		$item = \Aimeos\MShop::create( $this->context, 'subscription' )->createItem();
 
-		$this->stub->expects( $this->once() )->method( 'getItem' )->will( $this->returnValue( $item ) );
+		$this->stub->expects( $this->once() )->method( 'get' )
+			->will( $this->returnValue( $item ) );
 
-		$this->assertInstanceOf( '\Aimeos\MShop\Subscription\Item\Iface', $this->object->getItem( -1 ) );
-	}
-
-
-	public function testSaveItem()
-	{
-		$item = \Aimeos\MShop\Factory::createManager( $this->context, 'subscription' )->createItem();
-
-		$this->stub->expects( $this->once() )->method( 'saveItem' );
-
-		$this->object->saveItem( $item );
-	}
-
-
-	public function testSearchItems()
-	{
-		$search = $this->getMockBuilder( '\Aimeos\MW\Criteria\Iface' )->getMock();
-
-		$this->stub->expects( $this->once() )->method( 'searchItems' )->will( $this->returnValue( [] ) );
-
-		$this->assertEquals( [], $this->object->searchItems( $search ) );
+		$this->assertInstanceOf( \Aimeos\MShop\Subscription\Item\Iface::class, $this->object->get( -1 ) );
 	}
 
 
 	public function testGetIntervals()
 	{
-		$this->stub->expects( $this->once() )->method( 'getIntervals' )->will( $this->returnValue( [] ) );
+		$this->stub->expects( $this->once() )->method( 'getIntervals' )
+			->will( $this->returnValue( [] ) );
 
 		$this->assertEquals( [], $this->object->getIntervals() );
 	}
 
 
+	public function testParse()
+	{
+		$this->assertSame( $this->object, $this->object->parse( [] ) );
+	}
+
+
+	public function testSave()
+	{
+		$item = \Aimeos\MShop::create( $this->context, 'subscription' )->createItem();
+
+		$this->stub->expects( $this->once() )->method( 'save' )
+			->will( $this->returnValue( $item ) );
+
+		$this->assertInstanceOf( \Aimeos\MShop\Subscription\Item\Iface::class, $this->object->save( $item ) );
+	}
+
+
+	public function testSearch()
+	{
+		$item = \Aimeos\MShop::create( $this->context, 'subscription' )->createItem();
+
+		$this->stub->expects( $this->once() )->method( 'search' )
+			->will( $this->returnValue( [$item] ) );
+
+		$this->assertEquals( [$item], $this->object->search() );
+	}
+
+
+	public function testSlice()
+	{
+		$this->assertSame( $this->object, $this->object->slice( 0, 100 ) );
+	}
+
+
+	public function testSort()
+	{
+		$this->assertSame( $this->object, $this->object->sort( 'interval' ) );
+	}
+
+
 	public function testGetController()
 	{
-		$result = $this->access( 'getController' )->invokeArgs( $this->object, [] );
-
-		$this->assertSame( $this->stub, $result );
+		$this->assertSame( $this->stub, $this->access( 'getController' )->invokeArgs( $this->object, [] ) );
 	}
 
 
 	protected function access( $name )
 	{
-		$class = new \ReflectionClass( '\Aimeos\Controller\Frontend\Subscription\Decorator\Base' );
+		$class = new \ReflectionClass( \Aimeos\Controller\Frontend\Subscription\Decorator\Base::class );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 

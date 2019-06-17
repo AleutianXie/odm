@@ -73,9 +73,25 @@ class Standard
 		 * @see controller/common/product/import/csv/processor/price/listtypes
 		 * @see controller/common/product/import/csv/processor/text/listtypes
 		 */
-		$default = array( 'default', 'suggestion' );
 		$key = 'controller/common/product/import/csv/processor/product/listtypes';
-		$this->listTypes = $context->getConfig()->get( $key, $default );
+		$this->listTypes = $context->getConfig()->get( $key, ['default', 'suggestion'] );
+
+		if( $this->listTypes === null )
+		{
+			$this->listTypes = [];
+			$manager = \Aimeos\MShop::create( $context, 'product/lists/type' );
+
+			$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+			$search->setConditions( $search->compare( '==', 'product.lists.type.domain', 'product' ) );
+
+			foreach( $manager->searchItems( $search ) as $item ) {
+				$this->listTypes[$item->getCode()] = $item->getCode();
+			}
+		}
+		else
+		{
+			$this->listTypes = array_flip( $this->listTypes );
+		}
 
 		$this->cache = $this->getCache( 'product' );
 	}
@@ -86,12 +102,13 @@ class Standard
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $product Product item with associated items
 	 * @param array $data List of CSV fields with position as key and data as value
-	 * @return array List of data which hasn't been imported
+	 * @return array List of data which has not been imported
 	 */
 	public function process( \Aimeos\MShop\Product\Item\Iface $product, array $data )
 	{
 		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists' );
+		$logger = $context->getLogger();
+		$manager = \Aimeos\MShop::create( $context, 'product/lists' );
 		$separator = $context->getConfig()->get( 'controller/common/product/import/csv/separator', "\n" );
 
 		$listItems = $product->getListItems( 'product', null, null, false );
@@ -103,27 +120,25 @@ class Standard
 				continue;
 			}
 
-			$type = trim( isset( $list['product.lists.type'] ) ? $list['product.lists.type'] : 'default' );
+			$listtype = $this->getValue( $list, 'product.lists.type', 'default' );
 
-			foreach( explode( $separator, trim( $list['product.code'] ) ) as $code )
+			foreach( explode( $separator, $this->getValue( $list, 'product.code', '' ) ) as $code )
 			{
 				$code = trim( $code );
 
 				if( ( $prodid = $this->cache->get( $code ) ) === null )
 				{
 					$msg = 'No product for code "%1$s" available when importing product with code "%2$s"';
-					throw new \Aimeos\Controller\Jobs\Exception( sprintf( $msg, $code, $product->getCode() ) );
+					$logger->log( sprintf( $msg, $code, $product->getCode() ), \Aimeos\MW\Logger\Base::WARN );
 				}
 
-				if( ( $listItem = $product->getListItem( 'product', $type, $prodid ) ) === null ) {
-					$listItem = $manager->createItem( $type, 'product' );
+				if( ( $listItem = $product->getListItem( 'product', $listtype, $prodid ) ) === null ) {
+					$listItem = $manager->createItem()->setType( $listtype );
 				} else {
 					unset( $listItems[$listItem->getId()] );
 				}
 
-				$listItem->fromArray( $list );
-				$listItem->setRefId( $prodid );
-
+				$listItem = $listItem->fromArray( $list )->setRefId( $prodid );
 				$product->addListItem( 'product', $listItem );
 			}
 		}
@@ -142,10 +157,14 @@ class Standard
 	 */
 	protected function checkEntry( array $list )
 	{
-		if( !isset( $list['product.code'] ) || trim( $list['product.code'] ) === '' || isset( $list['product.lists.type'] )
-			&& $this->listTypes !== null && !in_array( trim( $list['product.lists.type'] ), (array) $this->listTypes )
-		) {
+		if( $this->getValue( $list, 'product.code' ) === null ) {
 			return false;
+		}
+
+		if( ( $type = $this->getValue( $list, 'product.lists.type' ) ) && !isset( $this->listTypes[$type] ) )
+		{
+			$msg = sprintf( 'Invalid type "%1$s" (%2$s)', $type, 'product list' );
+			throw new \Aimeos\Controller\Common\Exception( $msg );
 		}
 
 		return true;

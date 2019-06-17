@@ -284,18 +284,6 @@ class Standard
 
 
 	/**
-	 * Returns the selection articles including attributes for the given product item
-	 *
-	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item including reference product articles
-	 * @return \Aimeos\MShop\Product\Item\Iface[] Associative list of article items with IDs as keys and items as values
-	 */
-	protected function getArticleItems( \Aimeos\MShop\Product\Item\Iface $item )
-	{
-		return $item->getRefItems( 'product', null, 'default', false );
-	}
-
-
-	/**
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
@@ -304,12 +292,12 @@ class Standard
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
 		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'product' );
-		$listManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists' );
+		$manager = \Aimeos\MShop::create( $context, 'product' );
+		$listManager = \Aimeos\MShop::create( $context, 'product/lists' );
 
-		$articles = $this->getArticleItems( $item );
-		$prodItem = $manager->createItem( 'default', 'product' );
-		$listItem = $listManager->createItem( 'default', 'product' );
+		$prodItem = $manager->createItem()->setType( 'default' );
+		$listItem = $listManager->createItem()->setType( 'default' );
+		$articles = $item->getRefItems( 'product', null, 'default', false );
 		$listItems = $item->getListItems( 'product', 'default', null, false );
 
 		foreach( $data as $idx => $entry )
@@ -324,10 +312,10 @@ class Standard
 				$refItem = clone $prodItem;
 			}
 
-			$litem->fromArray( $entry );
+			$litem->fromArray( $entry, true );
 			$litem->setPosition( $idx );
 
-			$refItem->fromArray( $entry );
+			$refItem->fromArray( $entry, true );
 
 			if( isset( $entry['attr'] ) ) {
 				$refItem = $this->fromArrayAttributes( $refItem, $entry['attr'] );
@@ -350,9 +338,9 @@ class Standard
 	 */
 	protected function fromArrayAttributes( \Aimeos\MShop\Product\Item\Iface $refItem, array $entry )
 	{
-		$listManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/lists' );
+		$listManager = \Aimeos\MShop::create( $this->getContext(), 'product/lists' );
 
-		$listItem = $listManager->createItem( 'variant', 'attribute' );
+		$listItem = $listManager->createItem()->setType( 'variant' );
 		$litems = $refItem->getListItems( 'attribute', 'variant', null, false );
 
 		foreach( $entry as $pos => $attr )
@@ -365,7 +353,7 @@ class Standard
 				$litem = clone $listItem;
 			}
 
-			$litem->fromArray( $attr );
+			$litem->fromArray( $attr, true );
 			$litem->setPosition( $pos );
 
 			$refItem->addListItem( 'attribute', $litem, $litem->getRefItem() );
@@ -458,7 +446,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/selection/template-item';
-		$default = 'product/item-selection-standard.php';
+		$default = 'product/item-selection-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

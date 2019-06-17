@@ -20,11 +20,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	{
 		$this->context = \TestHelperFrontend::getContext();
 
-		$this->stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Product\Standard' )
+		$this->stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Product\Standard::class )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$this->object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Product\Decorator\Base' )
+		$this->object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Product\Decorator\Base::class )
 			->setConstructorArgs( [$this->stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -38,11 +38,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testConstructException()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Iface' )->getMock();
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Iface::class )->getMock();
 
-		$this->setExpectedException( '\Aimeos\MW\Common\Exception' );
+		$this->setExpectedException( \Aimeos\MW\Common\Exception::class );
 
-		$this->getMockBuilder( '\Aimeos\Controller\Frontend\Product\Decorator\Base' )
+		$this->getMockBuilder( \Aimeos\Controller\Frontend\Product\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -50,12 +50,12 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCall()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Product\Standard' )
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Product\Standard::class )
 			->disableOriginalConstructor()
 			->setMethods( ['invalid'] )
 			->getMock();
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Product\Decorator\Base' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Product\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 
@@ -65,100 +65,138 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	}
 
 
-	public function testAddFilterAttribute()
-	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'index' )->createSearch();
-
-		$this->stub->expects( $this->once() )->method( 'addFilterAttribute' )
-			->will( $this->returnArgument( 0 ) );
-
-		$this->assertInstanceOf( '\Aimeos\MW\Criteria\Iface', $this->object->addFilterAttribute( $search, [], [], [] ) );
-	}
-
-
-	public function testAddFilterCategory()
-	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'index' )->createSearch();
-
-		$this->stub->expects( $this->once() )->method( 'addFilterCategory' )
-			->will( $this->returnArgument( 0 ) );
-
-		$this->assertInstanceOf( '\Aimeos\MW\Criteria\Iface', $this->object->addFilterCategory( $search, -1 ) );
-	}
-
-
-	public function testAddFilterSupplier()
-	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'index' )->createSearch();
-
-		$this->stub->expects( $this->once() )->method( 'addFilterSupplier' )
-			->will( $this->returnArgument( 0 ) );
-
-		$this->assertInstanceOf( '\Aimeos\MW\Criteria\Iface', $this->object->addFilterSupplier( $search, [] ) );
-	}
-
-
-	public function testAddFilterText()
-	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'index' )->createSearch();
-
-		$this->stub->expects( $this->once() )->method( 'addFilterText' )
-			->will( $this->returnArgument( 0 ) );
-
-		$this->assertInstanceOf( '\Aimeos\MW\Criteria\Iface', $this->object->addFilterText( $search, 'test' ) );
-	}
-
-
 	public function testAggregate()
 	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'index' )->createSearch();
-
 		$this->stub->expects( $this->once() )->method( 'aggregate' )
 			->will( $this->returnValue( [] ) );
 
-		$this->assertEquals( [], $this->object->aggregate( $search, 'test' ) );
+		$this->assertEquals( [], $this->object->aggregate( 'test' ) );
 	}
 
 
-	public function testCreateFilter()
+	public function testAllOf()
 	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'index' )->createSearch();
-
-		$this->stub->expects( $this->once() )->method( 'createFilter' )
-			->will( $this->returnValue( $search ) );
-
-		$this->assertInstanceOf( '\Aimeos\MW\Criteria\Iface', $this->object->createFilter() );
+		$this->assertSame( $this->object, $this->object->allOf( [1, 2] ) );
 	}
 
 
-	public function testGetItem()
+	public function testCategory()
 	{
-		$prodItem = \Aimeos\MShop\Factory::createManager( $this->context, 'index' )->createItem();
-
-		$this->stub->expects( $this->once() )->method( 'getItem' )
-			->will( $this->returnValue( $prodItem ) );
-
-		$this->assertInstanceOf( '\Aimeos\MShop\Product\Item\Iface', $this->object->getItem( -1 ) );
+		$level = \Aimeos\MW\Tree\Manager\Base::LEVEL_TREE;
+		$this->assertSame( $this->object, $this->object->category( 1, 'default', $level ) );
 	}
 
 
-	public function testGetItems()
+	public function testCompare()
 	{
-		$this->stub->expects( $this->once() )->method( 'getItems' )
-			->will( $this->returnValue( [] ) );
-
-		$this->assertEquals( [], $this->object->getItems( [-1] ) );
+		$this->assertSame( $this->object, $this->object->compare( '==', 'product.code', 'test' ) );
 	}
 
 
-	public function testSearchItems()
+	public function testFind()
 	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'index' )->createSearch();
+		$item = \Aimeos\MShop::create( $this->context, 'product' )->createItem();
+		$expected = \Aimeos\MShop\Product\Item\Iface::class;
 
-		$this->stub->expects( $this->once() )->method( 'searchItems' )
-			->will( $this->returnValue( [] ) );
+		$this->stub->expects( $this->once() )->method( 'find' )
+			->will( $this->returnValue( $item ) );
 
-		$this->assertEquals( [], $this->object->searchItems( $search ) );
+		$this->assertInstanceOf( $expected, $this->object->find( 'test', ['text'] ) );
+	}
+
+
+	public function testGet()
+	{
+		$item = \Aimeos\MShop::create( $this->context, 'product' )->createItem();
+		$expected = \Aimeos\MShop\Product\Item\Iface::class;
+
+		$this->stub->expects( $this->once() )->method( 'get' )
+			->will( $this->returnValue( $item ) );
+
+		$this->assertInstanceOf( $expected, $this->object->get( 1, ['text'] ) );
+	}
+
+
+	public function testHas()
+	{
+		$this->assertSame( $this->object, $this->object->has( 'attribute', 'default', -1 ) );
+	}
+
+
+	public function testOneOf()
+	{
+		$this->assertSame( $this->object, $this->object->oneOf( [1, 2] ) );
+	}
+
+
+	public function testParse()
+	{
+		$this->assertSame( $this->object, $this->object->parse( [] ) );
+	}
+
+
+	public function testProduct()
+	{
+		$this->assertSame( $this->object, $this->object->product( [1, 3] ) );
+	}
+
+
+	public function testProperty()
+	{
+		$this->assertSame( $this->object, $this->object->property( 'test', 'value' ) );
+	}
+
+
+	public function testResolve()
+	{
+		$item = \Aimeos\MShop::create( $this->context, 'product' )->createItem();
+
+		$this->stub->expects( $this->once() )->method( 'resolve' )
+			->will( $this->returnValue( $item ) );
+
+		$this->assertEquals( $item, $this->object->resolve( 'test' ) );
+	}
+
+
+	public function testSearch()
+	{
+		$total = 0;
+		$item = \Aimeos\MShop::create( $this->context, 'product' )->createItem();
+
+		$this->stub->expects( $this->once() )->method( 'search' )
+			->will( $this->returnValue( [$item] ) );
+
+		$this->assertEquals( [$item], $this->object->search( $total ) );
+	}
+
+
+	public function testSlice()
+	{
+		$this->assertSame( $this->object, $this->object->slice( 0, 100 ) );
+	}
+
+
+	public function testSort()
+	{
+		$this->assertSame( $this->object, $this->object->sort( 'code' ) );
+	}
+
+
+	public function testSupplier()
+	{
+		$this->assertSame( $this->object, $this->object->supplier( [1], 'default' ) );
+	}
+
+
+	public function testText()
+	{
+		$this->assertSame( $this->object, $this->object->text( 'test' ) );
+	}
+
+
+	public function testUses()
+	{
+		$this->assertSame( $this->object, $this->object->uses( ['text'] ) );
 	}
 
 
@@ -172,7 +210,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	protected function access( $name )
 	{
-		$class = new \ReflectionClass( '\Aimeos\Controller\Frontend\Product\Decorator\Base' );
+		$class = new \ReflectionClass( \Aimeos\Controller\Frontend\Product\Decorator\Base::class );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 

@@ -76,7 +76,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'client/jsonapi/locale/standard/template';
-		$default = 'locale/standard.php';
+		$default = 'locale/standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -111,9 +111,7 @@ class Standard
 	 */
 	protected function getItem( \Aimeos\MW\View\Iface $view, ServerRequestInterface $request, ResponseInterface $response )
 	{
-		$cntl = \Aimeos\Controller\Frontend\Factory::createController( $this->getContext(), 'locale' );
-
-		$view->items = $cntl->getItem( $view->param( 'id' ) );
+		$view->items = \Aimeos\Controller\Frontend::create( $this->getContext(), 'locale' )->get( $view->param( 'id' ) );
 		$view->total = 1;
 
 		return $response;
@@ -132,12 +130,10 @@ class Standard
 	{
 		$total = 0;
 
-		$cntl = \Aimeos\Controller\Frontend\Factory::createController( $this->getContext(), 'locale' );
-
-		$filter = $cntl->createFilter();
-		$filter = $this->initCriteriaConditions( $filter, $view->param() );
-
-		$view->items = $cntl->searchItems( $filter, [], $total );
+		$view->items = \Aimeos\Controller\Frontend::create( $this->getContext(), 'locale' )
+			->parse( $view->param( 'filter', [] ) )->sort( $view->param( 'sort', 'position' ) )
+			->slice( $view->param( 'page/offset', 0 ), $view->param( 'page/limit', 25 ) )
+			->search( $total );
 		$view->total = $total;
 
 		return $response;

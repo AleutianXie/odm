@@ -48,7 +48,7 @@ $delConfig = $this->config( 'admin/jqadm/url/delete/config', [] );
  * @since 2017.07
  * @category Developer
  */
-$default = ['service.status', 'service.typeid', 'service.label', 'service.provider'];
+$default = ['service.status', 'service.type', 'service.label', 'service.provider'];
 $default = $this->config( 'admin/jqadm/service/fields', $default );
 $fields = $this->session( 'aimeos/admin/jqadm/service/fields', $default );
 
@@ -56,14 +56,14 @@ $searchParams = $params = $this->get( 'pageParams', [] );
 $searchParams['page']['start'] = 0;
 
 $typeList = [];
-foreach( $this->get( 'itemTypes', [] ) as $id => $typeItem ) {
-	$typeList[$id] = $typeItem->getCode();
+foreach( $this->get( 'itemTypes', [] ) as $typeItem ) {
+	$typeList[$typeItem->getCode()] = $typeItem->getCode();
 }
 
 $columnList = [
 	'service.id' => $this->translate( 'admin', 'ID' ),
 	'service.status' => $this->translate( 'admin', 'Status' ),
-	'service.typeid' => $this->translate( 'admin', 'Type' ),
+	'service.type' => $this->translate( 'admin', 'Type' ),
 	'service.position' => $this->translate( 'admin', 'Position' ),
 	'service.code' => $this->translate( 'admin', 'Code' ),
 	'service.label' => $this->translate( 'admin', 'Label' ),
@@ -87,7 +87,7 @@ $columnList = [
 	</span>
 
 	<?= $this->partial(
-		$this->config( 'admin/jqadm/partial/navsearch', 'common/partials/navsearch-standard.php' ), [
+		$this->config( 'admin/jqadm/partial/navsearch', 'common/partials/navsearch-standard' ), [
 			'filter' => $this->session( 'aimeos/admin/jqadm/service/filter', [] ),
 			'filterAttributes' => $this->get( 'filterAttributes', [] ),
 			'filterOperators' => $this->get( 'filterOperators', [] ),
@@ -98,7 +98,7 @@ $columnList = [
 
 
 <?= $this->partial(
-		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard.php' ),
+		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard' ),
 		['pageParams' => $params, 'pos' => 'top', 'total' => $this->get( 'total' ),
 		'page' => $this->session( 'aimeos/admin/jqadm/service/page', [] )]
 	);
@@ -111,7 +111,7 @@ $columnList = [
 		<thead class="list-header">
 			<tr>
 				<?= $this->partial(
-						$this->config( 'admin/jqadm/partial/listhead', 'common/partials/listhead-standard.php' ),
+						$this->config( 'admin/jqadm/partial/listhead', 'common/partials/listhead-standard' ),
 						['fields' => $fields, 'params' => $params, 'data' => $columnList, 'sort' => $this->session( 'aimeos/admin/jqadm/service/sort' )]
 					);
 				?>
@@ -124,7 +124,7 @@ $columnList = [
 					</a>
 
 					<?= $this->partial(
-							$this->config( 'admin/jqadm/partial/columns', 'common/partials/columns-standard.php' ),
+							$this->config( 'admin/jqadm/partial/columns', 'common/partials/columns-standard' ),
 							['fields' => $fields, 'data' => $columnList]
 						);
 					?>
@@ -134,7 +134,7 @@ $columnList = [
 		<tbody>
 
 			<?= $this->partial(
-				$this->config( 'admin/jqadm/partial/listsearch', 'common/partials/listsearch-standard.php' ), [
+				$this->config( 'admin/jqadm/partial/listsearch', 'common/partials/listsearch-standard' ), [
 					'fields' => $fields, 'filter' => $this->session( 'aimeos/admin/jqadm/service/filter', [] ),
 					'data' => [
 						'service.id' => ['op' => '=='],
@@ -144,7 +144,7 @@ $columnList = [
 							'-1' => $this->translate( 'mshop/code', 'status:-1' ),
 							'-2' => $this->translate( 'mshop/code', 'status:-2' ),
 						]],
-						'service.typeid' => ['op' => '==', 'type' => 'select', 'val' => $typeList],
+						'service.type' => ['op' => '==', 'type' => 'select', 'val' => $typeList],
 						'service.position' => ['op' => '>=', 'type' => 'number'],
 						'service.code' => [],
 						'service.label' => [],
@@ -168,7 +168,7 @@ $columnList = [
 					<?php if( in_array( 'service.status', $fields ) ) : ?>
 						<td class="service-status"><a class="items-field" href="<?= $url; ?>"><div class="fa status-<?= $enc->attr( $item->getStatus() ); ?>"></div></a></td>
 					<?php endif; ?>
-					<?php if( in_array( 'service.typeid', $fields ) ) : ?>
+					<?php if( in_array( 'service.type', $fields ) ) : ?>
 						<td class="service-type"><a class="items-field" href="<?= $url; ?>"><?= $enc->html( $item->getType() ); ?></a></td>
 					<?php endif; ?>
 					<?php if( in_array( 'service.position', $fields ) ) : ?>
@@ -233,7 +233,7 @@ $columnList = [
 </form>
 
 <?= $this->partial(
-		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard.php' ),
+		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard' ),
 		['pageParams' => $params, 'pos' => 'bottom', 'total' => $this->get( 'total' ),
 		'page' => $this->session( 'aimeos/admin/jqadm/service/page', [] )]
 	);
@@ -241,4 +241,4 @@ $columnList = [
 
 <?php $this->block()->stop(); ?>
 
-<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard.php' ) ); ?>
+<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard' ) ); ?>

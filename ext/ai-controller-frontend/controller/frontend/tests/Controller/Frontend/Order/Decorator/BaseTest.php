@@ -20,11 +20,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	{
 		$this->context = \TestHelperFrontend::getContext();
 
-		$this->stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Order\Standard' )
+		$this->stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Order\Standard::class )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$this->object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Order\Decorator\Base' )
+		$this->object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Order\Decorator\Base::class )
 			->setConstructorArgs( [$this->stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -38,11 +38,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testConstructException()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Iface' )->getMock();
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Iface::class )->getMock();
 
-		$this->setExpectedException( '\Aimeos\MW\Common\Exception' );
+		$this->setExpectedException( \Aimeos\MW\Common\Exception::class );
 
-		$this->getMockBuilder( '\Aimeos\Controller\Frontend\Order\Decorator\Base' )
+		$this->getMockBuilder( \Aimeos\Controller\Frontend\Order\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -50,12 +50,12 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCall()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Order\Standard' )
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Order\Standard::class )
 			->disableOriginalConstructor()
 			->setMethods( ['invalid'] )
 			->getMock();
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Order\Decorator\Base' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Order\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 
@@ -65,73 +65,77 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	}
 
 
-	public function testAddItem()
+	public function testAdd()
 	{
-		$item = \Aimeos\MShop\Factory::createManager( $this->context, 'order' )->createItem();
-
-		$this->stub->expects( $this->once() )->method( 'addItem' )->will( $this->returnValue( $item ) );
-
-		$this->assertInstanceOf( '\Aimeos\MShop\Order\Item\Iface', $this->object->addItem( -1, '' ) );
+		$this->stub->expects( $this->once() )->method( 'add' );
+		$this->assertSame( $this->object, $this->object->add( -1, [] ) );
 	}
 
 
-	public function testCreateFilter()
+	public function testCompare()
 	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'order' )->createSearch();
-
-		$this->stub->expects( $this->once() )->method( 'createFilter' )->will( $this->returnValue( $search ) );
-
-		$this->assertInstanceOf( '\Aimeos\MW\Criteria\Iface', $this->object->createFilter() );
+		$this->assertSame( $this->object, $this->object->compare( '==', 'order.type', 'test' ) );
 	}
 
 
-	public function testGetItem()
+	public function testGet()
 	{
-		$item = \Aimeos\MShop\Factory::createManager( $this->context, 'order' )->createItem();
+		$item = \Aimeos\MShop::create( $this->context, 'order' )->createItem();
+		$expected = \Aimeos\MShop\Order\Item\Iface::class;
 
-		$this->stub->expects( $this->once() )->method( 'getItem' )->will( $this->returnValue( $item ) );
+		$this->stub->expects( $this->once() )->method( 'get' )->will( $this->returnValue( $item ) );
 
-		$this->assertInstanceOf( '\Aimeos\MShop\Order\Item\Iface', $this->object->getItem( -1 ) );
+		$this->assertInstanceOf( $expected, $this->object->get( -1, false ) );
 	}
 
 
-	public function testSaveItem()
+	public function testParse()
 	{
-		$item = \Aimeos\MShop\Factory::createManager( $this->context, 'order' )->createItem();
-
-		$this->stub->expects( $this->once() )->method( 'saveItem' );
-
-		$this->object->saveItem( $item );
+		$this->assertSame( $this->object, $this->object->parse( [] ) );
 	}
 
 
-	public function testSearchItems()
+	public function testSave()
 	{
-		$search = $this->getMockBuilder( '\Aimeos\MW\Criteria\Iface' )->getMock();
+		$item = \Aimeos\MShop::create( $this->context, 'order' )->createItem();
+		$expected = \Aimeos\MShop\Order\Item\Iface::class;
 
-		$this->stub->expects( $this->once() )->method( 'searchItems' )->will( $this->returnValue( [] ) );
+		$this->stub->expects( $this->once() )->method( 'save' )->will( $this->returnArgument( 0 ) );
 
-		$this->assertEquals( [], $this->object->searchItems( $search ) );
+		$this->assertInstanceOf( $expected, $this->object->save( $item ) );
 	}
 
 
-	public function testUnblock()
+	public function testSearch()
 	{
-		$orderItem = \Aimeos\MShop\Factory::createManager( $this->context, 'order' )->createItem();
+		$total = 0;
+		$item = \Aimeos\MShop::create( $this->context, 'order' )->createItem();
 
-		$this->stub->expects( $this->once() )->method( 'unblock' );
+		$this->stub->expects( $this->once() )->method( 'search' )->will( $this->returnValue( [$item] ) );
 
-		$this->object->unblock( $orderItem );
+		$this->assertEquals( [$item], $this->object->search( $total ) );
 	}
 
 
-	public function testUpdate()
+	public function testSlice()
 	{
-		$orderItem = \Aimeos\MShop\Factory::createManager( $this->context, 'order' )->createItem();
+		$this->assertSame( $this->object, $this->object->slice( 0, 100 ) );
+	}
 
-		$this->stub->expects( $this->once() )->method( 'update' );
 
-		$this->object->update( $orderItem );
+	public function testSort()
+	{
+		$this->assertSame( $this->object, $this->object->sort( 'order.id' ) );
+	}
+
+
+	public function testStore()
+	{
+		$item = \Aimeos\MShop::create( $this->context, 'order' )->createItem();
+
+		$this->stub->expects( $this->once() )->method( 'store' )->will( $this->returnValue( $item ) );
+
+		$this->assertEquals( $item, $this->object->store() );
 	}
 
 
@@ -145,7 +149,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	protected function access( $name )
 	{
-		$class = new \ReflectionClass( '\Aimeos\Controller\Frontend\Order\Decorator\Base' );
+		$class = new \ReflectionClass( \Aimeos\Controller\Frontend\Order\Decorator\Base::class );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 

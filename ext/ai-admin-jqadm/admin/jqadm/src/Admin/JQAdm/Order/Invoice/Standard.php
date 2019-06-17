@@ -105,7 +105,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'order' );
+		$manager = \Aimeos\MShop::create( $context, 'order' );
 		$manager->begin();
 
 		try
@@ -280,7 +280,7 @@ class Standard
 	 */
 	protected function getOrderItems( \Aimeos\MShop\Order\Item\Base\Iface $order, array $params, &$total )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'order' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'order' );
 
 		$search = $manager->createSearch();
 		$search->setSortations( [$search->sort( '-', 'order.ctime' )] );
@@ -300,16 +300,15 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Order\Item\Base\Iface $order Order base item object
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Order\Item\Base\Iface $order, array $data )
 	{
 		$invoiceIds = $this->getValue( $data, 'order.id', [] );
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'order' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'order' );
 
-		$search = $manager->createSearch();
+		$search = $manager->createSearch()->setSlice( 0, count( $invoiceIds ) );
 		$search->setConditions( $search->compare( '==', 'order.id', $invoiceIds ) );
-		$search->setSlice( 0, 0x7fffffff );
 
 		$items = $manager->searchItems( $search );
 
@@ -402,7 +401,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/order/invoice/template-item';
-		$default = 'order/item-invoice-standard.php';
+		$default = 'order/item-invoice-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

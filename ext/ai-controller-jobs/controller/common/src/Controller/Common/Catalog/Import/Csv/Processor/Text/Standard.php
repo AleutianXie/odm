@@ -33,6 +33,7 @@ class Standard
 	 */
 
 	private $listTypes;
+	private $types;
 
 
 	/**
@@ -66,7 +67,35 @@ class Standard
 		 * @see controller/common/catalog/import/csv/processor/price/listtypes
 		 * @see controller/common/catalog/import/csv/processor/catalog/listtypes
 		 */
-		$this->listTypes = $context->getConfig()->get( 'controller/common/catalog/import/csv/processor/text/listtypes' );
+		$key = 'controller/common/catalog/import/csv/processor/text/listtypes';
+		$this->listTypes = $context->getConfig()->get( $key );
+
+		if( $this->listTypes === null )
+		{
+			$this->listTypes = [];
+			$manager = \Aimeos\MShop::create( $context, 'catalog/lists/type' );
+
+			$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+			$search->setConditions( $search->compare( '==', 'catalog.lists.type.domain', 'text' ) );
+
+			foreach( $manager->searchItems( $search ) as $item ) {
+				$this->listTypes[$item->getCode()] = $item->getCode();
+			}
+		}
+		else
+		{
+			$this->listTypes = array_flip( $this->listTypes );
+		}
+
+
+		$manager = \Aimeos\MShop::create( $context, 'text/type' );
+
+		$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+		$search->setConditions( $search->compare( '==', 'text.type.domain', 'catalog' ) );
+
+		foreach( $manager->searchItems( $search ) as $item ) {
+			$this->types[$item->getCode()] = $item->getCode();
+		}
 	}
 
 
@@ -79,8 +108,8 @@ class Standard
 	 */
 	public function process( \Aimeos\MShop\Catalog\Item\Iface $catalog, array $data )
 	{
-		$listManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'catalog/lists' );
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'text' );
+		$listManager = \Aimeos\MShop::create( $this->getContext(), 'catalog/lists' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'text' );
 
 		$listMap = [];
 		$map = $this->getMappedChunk( $data, $this->getMapping() );
@@ -89,7 +118,7 @@ class Standard
 		foreach( $listItems as $listItem )
 		{
 			if( ( $refItem = $listItem->getRefItem() ) !== null ) {
-				$listMap[ $refItem->getContent() ][ $refItem->getType() ][ $listItem->getType() ] = $listItem;
+				$listMap[$refItem->getContent()][$refItem->getType()][$listItem->getType()] = $listItem;
 			}
 		}
 
@@ -99,24 +128,26 @@ class Standard
 				continue;
 			}
 
-			$content = trim( $list['text.content'] );
-			$type = trim( isset( $list['text.type'] ) ? $list['text.type'] : 'name' );
-			$typecode = trim( isset( $list['catalog.lists.type'] ) ? $list['catalog.lists.type'] : 'default' );
+			$type = $this->getValue( $list, 'text.type', 'name' );
+			$listtype = $this->getValue( $list, 'catalog.lists.type', 'default' );
+			$content = $this->getValue( $list, 'text.content', '' );
 
-			if( isset( $listMap[$content][$type][$typecode] ) )
+			if( isset( $listMap[$content][$type][$listtype] ) )
 			{
-				$listItem = $listMap[$content][$type][$typecode];
+				$listItem = $listMap[$content][$type][$listtype];
 				$refItem = $listItem->getRefItem();
-				unset( $listItems[ $listItem->getId() ] );
+				unset( $listItems[$listItem->getId()] );
 			}
 			else
 			{
-				$listItem = $listManager->createItem( $typecode, 'text' );
-				$refItem = $manager->createItem( $type, 'catalog' );
+				$listItem = $listManager->createItem()->setType( $listtype );
+				$refItem = $manager->createItem()->setType( $type );
 			}
 
-			$refItem->fromArray( $this->addItemDefaults( $list ) );
-			$listItem->fromArray( $this->addListItemDefaults( $list, $pos ) );
+			$listItem = $listItem->setPosition( $pos )->fromArray( $list );
+
+			$label = mb_strcut( $this->getValue( $list, 'text.content', '' ), 0, 255 );
+			$refItem = $refItem->setLabel( $label )->fromArray( $list );
 
 			$catalog->addListItem( 'text', $listItem, $refItem );
 		}
@@ -128,26 +159,6 @@ class Standard
 
 
 	/**
-	 * Adds the text item default values and returns the resulting array
-	 *
-	 * @param array $list Associative list of domain item keys and their values, e.g. "text.status" => 1
-	 * @return array Given associative list enriched by default values if they were not already set
-	 */
-	protected function addItemDefaults( array $list )
-	{
-		if( !isset( $list['text.label'] ) ) {
-			$list['text.label'] = mb_strcut( trim( $list['text.content'] ), 0, 255 );
-		}
-
-		if( !isset( $list['text.status'] ) ) {
-			$list['text.status'] = 1;
-		}
-
-		return $list;
-	}
-
-
-	/**
 	 * Checks if an entry can be used for updating a media item
 	 *
 	 * @param array $list Associative list of key/value pairs from the mapping
@@ -155,10 +166,20 @@ class Standard
 	 */
 	protected function checkEntry( array $list )
 	{
-		if( !isset( $list['text.content'] ) || trim( $list['text.content'] ) === '' || isset( $list['catalog.lists.type'] )
-			&& $this->listTypes !== null && !in_array( trim( $list['catalog.lists.type'] ), (array) $this->listTypes )
-		) {
+		if( $this->getValue( $list, 'text.content' ) === null ) {
 			return false;
+		}
+
+		if( ( $type = $this->getValue( $list, 'catalog.lists.type' ) ) && !isset( $this->listTypes[$type] ) )
+		{
+			$msg = sprintf( 'Invalid type "%1$s" (%2$s)', $type, 'catalog list' );
+			throw new \Aimeos\Controller\Common\Exception( $msg );
+		}
+
+		if( ( $type = $this->getValue( $list, 'text.type' ) ) && !isset( $this->types[$type] ) )
+		{
+			$msg = sprintf( 'Invalid type "%1$s" (%2$s)', $type, 'text' );
+			throw new \Aimeos\Controller\Common\Exception( $msg );
 		}
 
 		return true;

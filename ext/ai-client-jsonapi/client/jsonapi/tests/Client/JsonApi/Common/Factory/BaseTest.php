@@ -23,7 +23,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 		$this->client = new \Aimeos\Client\JsonApi\Product\Standard( $this->context, $this->view, [], '' );
 
-		$this->object = $this->getMockBuilder( '\Aimeos\Client\JsonApi\Common\Factory\Base' )
+		$this->object = $this->getMockBuilder( \Aimeos\Client\JsonApi\Common\Factory\Base::class )
 			->getMockForAbstractClass();
 	}
 
@@ -63,7 +63,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$prefix = '\Aimeos\\Client\\JsonApi\\Common\\Decorator\\';
 		$params = [$this->client, ['Test'], $prefix, $this->context, $this->view, [], ''];
 
-		$this->setExpectedException( '\Aimeos\Client\JsonApi\Exception' );
+		$this->setExpectedException( \Aimeos\Client\JsonApi\Exception::class );
 		$this->access( 'addDecorators' )->invokeArgs( $this->object, $params );
 	}
 
@@ -73,7 +73,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$prefix = '\Aimeos\\Client\\JsonApi\\Common\\Decorator\\';
 		$params = [$this->client, [''], $prefix, $this->context, $this->view, [], ''];
 
-		$this->setExpectedException( '\Aimeos\Client\JsonApi\Exception' );
+		$this->setExpectedException( \Aimeos\Client\JsonApi\Exception::class );
 		$this->access( 'addDecorators' )->invokeArgs( $this->object, $params );
 	}
 
@@ -84,7 +84,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$class = '\Aimeos\\Client\\JsonApi\\Product\\Standard';
 		$params = [$class, $iface, $this->context, $this->view, [], ''];
 
-		$result = $this->access( 'createClientBase' )->invokeArgs( $this->object, $params );
+		$result = $this->access( 'createClient' )->invokeArgs( $this->object, $params );
 
 		$this->assertInstanceOf( '\Aimeos\\Client\\JsonApi\\Iface', $result );
 	}
@@ -96,7 +96,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$params = ['test', $iface, $this->context, $this->view, [], ''];
 
 		$this->object->injectClient( 'test', $this->client );
-		$result = $this->access( 'createClientBase' )->invokeArgs( $this->object, $params );
+		$result = $this->access( 'createClient' )->invokeArgs( $this->object, $params );
 
 		$this->assertSame( $this->client, $result );
 	}
@@ -107,8 +107,8 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$iface = '\Aimeos\\Client\\JsonApi\\Iface';
 		$params = ['invalid', $iface, $this->context, $this->view, [], ''];
 
-		$this->setExpectedException( '\Aimeos\Client\JsonApi\Exception' );
-		$this->access( 'createClientBase' )->invokeArgs( $this->object, $params );
+		$this->setExpectedException( \Aimeos\Client\JsonApi\Exception::class );
+		$this->access( 'createClient' )->invokeArgs( $this->object, $params );
 	}
 
 
@@ -118,14 +118,14 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$class = '\Aimeos\\Client\\JsonApi\\Product\\Standard';
 		$params = [$class, $iface, $this->context, $this->view, [], ''];
 
-		$this->setExpectedException( '\Aimeos\MW\Common\Exception' );
-		$this->access( 'createClientBase' )->invokeArgs( $this->object, $params );
+		$this->setExpectedException( \Aimeos\MW\Common\Exception::class );
+		$this->access( 'createClient' )->invokeArgs( $this->object, $params );
 	}
 
 
 	protected function access( $name )
 	{
-		$class = new \ReflectionClass( '\Aimeos\Client\JsonApi\Common\Factory\Base' );
+		$class = new \ReflectionClass( \Aimeos\Client\JsonApi\Common\Factory\Base::class );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 

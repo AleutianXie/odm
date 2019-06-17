@@ -135,7 +135,7 @@ if( isset( $this->detailProductItem ) )
 					 * @since 2017.01
 					 * @category Developer
 					 */
-					$this->config( 'client/html/catalog/detail/partials/image', 'catalog/detail/image-partial-standard.php' ),
+					$this->config( 'client/html/catalog/detail/partials/image', 'catalog/detail/image-partial-standard' ),
 					array(
 						'productItem' => $this->detailProductItem,
 						'params' => $this->get( 'detailParams', [] ),
@@ -167,20 +167,19 @@ if( isset( $this->detailProductItem ) )
 								data-prodid="<?= $enc->attr( $this->detailProductItem->getId() ); ?>"
 								data-prodcode="<?= $enc->attr( $this->detailProductItem->getCode() ); ?>">
 								<?= $this->partial(
-									$this->config( 'client/html/common/partials/price', 'common/partials/price-standard.php' ),
+									$this->config( 'client/html/common/partials/price', 'common/partials/price-standard' ),
 									array( 'prices' => $this->detailProductItem->getRefItems( 'price', null, 'default' ) )
 								); ?>
 							</div>
 
 							<?php if( $this->detailProductItem->getType() === 'select' ) : ?>
 								<?php foreach( $getProductList( $this->detailProductItem->getRefItems( 'product', 'default', 'default' ), $prodItems ) as $prodid => $product ) : ?>
-
 									<?php if( ( $prices = $product->getRefItems( 'price', null, 'default' ) ) !== [] ) : ?>
 										<div class="articleitem price"
 											data-prodid="<?= $enc->attr( $prodid ); ?>"
 											data-prodcode="<?= $enc->attr( $product->getCode() ); ?>">
 											<?= $this->partial(
-												$this->config( 'client/html/common/partials/price', 'common/partials/price-standard.php' ),
+												$this->config( 'client/html/common/partials/price', 'common/partials/price-standard' ),
 												array( 'prices' => $prices )
 											); ?>
 										</div>
@@ -224,7 +223,7 @@ if( isset( $this->detailProductItem ) )
 									 * @category Developer
 									 * @see client/html/common/partials/attribute
 									 */
-									$this->config( 'client/html/common/partials/selection', 'common/partials/selection-standard.php' ),
+									$this->config( 'client/html/common/partials/selection', 'common/partials/selection-standard' ),
 									array(
 										'products' => $this->detailProductItem->getRefItems( 'product', 'default', 'default' ),
 										'attributeItems' => $this->get( 'detailAttributeItems', [] ),
@@ -255,7 +254,7 @@ if( isset( $this->detailProductItem ) )
 								 * @category Developer
 								 * @see client/html/common/partials/selection
 								 */
-								$this->config( 'client/html/common/partials/attribute', 'common/partials/attribute-standard.php' ),
+								$this->config( 'client/html/common/partials/attribute', 'common/partials/attribute-standard' ),
 								array(
 									'productItem' => $this->detailProductItem,
 									'attributeItems' => $this->get( 'detailAttributeItems', [] ),
@@ -318,7 +317,7 @@ if( isset( $this->detailProductItem ) )
 					 * @since 2017.04
 					 * @category Developer
 					 */
-					$this->config( 'client/html/catalog/partials/actions', 'catalog/actions-partial-standard.php' ),
+					$this->config( 'client/html/catalog/partials/actions', 'catalog/actions-partial-standard' ),
 					array(
 						'productItem' => $this->detailProductItem,
 						'params' => $this->get( 'detailParams', [] )
@@ -339,7 +338,7 @@ if( isset( $this->detailProductItem ) )
 					 * @since 2017.04
 					 * @category Developer
 					 */
-					$this->config( 'client/html/catalog/partials/social', 'catalog/social-partial-standard.php' ),
+					$this->config( 'client/html/catalog/partials/social', 'catalog/social-partial-standard' ),
 					array( 'productItem' => $this->detailProductItem )
 				); ?>
 
@@ -351,11 +350,10 @@ if( isset( $this->detailProductItem ) )
 				<?php if( $this->detailProductItem->getType() === 'bundle'
 					&& ( $posItems = $this->detailProductItem->getRefItems( 'product', null, 'default' ) ) !== []
 					&& ( $products = $getProductList( $posItems, $prodItems ) ) !== [] ) : ?>
-
 					<section class="catalog-detail-bundle">
 						<h2 class="header"><?= $this->translate( 'client', 'Bundled products' ); ?></h2>
 						<?= $this->partial(
-							$this->config( 'client/html/common/partials/products', 'common/partials/products-standard.php' ),
+							$this->config( 'client/html/common/partials/products', 'common/partials/products-standard' ),
 							array( 'products' => $products, 'itemprop' => 'isRelatedTo' )
 						); ?>
 					</section>
@@ -391,7 +389,7 @@ if( isset( $this->detailProductItem ) )
 														<?php foreach( $attrItem->getListItems( 'media', 'icon' ) as $listItem ) : ?>
 															<?php if( ( $item = $listItem->getRefItem() ) !== null ) : ?>
 																<?= $this->partial(
-																	$this->config( 'client/html/common/partials/media', 'common/partials/media-standard.php' ),
+																	$this->config( 'client/html/common/partials/media', 'common/partials/media-standard' ),
 																	array( 'item' => $item, 'boxAttributes' => array( 'class' => 'media-item' ) )
 																); ?>
 															<?php endif; ?>
@@ -425,7 +423,7 @@ if( isset( $this->detailProductItem ) )
 															<?php foreach( $attrItem->getListItems( 'media', 'icon' ) as $listItem ) : ?>
 																<?php if( ( $item = $listItem->getRefItem() ) !== null ) : ?>
 																	<?= $this->partial(
-																		$this->config( 'client/html/common/partials/media', 'common/partials/media-standard.php' ),
+																		$this->config( 'client/html/common/partials/media', 'common/partials/media-standard' ),
 																		array( 'item' => $item, 'boxAttributes' => array( 'class' => 'media-item' ) )
 																	); ?>
 																<?php endif; ?>
@@ -479,7 +477,7 @@ if( isset( $this->detailProductItem ) )
 					<?php endif; ?>
 
 					<?php $mediaList = $this->get( 'detailMediaItems', [] ); ?>
-					<?php if( ( $mediaItems = $this->detailProductItem->getRefItems( 'media', null, 'download' ) ) !== [] ) : ?>
+					<?php if( ( $mediaItems = $this->detailProductItem->getRefItems( 'media', 'download' ) ) !== [] ) : ?>
 						<div class="additional-box">
 							<h2 class="header downloads"><?= $enc->html( $this->translate( 'client', 'Downloads' ), $enc::TRUST ); ?></h2>
 							<ul class="content downloads">
@@ -504,11 +502,10 @@ if( isset( $this->detailProductItem ) )
 
 				<?php if( ( $posItems = $this->detailProductItem->getRefItems( 'product', null, 'suggestion' ) ) !== []
 					&& ( $products = $getProductList( $posItems, $prodItems ) ) !== [] ) : ?>
-
 					<section class="catalog-detail-suggest">
 						<h2 class="header"><?= $this->translate( 'client', 'Suggested products' ); ?></h2>
 						<?= $this->partial(
-							$this->config( 'client/html/common/partials/products', 'common/partials/products-standard.php' ),
+							$this->config( 'client/html/common/partials/products', 'common/partials/products-standard' ),
 							array( 'products' => $products, 'itemprop' => 'isRelatedTo' )
 						); ?>
 					</section>
@@ -518,11 +515,10 @@ if( isset( $this->detailProductItem ) )
 
 				<?php if( ( $posItems = $this->detailProductItem->getRefItems( 'product', null, 'bought-together' ) ) !== []
 					&& ( $products = $getProductList( $posItems, $prodItems ) ) !== [] ) : ?>
-
 					<section class="catalog-detail-bought">
 						<h2 class="header"><?= $this->translate( 'client', 'Other customers also bought' ); ?></h2>
 						<?= $this->partial(
-							$this->config( 'client/html/common/partials/products', 'common/partials/products-standard.php' ),
+							$this->config( 'client/html/common/partials/products', 'common/partials/products-standard' ),
 							array( 'products' => $products, 'itemprop' => 'isRelatedTo' )
 						); ?>
 					</section>

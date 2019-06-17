@@ -71,7 +71,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'client/jsonapi/catalog/standard/template';
-		$default = 'catalog/standard.php';
+		$default = 'catalog/standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -107,13 +107,8 @@ class Standard
 	protected function getItem( \Aimeos\MW\View\Iface $view, ServerRequestInterface $request, ResponseInterface $response )
 	{
 		$map = [];
-		$catId = $view->param( 'id' );
 		$ref = $view->param( 'include', [] );
 		$level = \Aimeos\MW\Tree\Manager\Base::LEVEL_ONE;
-
-		if( $catId == '' ) {
-			$catId = null;
-		}
 
 		if( is_string( $ref ) ) {
 			$ref = explode( ',', $ref );
@@ -123,13 +118,9 @@ class Standard
 			$level = \Aimeos\MW\Tree\Manager\Base::LEVEL_LIST;
 		}
 
-		$context = $this->getContext();
-		$cntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'catalog' );
-
-		$filter = $cntl->createFilter();
-		$filter = $this->initCriteria( $filter, $view->param() );
-
-		$view->item = $cntl->getTree( $catId, $ref, $level, $filter );
+		$view->item = \Aimeos\Controller\Frontend::create( $this->getContext(), 'catalog' )
+			->root( $view->param( 'id' ) )->parse( (array) $view->param( 'filter', [] ) )
+			->uses( $ref )->getTree( $level );
 
 		return $response;
 	}

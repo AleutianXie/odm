@@ -137,7 +137,7 @@ class Standard
 			 * @see client/html/catalog/stage/standard/template-header
 			 */
 			$tplconf = 'client/html/catalog/stage/standard/template-body';
-			$default = 'catalog/stage/body-standard.php';
+			$default = 'catalog/stage/body-standard';
 
 			try
 			{
@@ -226,7 +226,7 @@ class Standard
 			 * @see client/html/catalog/stage/standard/template-body
 			 */
 			$tplconf = 'client/html/catalog/stage/standard/template-header';
-			$default = 'catalog/stage/header-standard.php';
+			$default = 'catalog/stage/header-standard';
 
 			try
 			{
@@ -392,7 +392,7 @@ class Standard
 	 */
 	protected function getClientParams( array $params, array $prefixes = array( 'f', 'l', 'd', 'a' ) )
 	{
-		if( isset( $params['d_prodid'] ) )
+		if( isset( $params['d_prodid'] ) || isset( $params['d_name'] ) )
 		{
 			$context = $this->getContext();
 			$site = $context->getLocale()->getSite()->getCode();
@@ -436,16 +436,14 @@ class Standard
 
 		if( $catid != '' )
 		{
-			$controller = \Aimeos\Controller\Frontend\Factory::createController( $context, 'catalog' );
-
-			$default = array( 'attribute', 'media', 'text' );
+			$controller = \Aimeos\Controller\Frontend::create( $context, 'catalog' );
 
 			/** client/html/catalog/domains
 			 * A list of domain names whose items should be available in the catalog view templates
 			 *
 			 * @see client/html/catalog/stage/domains
 			 */
-			$domains = $config->get( 'client/html/catalog/domains', $default );
+			$domains = $config->get( 'client/html/catalog/domains', ['attribute', 'media', 'text'] );
 
 			/** client/html/catalog/stage/standard/domains
 			 * A list of domain names whose items should be available in the catalog stage view template
@@ -469,7 +467,8 @@ class Standard
 			 * @see client/html/catalog/lists/domains
 			 */
 			$domains = $config->get( 'client/html/catalog/stage/standard/domains', $domains );
-			$stageCatPath = $controller->getPath( $catid, $domains );
+
+			$stageCatPath = $controller->uses( $domains )->getPath( $catid );
 
 			if( ( $categoryItem = end( $stageCatPath ) ) !== false ) {
 				$view->stageCurrentCatItem = $categoryItem;

@@ -106,7 +106,7 @@ class Standard
 		 * @see client/html/checkout/standard/delivery/standard/template-header
 		 */
 		$tplconf = 'client/html/checkout/standard/delivery/standard/template-body';
-		$default = 'checkout/standard/delivery-body-standard.php';
+		$default = 'checkout/standard/delivery-body-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -231,28 +231,26 @@ class Standard
 		try
 		{
 			$context = $this->getContext();
-			$basketCtrl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'basket' );
-			$serviceCtrl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'service' );
+			$basketCtrl = \Aimeos\Controller\Frontend::create( $context, 'basket' );
+			$servCtrl = \Aimeos\Controller\Frontend::create( $context, 'service' )->uses( ['media', 'price', 'text'] );
 
 			// only start if there's something to do
 			if( ( $serviceIds = $view->param( 'c_deliveryoption', null ) ) !== null )
 			{
 				$basketCtrl->deleteService( 'delivery' );
 
-				foreach( (array) $serviceIds as $serviceId )
+				foreach( (array) $serviceIds as $id )
 				{
-					$attributes = $view->param( 'c_delivery/' . $serviceId, [] );
-					$errors = $serviceCtrl->checkAttributes( $serviceId, $attributes );
-					$view->deliveryError = $errors;
-
-					if( count( $errors ) > 0 )
+					try
 					{
-						$view->standardErrorList = $view->get( 'standardErrorList', [] ) + $errors;
-						throw new \Aimeos\Client\Html\Exception( sprintf( 'Please recheck your delivery choice' ) );
+						$basketCtrl->addService( $servCtrl->get( $id ), $view->param( 'c_delivery/' . $id, [] ) );
 					}
-					else
+					catch( \Aimeos\Controller\Frontend\Basket\Exception $e )
 					{
-						$basketCtrl->addService( 'delivery', $serviceId, $attributes );
+						$view->deliveryError = $e->getErrors();
+						$view->standardErrorList = $view->get( 'standardErrorList', [] ) + $e->getErrors();
+
+						throw $e;
 					}
 				}
 			}
@@ -262,10 +260,10 @@ class Standard
 
 
 			// Test if delivery service is available
-			$services = $basketCtrl->get()->getServices();
+			$services = $basketCtrl->get()->getServices( 'delivery' );
 
-			if( !isset( $view->standardStepActive ) && ( !isset( $services['delivery'] ) || empty( $services['delivery'] ) )
-				&& count( $serviceCtrl->getProviders( 'delivery' ) ) > 0
+			if( !isset( $view->standardStepActive ) && empty( $services )
+				&& count( $servCtrl->getProviders( 'delivery' ) ) > 0
 			) {
 				$view->standardStepActive = 'delivery';
 				return false;
@@ -301,13 +299,30 @@ class Standard
 	public function addData( \Aimeos\MW\View\Iface $view, array &$tags = [], &$expire = null )
 	{
 		$context = $this->getContext();
+		$domains = ['media', 'price', 'text'];
 
-		$basketCntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'basket' );
-		$serviceCntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'service' );
+		/** client/html/checkout/standard/delivery/domains
+		 * List of domain names whose items should be available in the checkout payment templates
+		 *
+		 * The templates rendering checkout delivery related data usually add the
+		 * images, prices and texts associated to each item. If you want to display
+		 * additional content like the attributes, you can configure your own list
+		 * of domains (attribute, media, price, text, etc. are domains) whose items
+		 * are fetched from the storage.
+		 *
+		 * @param array List of domain names
+		 * @since 2019.04
+		 * @category Developer
+		 * @see client/html/checkout/standard/payment/domains
+		 */
+		$domains = $context->getConfig()->get( 'client/html/checkout/standard/delivery/domains', $domains );
+
+		$basketCntl = \Aimeos\Controller\Frontend::create( $context, 'basket' );
+		$serviceCntl = \Aimeos\Controller\Frontend::create( $context, 'service' );
 
 		$basket = $basketCntl->get();
 		$services = $attributes = $prices = [];
-		$providers = $serviceCntl->getProviders( 'delivery' );
+		$providers = $serviceCntl->uses( $domains )->type( 'delivery' )->getProviders();
 
 		foreach( $providers as $id => $provider )
 		{

@@ -56,14 +56,14 @@ $searchParams = $params = $this->get( 'pageParams', [] );
 $searchParams['page']['start'] = 0;
 
 $typeList = [];
-foreach( $this->get( 'itemTypes', [] ) as $id => $typeItem ) {
-	$typeList[$id] = $typeItem->getCode();
+foreach( $this->get( 'itemTypes', [] ) as $typeItem ) {
+	$typeList[$typeItem->getCode()] = $typeItem->getCode();
 }
 
 $columnList = [
 	'plugin.id' => $this->translate( 'admin', 'ID' ),
 	'plugin.status' => $this->translate( 'admin', 'Status' ),
-	'plugin.typeid' => $this->translate( 'admin', 'Type' ),
+	'plugin.type' => $this->translate( 'admin', 'Type' ),
 	'plugin.position' => $this->translate( 'admin', 'Position' ),
 	'plugin.label' => $this->translate( 'admin', 'Label' ),
 	'plugin.provider' => $this->translate( 'admin', 'Provider' ),
@@ -84,7 +84,7 @@ $columnList = [
 	</span>
 
 	<?= $this->partial(
-		$this->config( 'admin/jqadm/partial/navsearch', 'common/partials/navsearch-standard.php' ), [
+		$this->config( 'admin/jqadm/partial/navsearch', 'common/partials/navsearch-standard' ), [
 			'filter' => $this->session( 'aimeos/admin/jqadm/plugin/filter', [] ),
 			'filterAttributes' => $this->get( 'filterAttributes', [] ),
 			'filterOperators' => $this->get( 'filterOperators', [] ),
@@ -95,7 +95,7 @@ $columnList = [
 
 
 <?= $this->partial(
-		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard.php' ),
+		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard' ),
 		['pageParams' => $params, 'pos' => 'top', 'total' => $this->get( 'total' ),
 		'page' => $this->session( 'aimeos/admin/jqadm/plugin/page', [] )]
 	);
@@ -108,7 +108,7 @@ $columnList = [
 		<thead class="list-header">
 			<tr>
 				<?= $this->partial(
-						$this->config( 'admin/jqadm/partial/listhead', 'common/partials/listhead-standard.php' ),
+						$this->config( 'admin/jqadm/partial/listhead', 'common/partials/listhead-standard' ),
 						['fields' => $fields, 'params' => $params, 'data' => $columnList, 'sort' => $this->session( 'aimeos/admin/jqadm/plugin/sort' )]
 					);
 				?>
@@ -121,7 +121,7 @@ $columnList = [
 					</a>
 
 					<?= $this->partial(
-							$this->config( 'admin/jqadm/partial/columns', 'common/partials/columns-standard.php' ),
+							$this->config( 'admin/jqadm/partial/columns', 'common/partials/columns-standard' ),
 							['fields' => $fields, 'data' => $columnList]
 						);
 					?>
@@ -131,7 +131,7 @@ $columnList = [
 		<tbody>
 
 			<?= $this->partial(
-				$this->config( 'admin/jqadm/partial/listsearch', 'common/partials/listsearch-standard.php' ), [
+				$this->config( 'admin/jqadm/partial/listsearch', 'common/partials/listsearch-standard' ), [
 					'fields' => $fields, 'filter' => $this->session( 'aimeos/admin/jqadm/plugin/filter', [] ),
 					'data' => [
 						'plugin.id' => ['op' => '=='],
@@ -141,7 +141,7 @@ $columnList = [
 							'-1' => $this->translate( 'mshop/code', 'status:-1' ),
 							'-2' => $this->translate( 'mshop/code', 'status:-2' ),
 						]],
-						'plugin.typeid' => ['op' => '==', 'type' => 'select', 'val' => $typeList],
+						'plugin.type' => ['op' => '==', 'type' => 'select', 'val' => $typeList],
 						'plugin.position' => ['op' => '>=', 'type' => 'number'],
 						'plugin.label' => [],
 						'plugin.provider' => [],
@@ -162,7 +162,7 @@ $columnList = [
 					<?php if( in_array( 'plugin.status', $fields ) ) : ?>
 						<td class="plugin-status"><a class="items-field" href="<?= $url; ?>"><div class="fa status-<?= $enc->attr( $item->getStatus() ); ?>"></div></a></td>
 					<?php endif; ?>
-					<?php if( in_array( 'plugin.typeid', $fields ) ) : ?>
+					<?php if( in_array( 'plugin.type', $fields ) ) : ?>
 						<td class="plugin-type"><a class="items-field" href="<?= $url; ?>"><?= $enc->html( $item->getType() ); ?></a></td>
 					<?php endif; ?>
 					<?php if( in_array( 'plugin.position', $fields ) ) : ?>
@@ -218,7 +218,7 @@ $columnList = [
 </form>
 
 <?= $this->partial(
-		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard.php' ),
+		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard' ),
 		['pageParams' => $params, 'pos' => 'bottom', 'total' => $this->get( 'total' ),
 		'page' => $this->session( 'aimeos/admin/jqadm/plugin/page', [] )]
 	);
@@ -226,4 +226,4 @@ $columnList = [
 
 <?php $this->block()->stop(); ?>
 
-<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard.php' ) ); ?>
+<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard' ) ); ?>

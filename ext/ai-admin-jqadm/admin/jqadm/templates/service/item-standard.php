@@ -44,7 +44,7 @@ $enc = $this->encoder();
 			<span class="navbar-secondary">(<?= $enc->html( $this->site()->match( $this->get( 'itemData/service.siteid' ) ) ); ?>)</span>
 		</span>
 		<div class="item-actions">
-			<?= $this->partial( $this->config( 'admin/jqadm/partial/itemactions', 'common/partials/itemactions-standard.php' ), ['params' => $params] ); ?>
+			<?= $this->partial( $this->config( 'admin/jqadm/partial/itemactions', 'common/partials/itemactions-standard' ), ['params' => $params] ); ?>
 		</div>
 	</nav>
 
@@ -117,17 +117,16 @@ $enc = $this->encoder();
 					<div class="form-group row mandatory">
 						<label class="col-sm-4 form-control-label"><?= $enc->html( $this->translate( 'admin', 'Type' ) ); ?></label>
 						<div class="col-sm-8">
-							<select class="form-control custom-select item-typeid" required="required" tabindex="1"
-								name="<?= $enc->attr( $this->formparam( array( 'item', 'service.typeid' ) ) ); ?>"
+							<select class="form-control custom-select item-type" required="required" tabindex="1"
+								name="<?= $enc->attr( $this->formparam( array( 'item', 'service.type' ) ) ); ?>"
 								<?= $this->site()->readonly( $this->get( 'itemData/service.siteid' ) ); ?> >
 								<option value="">
 									<?= $enc->html( $this->translate( 'admin', 'Please select' ) ); ?>
 								</option>
 
-								<?php foreach( $this->get( 'itemTypes', [] ) as $id => $typeItem ) : ?>
-									<option value="<?= $enc->attr( $id ); ?>" data-code="<?= $enc->attr( $typeItem->getCode() ); ?>"
-										<?= $selected( $this->get( 'itemData/service.typeid' ), $id ); ?> >
-										<?= $enc->html( $typeItem->getLabel() ); ?>
+								<?php foreach( $this->get( 'itemTypes', [] ) as $type => $item ) : ?>
+									<option value="<?= $enc->attr( $type ); ?>" <?= $selected( $this->get( 'itemData/service.type' ), $type ); ?> >
+										<?= $enc->html( $item->getLabel() ); ?>
 									</option>
 								<?php endforeach; ?>
 							</select>
@@ -360,7 +359,7 @@ $enc = $this->encoder();
 		</div>
 
 		<div class="item-actions">
-			<?= $this->partial( $this->config( 'admin/jqadm/partial/itemactions', 'common/partials/itemactions-standard.php' ), ['params' => $params] ); ?>
+			<?= $this->partial( $this->config( 'admin/jqadm/partial/itemactions', 'common/partials/itemactions-standard' ), ['params' => $params] ); ?>
 		</div>
 	</div>
 </form>
@@ -368,4 +367,4 @@ $enc = $this->encoder();
 <?php $this->block()->stop(); ?>
 
 
-<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard.php' ) ); ?>
+<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard' ) ); ?>

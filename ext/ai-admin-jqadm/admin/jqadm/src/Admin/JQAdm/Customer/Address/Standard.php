@@ -270,11 +270,11 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Customer\Item\Iface $item Customer item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Customer\Item\Iface $item, array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer/address' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'customer/address' );
 
 		$addrItems = $item->getAddressItems();
 
@@ -290,7 +290,7 @@ class Standard
 				$addrItem = $manager->createItem();
 			}
 
-			$addrItem->fromArray( $entry );
+			$addrItem->fromArray( $entry, true );
 			$item->addAddressItem( $addrItem );
 		}
 
@@ -355,7 +355,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/customer/address/template-item';
-		$default = 'customer/item-address-standard.php';
+		$default = 'customer/item-address-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

@@ -38,7 +38,6 @@ $optConfig = $this->config( 'client/jsonapi/url/config', [] );
 
 
 	<?php if( isset( $this->standardBasket ) ) : ?>
-
 		<h1><?= $enc->html( $this->translate( 'client', 'Basket' ), $enc::TRUST ); ?></h1>
 
 		<form method="POST" action="<?= $enc->attr( $this->url( $basketTarget, $basketController, $basketAction, [], [], $basketConfig ) ); ?>">
@@ -64,7 +63,7 @@ $optConfig = $this->config( 'client/jsonapi/url/config', [] );
 						 * @since 2017.01
 						 * @category Developer
 						 */
-						$this->config( 'client/html/basket/standard/summary/detail', 'common/summary/detail-standard.php' ),
+						$this->config( 'client/html/basket/standard/summary/detail', 'common/summary/detail-standard' ),
 						array(
 							'summaryEnableModify' => true,
 							'summaryBasket' => $this->standardBasket,

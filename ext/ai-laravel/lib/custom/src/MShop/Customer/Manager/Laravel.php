@@ -33,14 +33,14 @@ class Laravel
 		'customer.code' => array(
 			'label' => 'Customer username',
 			'code' => 'customer.code',
-			'internalcode' => 'lvu."name"',
+			'internalcode' => 'lvu."email"',
 			'type' => 'string',
 			'internaltype' => \Aimeos\MW\DB\Statement\Base::PARAM_STR
 		),
 		'customer.label' => array(
 			'label' => 'Customer label',
 			'code' => 'customer.label',
-			'internalcode' => 'lvu."label"',
+			'internalcode' => 'lvu."name"',
 			'type' => 'string',
 			'internaltype' => \Aimeos\MW\DB\Statement\Base::PARAM_STR
 		),
@@ -174,15 +174,15 @@ class Laravel
 			'label' => 'Customer longitude',
 			'code' => 'customer.longitude',
 			'internalcode' => 'lvu."longitude"',
-			'type' => 'string',
-			'internaltype' => \Aimeos\MW\DB\Statement\Base::PARAM_STR,
+			'type' => 'float',
+			'internaltype' => \Aimeos\MW\DB\Statement\Base::PARAM_FLOAT,
 		),
 		'customer.latitude' => array(
 			'label' => 'Customer latitude',
 			'code' => 'customer.latitude',
 			'internalcode' => 'lvu."latitude"',
-			'type' => 'string',
-			'internaltype' => \Aimeos\MW\DB\Statement\Base::PARAM_STR,
+			'type' => 'float',
+			'internaltype' => \Aimeos\MW\DB\Statement\Base::PARAM_FLOAT,
 		),
 		'customer.birthday' => array(
 			'label' => 'Customer birthday',
@@ -233,7 +233,84 @@ class Laravel
 			'type'=> 'string',
 			'internaltype'=> \Aimeos\MW\DB\Statement\Base::PARAM_STR,
 		),
+		'customer:has' => array(
+			'code' => 'customer:has()',
+			'internalcode' => '(
+				SELECT lvuli_has."id" FROM users_list AS lvuli_has
+				WHERE lvu."id" = lvuli_has."parentid" AND :site AND :key LIMIT 1
+			)',
+			'label' => 'Customer has list item, parameter(<domain>[,<list type>[,<reference ID>)]]',
+			'type' => 'null',
+			'internaltype' => 'null',
+			'public' => false,
+		),
+		'customer:prop' => array(
+			'code' => 'customer:prop()',
+			'internalcode' => '(
+				SELECT lvupr_prop."id" FROM users_property AS lvupr_prop
+				WHERE lvu."id" = lvupr_prop."parentid" AND :site AND :key LIMIT 1
+			)',
+			'label' => 'Customer has property item, parameter(<property type>[,<language code>[,<property value>]])',
+			'type' => 'null',
+			'internaltype' => 'null',
+			'public' => false,
+		),
 	);
+
+
+	/**
+	 * Initializes the object.
+	 *
+	 * @param \Aimeos\MShop\Context\Item\Iface $context Context object
+	 */
+	public function __construct( \Aimeos\MShop\Context\Item\Iface $context )
+	{
+		parent::__construct( $context );
+
+		$self = $this;
+		$locale = $context->getLocale();
+
+		$level = \Aimeos\MShop\Locale\Manager\Base::SITE_ALL;
+		$level = $context->getConfig()->get( 'mshop/customer/manager/sitemode', $level );
+
+		$siteIds = [$locale->getSiteId()];
+
+		if( $level & \Aimeos\MShop\Locale\Manager\Base::SITE_PATH ) {
+			$siteIds = array_merge( $siteIds, $locale->getSitePath() );
+		}
+
+		if( $level & \Aimeos\MShop\Locale\Manager\Base::SITE_SUBTREE ) {
+			$siteIds = array_merge( $siteIds, $locale->getSiteSubTree() );
+		}
+
+
+		$this->searchConfig['customer:has']['function'] = function( &$source, array $params ) use ( $self, $siteIds ) {
+
+			foreach( $params as $key => $param ) {
+				$params[$key] = trim( $param, '\'' );
+			}
+
+			$source = str_replace( ':site', $self->toExpression( 'lvuli_has."siteid"', $siteIds ), $source );
+			$str = $self->toExpression( 'lvuli_has."key"', join( '|', $params ), isset( $params[2] ) ? '==' : '=~' );
+			$source = str_replace( ':key', $str, $source );
+
+			return $params;
+		};
+
+
+		$this->searchConfig['customer:prop']['function'] = function( &$source, array $params ) use ( $self, $siteIds ) {
+
+			foreach( $params as $key => $param ) {
+				$params[$key] = trim( $param, '\'' );
+			}
+
+			$source = str_replace( ':site', $self->toExpression( 'lvupr_prop."siteid"', $siteIds ), $source );
+			$str = $self->toExpression( 'lvupr_prop."key"', join( '|', $params ), isset( $params[2] ) ? '==' : '=~' );
+			$source = str_replace( ':key', $str, $source );
+
+			return $params;
+		};
+	}
 
 
 	/**
@@ -273,9 +350,7 @@ class Laravel
 	public function getSearchAttributes( $withsub = true )
 	{
 		$path = 'mshop/customer/manager/submanagers';
-		$default = ['address', 'lists', 'property'];
-
-		return $this->getSearchAttributesBase( $this->searchConfig, $path, $default, $withsub );
+		return $this->getSearchAttributesBase( $this->searchConfig, $path, ['address'], $withsub );
 	}
 
 
@@ -289,6 +364,8 @@ class Laravel
 	public function saveItem( \Aimeos\MShop\Common\Item\Iface $item, $fetch = true )
 	{
 		self::checkClass( '\\Aimeos\\MShop\\Customer\\Item\\Iface', $item );
+
+		$item = $this->addGroups( $item );
 
 		if( !$item->isModified() )
 		{
@@ -375,40 +452,39 @@ class Laravel
 			$stmt = $this->getCachedStatement( $conn, $path );
 
 			$stmt->bind( 1, $context->getLocale()->getSiteId(), \Aimeos\MW\DB\Statement\Base::PARAM_INT );
-			$stmt->bind( 2, $item->getCode() );
-			$stmt->bind( 3, $billingAddress->getCompany() );
-			$stmt->bind( 4, $billingAddress->getVatID() );
-			$stmt->bind( 5, $billingAddress->getSalutation() );
-			$stmt->bind( 6, $billingAddress->getTitle() );
-			$stmt->bind( 7, $billingAddress->getFirstname() );
-			$stmt->bind( 8, $billingAddress->getLastname() );
-			$stmt->bind( 9, $billingAddress->getAddress1() );
-			$stmt->bind( 10, $billingAddress->getAddress2() );
-			$stmt->bind( 11, $billingAddress->getAddress3() );
-			$stmt->bind( 12, $billingAddress->getPostal() );
-			$stmt->bind( 13, $billingAddress->getCity() );
-			$stmt->bind( 14, $billingAddress->getState() );
-			$stmt->bind( 15, $billingAddress->getCountryId() );
-			$stmt->bind( 16, $billingAddress->getLanguageId() );
-			$stmt->bind( 17, $billingAddress->getTelephone() );
-			$stmt->bind( 18, $billingAddress->getTelefax() );
-			$stmt->bind( 19, $billingAddress->getWebsite() );
-			$stmt->bind( 20, $billingAddress->getEmail() );
-			$stmt->bind( 21, $billingAddress->getLongitude() );
-			$stmt->bind( 22, $billingAddress->getLatitude() );
-			$stmt->bind( 23, $item->getLabel() );
-			$stmt->bind( 24, $item->getBirthday() );
-			$stmt->bind( 25, $item->getStatus(), \Aimeos\MW\DB\Statement\Base::PARAM_INT );
-			$stmt->bind( 26, $item->getDateVerified() );
-			$stmt->bind( 27, $item->getPassword() );
-			$stmt->bind( 28, $date ); // Modification time
-			$stmt->bind( 29, $context->getEditor() );
+			$stmt->bind( 2, $item->getLabel() );
+			$stmt->bind( 3, $item->getCode() );
+			$stmt->bind( 4, $billingAddress->getCompany() );
+			$stmt->bind( 5, $billingAddress->getVatID() );
+			$stmt->bind( 6, $billingAddress->getSalutation() );
+			$stmt->bind( 7, $billingAddress->getTitle() );
+			$stmt->bind( 8, $billingAddress->getFirstname() );
+			$stmt->bind( 9, $billingAddress->getLastname() );
+			$stmt->bind( 10, $billingAddress->getAddress1() );
+			$stmt->bind( 11, $billingAddress->getAddress2() );
+			$stmt->bind( 12, $billingAddress->getAddress3() );
+			$stmt->bind( 13, $billingAddress->getPostal() );
+			$stmt->bind( 14, $billingAddress->getCity() );
+			$stmt->bind( 15, $billingAddress->getState() );
+			$stmt->bind( 16, $billingAddress->getCountryId() );
+			$stmt->bind( 17, $billingAddress->getLanguageId() );
+			$stmt->bind( 18, $billingAddress->getTelephone() );
+			$stmt->bind( 19, $billingAddress->getTelefax() );
+			$stmt->bind( 20, $billingAddress->getWebsite() );
+			$stmt->bind( 21, $billingAddress->getLongitude(), \Aimeos\MW\DB\Statement\Base::PARAM_FLOAT );
+			$stmt->bind( 22, $billingAddress->getLatitude(), \Aimeos\MW\DB\Statement\Base::PARAM_FLOAT );
+			$stmt->bind( 23, $item->getBirthday() );
+			$stmt->bind( 24, $item->getStatus(), \Aimeos\MW\DB\Statement\Base::PARAM_INT );
+			$stmt->bind( 25, $item->getDateVerified() );
+			$stmt->bind( 26, $item->getPassword() );
+			$stmt->bind( 27, $date ); // Modification time
+			$stmt->bind( 28, $context->getEditor() );
 
 			if( $id !== null ) {
-				$stmt->bind( 30, $id, \Aimeos\MW\DB\Statement\Base::PARAM_INT );
+				$stmt->bind( 29, $id, \Aimeos\MW\DB\Statement\Base::PARAM_INT );
 				$item->setId( $id );
 			} else {
-				$stmt->bind( 30, $date ); // Creation time
+				$stmt->bind( 29, $date ); // Creation time
 			}
 
 			$stmt->execute()->finish();
@@ -457,8 +533,6 @@ class Laravel
 			throw $e;
 		}
 
-		$this->addGroups( $item );
-
 		$item = $this->savePropertyItems( $item, 'customer' );
 		$item = $this->saveAddressItems( $item, 'customer' );
 		return $this->saveListItems( $item, 'customer' );
@@ -485,7 +559,8 @@ class Laravel
 			$level = \Aimeos\MShop\Locale\Manager\Base::SITE_ALL;
 			$cfgPathSearch = 'mshop/customer/manager/laravel/search';
 			$cfgPathCount = 'mshop/customer/manager/laravel/count';
-			$required = array( 'customer' );
+			$ref[] = 'customer/group';
+			$required = ['customer'];
 
 			$results = $this->searchItemsBase( $conn, $search, $cfgPathSearch, $cfgPathCount, $required, $total, $level );
 			while( ( $row = $results->fetch() ) !== false ) {

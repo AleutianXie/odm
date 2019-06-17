@@ -208,11 +208,10 @@ class Standard
 			$ids[] = $item->getBaseId();
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'order/base' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'order/base' );
 
-		$search = $manager->createSearch();
+		$search = $manager->createSearch()->setSlice( 0, count( $ids ) );
 		$search->setConditions( $search->compare( '==', 'order.base.id', $ids ) );
-		$search->setSlice( 0, 0x7fffffff );
 
 		return $manager->searchItems( $search );
 	}
@@ -226,9 +225,9 @@ class Standard
 	 * @param integer $total Value/result parameter that will contain the item total afterwards
 	 * @return \Aimeos\MShop\Order\Item\Iface[] Order items of the customer
 	 */
-	protected function getOrderItems( \Aimeos\MShop\Customer\Item\Iface $item, array $params = [], &$total )
+	protected function getOrderItems( \Aimeos\MShop\Customer\Item\Iface $item, array $params = [], &$total = null )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'order' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'order' );
 
 		$search = $manager->createSearch();
 		$search->setSortations( [$search->sort( '-', 'order.ctime' )] );
@@ -316,7 +315,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/customer/order/template-item';
-		$default = 'customer/item-order-standard.php';
+		$default = 'customer/item-order-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

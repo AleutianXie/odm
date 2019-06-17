@@ -11,48 +11,64 @@ namespace Aimeos\Controller\Frontend\Subscription;
 
 class StandardTest extends \PHPUnit\Framework\TestCase
 {
-	private $object;
 	private $context;
+	private $manager;
+	private $object;
 
 
 	protected function setUp()
 	{
-		\Aimeos\MShop\Factory::setCache( true );
-
 		$this->context = \TestHelperFrontend::getContext();
+		$this->context->setUserId( $this->getCustomerId() );
+
+		$this->manager = $this->getMockBuilder( '\\Aimeos\\MShop\\Subscription\\Manager\\Standard' )
+			->setConstructorArgs( [$this->context] )
+			->setMethods( ['saveItem'] )
+			->getMock();
+
+		\Aimeos\MShop::cache( true );
+		\Aimeos\MShop::inject( 'subscription', $this->manager );
+
 		$this->object = new \Aimeos\Controller\Frontend\Subscription\Standard( $this->context );
 	}
 
 
 	protected function tearDown()
 	{
-		unset( $this->object, $this->context );
-
-		\Aimeos\MShop\Factory::setCache( false );
-		\Aimeos\MShop\Factory::clear();
+		\Aimeos\MShop::cache( false );
+		unset( $this->object, $this->manager, $this->context );
 	}
 
 
 	public function testCancel()
 	{
-		$this->context->setUserId( $this->getCustomerId() );
-		$item = \Aimeos\MShop\Factory::createManager( $this->context, 'subscription' )->createItem();
+		$expected = \Aimeos\MShop\Subscription\Item\Iface::class;
+		$item = \Aimeos\MShop::create( $this->context, 'subscription' )->createItem();
 
-		$cntl = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Subscription\Standard' )
-			->setConstructorArgs( [$this->context] )
-			->setMethods( ['saveItem'] )
-			->getMock();
-
-		$cntl->expects( $this->once() )->method( 'saveItem' )
+		$this->manager->expects( $this->once() )->method( 'saveItem' )
 			->will( $this->returnValue( $item ) );
 
-		$this->assertInstanceOf( '\Aimeos\MShop\Subscription\Item\Iface', $cntl->cancel( $this->getSubscriptionId() ) );
+		$this->assertInstanceOf( $expected, $this->object->cancel( $this->getSubscriptionId() ) );
 	}
 
 
-	public function testCreateFilter()
+	public function testCompare()
 	{
-		$this->assertInstanceOf( '\Aimeos\MW\Criteria\Iface', $this->object->createFilter() );
+		$this->assertEquals( 2, count( $this->object->compare( '>=', 'subscription.datenext', '2000-01-01' )->search() ) );
+	}
+
+
+	public function testGet()
+	{
+		$expected = \Aimeos\MShop\Subscription\Item\Iface::class;
+		$this->assertInstanceOf( $expected, $this->object->get( $this->getSubscriptionId() ) );
+	}
+
+
+	public function testGetException()
+	{
+		$this->setExpectedException( \Aimeos\Controller\Frontend\Subscription\Exception::class );
+		$this->object->get( -1 );
 	}
 
 
@@ -62,55 +78,74 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	}
 
 
-	public function testGetItem()
+	public function testParse()
 	{
-		$id = $this->getSubscriptionId();
-		$this->context->setUserId( $this->getCustomerId() );
-
-		$this->assertInstanceOf( '\Aimeos\MShop\Subscription\Item\Iface', $this->object->getItem( $id ) );
+		$cond = ['&&' => [['==' => ['subscription.datenext' => '2000-01-01']], ['==' => ['subscription.status' => 1]]]];
+		$this->assertEquals( 1, count( $this->object->parse( $cond )->search() ) );
 	}
 
 
-	public function testGetItemException()
+	public function testSave()
 	{
-		$this->setExpectedException( '\Aimeos\Controller\Frontend\Subscription\Exception' );
-		$this->object->getItem( -1 );
+		$item = $this->manager->createItem();
+		$expected = \Aimeos\MShop\Subscription\Item\Iface::class;
+
+		$this->manager->expects( $this->once() )->method( 'saveItem' )
+			->will( $this->returnValue( $item ) );
+
+		$this->assertInstanceOf( $expected, $this->object->save( $item ) );
 	}
 
 
-	public function testSaveItem()
+	public function testSearch()
 	{
-		$manager = $this->getMockBuilder( '\\Aimeos\\MShop\\Subscription\\Manager\\Standard' )
-			->setConstructorArgs( [$this->context] )
-			->setMethods( ['saveItem'] )
-			->getMock();
-
-		\Aimeos\MShop\Factory::injectManager( $this->context, 'subscription', $manager );
-
-		$manager->expects( $this->once() )->method( 'saveItem' )
-			->will( $this->returnValue( $manager->createItem() ) );
-
-		$this->assertInstanceOf( '\Aimeos\MShop\Subscription\Item\Iface', $this->object->saveItem( $manager->createItem() ) );
+		$total = 0;
+		$this->assertGreaterThanOrEqual( 2, count( $this->object->search( $total ) ) );
+		$this->assertGreaterThanOrEqual( 2, $total );
 	}
 
 
-	public function testSearchItems()
+	public function testSlice()
 	{
-		$this->assertGreaterThan( 1, $this->object->searchItems( $this->object->createFilter() ) );
+		$this->assertEquals( 1, count( $this->object->slice( 0, 1 )->search() ) );
 	}
+
+
+	public function testSort()
+	{
+		$this->assertEquals( 2, count( $this->object->sort()->search() ) );
+	}
+
+
+	public function testSortInterval()
+	{
+		$this->assertEquals( 2, count( $this->object->sort( 'interval' )->search() ) );
+	}
+
+
+	public function testSortGeneric()
+	{
+		$this->assertEquals( 2, count( $this->object->sort( 'subscription.dateend' )->search() ) );
+	}
+
+
+	public function testSortMultiple()
+	{
+		$this->assertEquals( 2, count( $this->object->sort( 'subscription.dateend,-subscription.id' )->search() ) );
+	}
+
 
 	protected function getCustomerId()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'customer' );
-		return $manager->findItem( 'UTC001' )->getId();
+		return \Aimeos\MShop::create( $this->context, 'customer' )->findItem( 'UTC001' )->getId();
 	}
 
 
 	protected function getSubscriptionId()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'subscription' );
+		$manager = \Aimeos\MShop::create( $this->context, 'subscription' );
 		$search = $manager->createSearch()->setSlice( 0, 1 );
-		$search->setConditions( $search->compare( '==', 'order.base.customerid', $this->getCustomerId() ) );
+		$search->setConditions( $search->compare( '==', 'order.base.customerid', $this->context->getUserId() ) );
 		$result = $manager->searchItems( $search );
 
 		if( ( $item = reset( $result ) ) === false ) {

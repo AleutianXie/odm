@@ -39,8 +39,8 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'subscription' );
-			$baseManager = \Aimeos\MShop\Factory::createManager( $context, 'order/base' );
+			$manager = \Aimeos\MShop::create( $context, 'subscription' );
+			$baseManager = \Aimeos\MShop::create( $context, 'order/base' );
 
 			$view->item = $manager->getItem( $id );
 			$view->itemBase = $baseManager->getItem( $view->item->getOrderBaseId(), ['order/base/address', 'order/base/product'] );
@@ -86,10 +86,10 @@ class Standard
 			$data = $view->param( 'item', [] );
 
 			if( !isset( $view->item ) ) {
-				$view->item = \Aimeos\MShop\Factory::createManager( $context, 'subscription' )->createItem();
+				$view->item = \Aimeos\MShop::create( $context, 'subscription' )->createItem();
 			}
 
-			$baseManager = \Aimeos\MShop\Factory::createManager( $context, 'order/base' );
+			$baseManager = \Aimeos\MShop::create( $context, 'order/base' );
 			$baseId = ( $view->item->getOrderBaseId() ?: $view->param( 'item/subscription.ordbaseid' ) );
 
 			if( $baseId ) {
@@ -137,7 +137,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'subscription' );
+		$manager = \Aimeos\MShop::create( $context, 'subscription' );
 		$manager->begin();
 
 		try
@@ -239,8 +239,8 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'subscription' );
-			$baseManager = \Aimeos\MShop\Factory::createManager( $context, 'order/base' );
+			$manager = \Aimeos\MShop::create( $context, 'subscription' );
+			$baseManager = \Aimeos\MShop::create( $context, 'order/base' );
 
 			$view->item = $manager->getItem( $id );
 			$view->itemBase = $baseManager->getItem( $view->item->getOrderBaseId(), ['order/base/address', 'order/base/product'] );
@@ -281,7 +281,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'subscription' );
+		$manager = \Aimeos\MShop::create( $context, 'subscription' );
 		$manager->begin();
 
 		try
@@ -337,7 +337,7 @@ class Standard
 		{
 			$total = 0;
 			$params = $this->storeSearchParams( $view->param(), 'subscription' );
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'subscription' );
+			$manager = \Aimeos\MShop::create( $context, 'subscription' );
 
 			$search = $manager->createSearch();
 			$search->setSortations( [$search->sort( '-', 'subscription.ctime' )] );
@@ -387,7 +387,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/subscription/template-list';
-		$default = 'subscription/list-standard.php';
+		$default = 'subscription/list-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -492,11 +492,10 @@ class Standard
 			$baseIds[] = $item->getOrderBaseId();
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'order/base' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'order/base' );
 
-		$search = $manager->createSearch();
+		$search = $manager->createSearch()->setSlice( 0, count( $baseIds ) );
 		$search->setConditions( $search->compare( '==', 'order.base.id', $baseIds ) );
-		$search->setSlice( 0, 0x7fffffff );
 
 		return $manager->searchItems( $search, ['order/base/address', 'order/base/product'] );
 	}
@@ -549,12 +548,12 @@ class Standard
 	/**
 	 * Creates new and updates existing items using the data array
 	 *
-	 * @param string[] Data array
+	 * @param array $data Data array
 	 * @return \Aimeos\MShop\Subscription\Item\Iface New subscription item object
 	 */
 	protected function fromArray( array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'subscription' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'subscription' );
 
 		if( isset( $data['subscription.id'] ) && $data['subscription.id'] != '' ) {
 			$item = $manager->getItem( $data['subscription.id'] );
@@ -562,7 +561,7 @@ class Standard
 			$item = $manager->createItem();
 		}
 
-		$item->fromArray( $data );
+		$item->fromArray( $data, true );
 
 		return $item;
 	}
@@ -617,7 +616,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/subscription/template-item';
-		$default = 'subscription/item-standard.php';
+		$default = 'subscription/item-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

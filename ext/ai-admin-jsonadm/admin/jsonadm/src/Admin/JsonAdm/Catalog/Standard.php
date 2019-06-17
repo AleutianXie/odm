@@ -121,7 +121,7 @@ class Standard
 		 *
 		 * The partial template files are usually stored in the templates/partials/ folder
 		 * of the core or the extensions. The configured path to the partial file must
-		 * be relative to the templates/ folder, e.g. "partials/data-standard.php".
+		 * be relative to the templates/ folder, e.g. "partials/data-standard".
 		 *
 		 * @param string Relative path to the template file
 		 * @since 2016.07
@@ -164,7 +164,7 @@ class Standard
 	 */
 	protected function getItems( \Aimeos\MW\View\Iface $view, ServerRequestInterface $request, ResponseInterface $response )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'catalog' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'catalog' );
 
 		if( ( $key = $view->param( 'aggregate' ) ) !== null )
 		{
@@ -211,7 +211,7 @@ class Standard
 	 */
 	protected function getListItems( array $items, array $include )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'catalog/lists' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'catalog/lists' );
 
 		$search = $manager->createSearch();
 		$expr = array(
@@ -239,7 +239,11 @@ class Standard
 		if( isset( $entry->id ) )
 		{
 			$item = $manager->getItem( $entry->id );
-			$item = $this->addItemData( $manager, $item, $entry, $item->getResourceType() );
+
+			if( isset( $entry->attributes ) && ( $attr = (array) $entry->attributes ) ) {
+				$item = $item->fromArray( $attr, true );
+			}
+
 			$item = $manager->saveItem( $item );
 
 			if( isset( $entry->parentid ) && $targetId !== null ) {
@@ -249,7 +253,11 @@ class Standard
 		else
 		{
 			$item = $manager->createItem();
-			$item = $this->addItemData( $manager, $item, $entry, $item->getResourceType() );
+
+			if( isset( $entry->attributes ) && ( $attr = (array) $entry->attributes ) ) {
+				$item = $item->fromArray( $attr, true );
+			}
+
 			$manager->insertItem( $item, $targetId, $refId );
 		}
 

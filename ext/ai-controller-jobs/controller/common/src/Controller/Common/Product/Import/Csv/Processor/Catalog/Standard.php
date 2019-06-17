@@ -67,7 +67,25 @@ class Standard
 		 * @see controller/common/product/import/csv/processor/product/listtypes
 		 * @see controller/common/product/import/csv/processor/text/listtypes
 		 */
-		$this->listTypes = $context->getConfig()->get( 'controller/common/product/import/csv/processor/catalog/listtypes' );
+		$key = 'controller/common/product/import/csv/processor/catalog/listtypes';
+		$this->listTypes = $context->getConfig()->get( $key );
+
+		if( $this->listTypes === null )
+		{
+			$this->listTypes = [];
+			$manager = \Aimeos\MShop::create( $context, 'catalog/lists/type' );
+
+			$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+			$search->setConditions( $search->compare( '==', 'catalog.lists.type.domain', 'product' ) );
+
+			foreach( $manager->searchItems( $search ) as $item ) {
+				$this->listTypes[$item->getCode()] = $item->getCode();
+			}
+		}
+		else
+		{
+			$this->listTypes = array_flip( $this->listTypes );
+		}
 
 		$this->cache = $this->getCache( 'catalog' );
 	}
@@ -83,8 +101,8 @@ class Standard
 	public function process( \Aimeos\MShop\Product\Item\Iface $product, array $data )
 	{
 		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'catalog' );
-		$listManager = \Aimeos\MShop\Factory::createManager( $context, 'catalog/lists' );
+		$manager = \Aimeos\MShop::create( $context, 'catalog' );
+		$listManager = \Aimeos\MShop::create( $context, 'catalog/lists' );
 
 		/** controller/common/product/import/csv/separator
 		 * Single separator character for multiple entries in one field of the import file
@@ -116,7 +134,7 @@ class Standard
 			$listItems = $this->getListItems( $prodid, $this->listTypes );
 
 			foreach( $listItems as $listItem ) {
-				$listMap[ $listItem->getParentId() ][ $listItem->getType() ] = $listItem;
+				$listMap[$listItem->getParentId()][$listItem->getType()] = $listItem;
 			}
 
 			foreach( $map as $pos => $list )
@@ -125,8 +143,8 @@ class Standard
 					continue;
 				}
 
-				$codes = explode( $separator, trim( $list['catalog.code'] ) );
-				$type = trim( isset( $list['catalog.lists.type'] ) ? $list['catalog.lists.type'] : 'default' );
+				$codes = explode( $separator, $this->getValue( $list, 'catalog.code', '' ) );
+				$listtype = $this->getValue( $list, 'catalog.lists.type', 'default' );
 
 				foreach( $codes as $code )
 				{
@@ -142,17 +160,17 @@ class Standard
 					$list['catalog.lists.refid'] = $prodid;
 					$list['catalog.lists.domain'] = 'product';
 
-					if( isset( $listMap[$catid][$type] ) )
+					if( isset( $listMap[$catid][$listtype] ) )
 					{
-						$listItem = $listMap[$catid][$type];
-						unset( $listItems[ $listItem->getId() ] );
+						$listItem = $listMap[$catid][$listtype];
+						unset( $listItems[$listItem->getId()] );
 					}
 					else
 					{
-						$listItem = $listManager->createItem( $type, 'product' );
+						$listItem = $listManager->createItem()->setType( $listtype );
 					}
 
-					$listItem->fromArray( $this->addListItemDefaults( $list, $pos++ ) );
+					$listItem = $listItem->setPosition( $pos++ )->fromArray( $list, true );
 					$listManager->saveItem( $listItem, false );
 				}
 			}
@@ -201,10 +219,14 @@ class Standard
 	 */
 	protected function checkEntry( array $list )
 	{
-		if( !isset( $list['catalog.code'] ) || trim( $list['catalog.code'] ) === '' || isset( $list['catalog.lists.type'] )
-			&& $this->listTypes !== null && !in_array( trim( $list['catalog.lists.type'] ), (array) $this->listTypes )
-		) {
+		if( $this->getValue( $list, 'catalog.code' ) === null ) {
 			return false;
+		}
+
+		if( ( $type = $this->getValue( $list, 'catalog.lists.type' ) ) && !isset( $this->listTypes[$type] ) )
+		{
+			$msg = sprintf( 'Invalid type "%1$s" (%2$s)', $type, 'catalog list' );
+			throw new \Aimeos\Controller\Common\Exception( $msg );
 		}
 
 		return true;
@@ -215,27 +237,23 @@ class Standard
 	 * Returns the catalog list items for the given category and product ID
 	 *
 	 * @param string $prodid Unique product ID
-	 * @param array|null $types List of catalog list types
+	 * @param array $types List of catalog list types
 	 * @return array List of catalog list items
 	 */
-	protected function getListItems( $prodid, $types )
+	protected function getListItems( $prodid, array $types )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'catalog/lists' );
-		$search = $manager->createSearch();
-
-		$expr = array(
-			$search->compare( '==', 'catalog.lists.domain', 'product' ),
-			$search->compare( '==', 'catalog.lists.refid', $prodid ),
-		);
-
-		if( $types !== null ) {
-			$expr[] = $search->compare( '==', 'catalog.lists.type.code', $types );
+		if( empty( $types ) ) {
+			return [];
 		}
 
-		$search->setConditions( $search->combine( '&&', $expr ) );
-		$search->setSortations( array( $search->sort( '+', 'catalog.lists.position' ) ) );
-		$search->setSlice( 0, 0x7FFFFFFF );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'catalog/lists' );
+		$search = $manager->createSearch()->setSlice( 0, 0x7FFFFFFF );
+		$expr = [];
 
-		return $manager->searchItems( $search );
+		foreach( $types as $type ) {
+			$expr[] = $search->compare( '==', 'catalog.lists.key', 'product|' . $type . '|' . $prodid );
+		}
+
+		return $manager->searchItems( $search->setConditions( $search->combine( '||', $expr ) ) );
 	}
 }

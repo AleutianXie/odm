@@ -156,7 +156,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jsonadm/service/config/template-get';
-		$default = 'config-standard.php';
+		$default = 'config-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -180,7 +180,7 @@ class Standard
 			throw new \Aimeos\Admin\JsonAdm\Exception( sprintf( 'No ID given' ), 400 );
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'service' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'service' );
 		$item = $manager->createItem()->setProvider( $id );
 
 		$view->configItems = $manager->getProvider( $item, $view->param( 'type', 'payment' ) )->getConfigBE();

@@ -82,6 +82,12 @@ $entryFcn = function( \Aimeos\MShop\Customer\Item\Iface $item ) use ( $fields, $
 		}
 	}
 
+	foreach( $item->getPropertyItems() as $propItem )
+	{
+		$propType = $propItem->getResourceType();
+		$entry['relationships'][$propType]['data'][] = ['id' => $propItem->getId(), 'type' => $propType];
+	}
+
 	return $entry;
 };
 
@@ -139,9 +145,8 @@ $refFcn = function( \Aimeos\MShop\Common\Item\Iface $item, array $map ) use ( $f
 	{
 		foreach( $item->getPropertyItems() as $propItem )
 		{
-			$propId = $propItem->getId();
 			$propType = $propItem->getResourceType();
-			$entry['relationships'][$propType]['data'][] = ['id' => $propId, 'type' => $propType];
+			$entry['relationships'][$propType]['data'][] = ['id' => $propItem->getId(), 'type' => $propType];
 			$map = $refFcn( $propItem, $map );
 		}
 	}
@@ -204,7 +209,7 @@ $flatFcn = function( array $map )
 	"meta": {
 		"total": <?= ( isset( $this->item ) ? 1 : 0 ); ?>,
 		"prefix": <?= json_encode( $this->get( 'prefix' ) ); ?>,
-		"content-baseurl": "<?= $this->config( 'client/html/common/content/baseurl' ); ?>"
+		"content-baseurl": "<?= $this->config( 'resource/fs/baseurl' ); ?>"
 
 		<?php if( $this->csrf()->name() != '' ) : ?>
 			, "csrf": {
@@ -227,11 +232,9 @@ $flatFcn = function( array $map )
 	}
 
 	<?php if( isset( $this->errors ) ) : ?>
-
 		,"errors": <?= json_encode( $this->errors, JSON_PRETTY_PRINT ); ?>
 
 	<?php elseif( isset( $this->item ) ) : ?>
-
 		,"data": <?= json_encode( $entryFcn( $this->item ), JSON_PRETTY_PRINT ); ?>
 
 		,"included": <?= json_encode( $flatFcn( $inclFcn( $this->item ) ), JSON_PRETTY_PRINT ); ?>

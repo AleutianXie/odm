@@ -59,6 +59,18 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	}
 
 
+	public function testDeletePluginException()
+	{
+		$object = $this->getObject( 'setType', $this->throwException( new \Aimeos\MShop\Plugin\Provider\Exception() ) );
+
+		$response = $object->delete( $this->view->request(), $this->view->response() );
+		$result = json_decode( (string) $response->getBody(), true );
+
+		$this->assertEquals( 409, $response->getStatusCode() );
+		$this->assertArrayHasKey( 'errors', $result );
+	}
+
+
 	public function testDeleteMShopException()
 	{
 		$object = $this->getObject( 'setType', $this->throwException( new \Aimeos\MShop\Exception() ) );
@@ -103,7 +115,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetById()
 	{
-		$user = \Aimeos\MShop\Factory::createManager( $this->context, 'customer' )->findItem( 'UTC001' );
+		$user = \Aimeos\MShop::create( $this->context, 'customer' )->findItem( 'UTC001' );
 		$this->context->setUserId( $user->getId() );
 
 		$params = array(
@@ -160,7 +172,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetIncluded()
 	{
-		$user = \Aimeos\MShop\Factory::createManager( $this->context, 'customer' )->findItem( 'UTC001' );
+		$user = \Aimeos\MShop::create( $this->context, 'customer' )->findItem( 'UTC001' );
 		$this->context->setUserId( $user->getId() );
 
 		$params = array(
@@ -191,7 +203,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetIncludedNone()
 	{
-		$user = \Aimeos\MShop\Factory::createManager( $this->context, 'customer' )->findItem( 'UTC001' );
+		$user = \Aimeos\MShop::create( $this->context, 'customer' )->findItem( 'UTC001' );
 		$this->context->setUserId( $user->getId() );
 
 		$params = array(
@@ -265,6 +277,22 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	}
 
 
+	public function testPatchPluginException()
+	{
+		$object = $this->getObject( 'setType', $this->throwException( new \Aimeos\MShop\Plugin\Provider\Exception() ) );
+
+		$body = '{"data": {"attributes": []}}';
+		$request = $this->view->request()->withBody( $this->view->response()->createStreamFromString( $body ) );
+
+		$response = $object->patch( $request, $this->view->response() );
+		$result = json_decode( (string) $response->getBody(), true );
+
+
+		$this->assertEquals( 409, $response->getStatusCode() );
+		$this->assertArrayHasKey( 'errors', $result );
+	}
+
+
 	public function testPatchMShopException()
 	{
 		$object = $this->getObject( 'setType', $this->throwException( new \Aimeos\MShop\Exception() ) );
@@ -299,8 +327,18 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testPost()
 	{
-		$orderBaseItem = $this->getOrderBaseItem();
-		$object = $this->getObject( 'store', $this->returnValue( $orderBaseItem ) );
+		$price = \Aimeos\MShop::create( $this->context, 'price' )->createItem();
+		$locale = \Aimeos\MShop::create( $this->context, 'locale' )->createItem();
+
+		$basket = $this->getMockBuilder( \Aimeos\MShop\Order\Item\Base\Standard::class )
+			->setConstructorArgs( [$price, $locale] )
+			->setMethods( ['check'] )
+			->getMock();
+
+		$basket->expects( $this->once() )->method( 'check' )->will( $this->returnSelf() );
+
+		$object = $this->getObject( ['get', 'store'], $this->returnValue( $basket ) );
+
 
 		$body = '{"data": {"attributes": {"order.base.comment": "test"}}}';
 		$request = $this->view->request()->withBody( $this->view->response()->createStreamFromString( $body ) );
@@ -321,9 +359,22 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	}
 
 
+	public function testPostPluginException()
+	{
+		$object = $this->getObject( 'get', $this->throwException( new \Aimeos\MShop\Plugin\Provider\Exception() ) );
+
+		$response = $object->post( $this->view->request(), $this->view->response() );
+		$result = json_decode( (string) $response->getBody(), true );
+
+
+		$this->assertEquals( 409, $response->getStatusCode() );
+		$this->assertArrayHasKey( 'errors', $result );
+	}
+
+
 	public function testPostMShopException()
 	{
-		$object = $this->getObject( 'setType', $this->throwException( new \Aimeos\MShop\Exception() ) );
+		$object = $this->getObject( 'get', $this->throwException( new \Aimeos\MShop\Exception() ) );
 
 		$response = $object->post( $this->view->request(), $this->view->response() );
 		$result = json_decode( (string) $response->getBody(), true );
@@ -336,7 +387,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testPostException()
 	{
-		$object = $this->getObject( 'setType', $this->throwException( new \Exception() ) );
+		$object = $this->getObject( 'get', $this->throwException( new \Exception() ) );
 
 		$response = $object->post( $this->view->request(), $this->view->response() );
 		$result = json_decode( (string) $response->getBody(), true );
@@ -371,12 +422,12 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	 */
 	protected function getOrderBaseItem()
 	{
-		$baseManager = \Aimeos\MShop\Factory::createManager( $this->context, 'order/base' );
+		$baseManager = \Aimeos\MShop::create( $this->context, 'order/base' );
 
 		$search = $baseManager->createSearch();
 		$search->setConditions( $search->compare( '==', 'order.base.price', '672.00') );
 
-		$items = $baseManager->searchItems( $search );
+		$items = $baseManager->searchItems( $search, ['order/base/product'] );
 
 		if( ( $item = reset( $items ) ) === false ) {
 			throw new \Exception( 'No order/base item with price "672.00" found' );
@@ -394,12 +445,16 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	 */
 	protected function getObject( $method, $result )
 	{
-		$cntl = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$methods = (array) $method;
+
+		$cntl = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
-			->setMethods( [$method] )
+			->setMethods( $methods )
 			->getMock();
 
-		$cntl->expects( $this->once() )->method( $method )->will( $result );
+		foreach( $methods as $method ) {
+			$cntl->expects( $this->once() )->method( $method )->will( $result );
+		}
 
 		\Aimeos\Controller\Frontend\Basket\Factory::injectController( '\Aimeos\Controller\Frontend\Basket\Standard', $cntl );
 

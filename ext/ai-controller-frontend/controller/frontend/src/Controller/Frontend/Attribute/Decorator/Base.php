@@ -32,11 +32,10 @@ abstract class Base
 	 */
 	public function __construct( \Aimeos\Controller\Frontend\Iface $controller, \Aimeos\MShop\Context\Item\Iface $context )
 	{
-		\Aimeos\MW\Common\Base::checkClass( '\\Aimeos\\Controller\\Frontend\\Attribute\\Iface', $controller );
-
-		$this->controller = $controller;
-
 		parent::__construct( $context );
+
+		$iface = \Aimeos\Controller\Frontend\Attribute\Iface::class;
+		$this->controller = \Aimeos\MW\Common\Base::checkClass( $iface, $controller );
 	}
 
 
@@ -55,72 +54,214 @@ abstract class Base
 
 
 	/**
-	 * Returns the given search filter with the conditions attached for filtering by type code
-	 *
-	 * @param \Aimeos\MW\Criteria\Iface $filter Criteria object used for attribute search
-	 * @param array $codes List of attribute type codes
-	 * @return \Aimeos\MW\Criteria\Iface Criteria object containing the conditions for searching
-	 * @since 2017.03
+	 * Clones objects in controller and resets values
 	 */
-	public function addFilterTypes( \Aimeos\MW\Criteria\Iface $filter, array $codes )
+	public function __clone()
 	{
-		return $this->controller->addFilterTypes( $filter, $codes );
+		$this->controller = clone $this->controller;
 	}
 
 
 	/**
-	 * Returns the default attribute filter
+	 * Adds attribute IDs for filtering
 	 *
-	 * @param boolean True to add default criteria
-	 * @return \Aimeos\MW\Criteria\Iface Criteria object containing the conditions for searching
-	 * @since 2017.03
+	 * @param array|string $attrIds Attribute ID or list of IDs
+	 * @return \Aimeos\Controller\Frontend\Attribute\Iface Attribute controller for fluent interface
+	 * @since 2019.04
 	 */
-	public function createFilter()
+	public function attribute( $attrIds )
 	{
-		return $this->controller->createFilter();
+		$this->controller->attribute( $attrIds );
+		return $this;
 	}
 
 
 	/**
-	 * Returns the attribute item for the given attribute ID
+	 * Adds generic condition for filtering attributes
+	 *
+	 * @param string $operator Comparison operator, e.g. "==", "!=", "<", "<=", ">=", ">", "=~", "~="
+	 * @param string $key Search key defined by the attribute manager, e.g. "attribute.status"
+	 * @param array|string $value Value or list of values to compare to
+	 * @return \Aimeos\Controller\Frontend\Attribute\Iface Attribute controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function compare( $operator, $key, $value )
+	{
+		$this->controller->compare( $operator, $key, $value );
+		return $this;
+	}
+
+
+	/**
+	 * Adds the domain of the attributes for filtering
+	 *
+	 * @param string $domain Domain of the attributes
+	 * @return \Aimeos\Controller\Frontend\Attribute\Iface Attribute controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function domain( $domain )
+	{
+		$this->controller->domain( $domain );
+		return $this;
+	}
+
+
+	/**
+	 * Returns the attribute for the given attribute code
+	 *
+	 * @param string $code Unique attribute code
+	 * @param string $type Type assigned to the attribute
+	 * @return \Aimeos\MShop\Attribute\Item\Iface Attribute item including the referenced domains items
+	 * @since 2019.04
+	 */
+	public function find( $code, $type )
+	{
+		return $this->controller->find( $code, $type );
+	}
+
+
+	/**
+	 * Returns the attribute for the given attribute ID
 	 *
 	 * @param string $id Unique attribute ID
-	 * @param string[] $domains Domain names of items that are associated with the attributes and that should be fetched too
 	 * @return \Aimeos\MShop\Attribute\Item\Iface Attribute item including the referenced domains items
-	 * @since 2017.03
+	 * @since 2019.04
 	 */
-	public function getItem( $id, array $domains = array( 'media', 'price', 'text' ) )
+	public function get( $id )
 	{
-		return $this->controller->getItem( $id, $domains );
+		return $this->controller->get( $id );
 	}
 
 
 	/**
-	 * Returns the attribute items for the given attribute IDs
+	 * Adds a filter to return only items containing a reference to the given ID
 	 *
-	 * @param string $ids Unique attribute IDs
-	 * @param string[] $domains Domain names of items that are associated with the attributes and that should be fetched too
-	 * @return \Aimeos\MShop\Attribute\Item\Iface[] Associative list of attribute item including the referenced domains items
-	 * @since 2017.03
+	 * @param string $domain Domain name of the referenced item, e.g. "price"
+	 * @param string|null $type Type code of the reference, e.g. "default" or null for all types
+	 * @param string|null $refId ID of the referenced item of the given domain or null for all references
+	 * @return \Aimeos\Controller\Frontend\Attribute\Iface Attribute controller for fluent interface
+	 * @since 2019.04
 	 */
-	public function getItems( array $ids, array $domains = array( 'media', 'price', 'text' ) )
+	public function has( $domain, $type = null, $refId = null )
 	{
-		return $this->controller->getItems( $ids, $domains );
+		$this->controller->has( $domain, $type, $refId );
+		return $this;
 	}
 
 
 	/**
-	 * Returns the attributes filtered by the given criteria object
+	 * Parses the given array and adds the conditions to the list of conditions
 	 *
-	 * @param \Aimeos\MW\Criteria\Iface $filter Critera object which contains the filter conditions
-	 * @param string[] $domains Domain names of items that are associated with the attributes and that should be fetched too
+	 * @param array $conditions List of conditions, e.g. ['&&' => [['>' => ['attribute.status' => 0]], ['==' => ['attribute.type' => 'color']]]]
+	 * @return \Aimeos\Controller\Frontend\Attribute\Iface Attribute controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function parse( array $conditions )
+	{
+		$this->controller->parse( $conditions );
+		return $this;
+	}
+
+
+	/**
+	 * Adds a filter to return only items containing the property
+	 *
+	 * @param string $type Type code of the property, e.g. "htmlcolor"
+	 * @param string|null $value Exact value of the property
+	 * @param string|null $langId ISO country code (en or en_US) or null if not language specific
+	 * @return \Aimeos\Controller\Frontend\Attribute\Iface Attribute controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function property( $type, $value = null, $langId = null )
+	{
+		$this->controller->property( $type, $value, $langId );
+		return $this;
+	}
+
+
+	/**
+	 * Returns the attributes filtered by the previously assigned conditions
+	 *
 	 * @param integer &$total Parameter where the total number of found attributes will be stored in
-	 * @return array Ordered list of attribute items implementing \Aimeos\MShop\Attribute\Item\Iface
-	 * @since 2017.03
+	 * @return \Aimeos\MShop\Attribute\Item\Iface[] Ordered list of attribute items
+	 * @since 2019.04
 	 */
-	public function searchItems( \Aimeos\MW\Criteria\Iface $filter, array $domains = array( 'media', 'price', 'text' ), &$total = null )
+	public function search( &$total = null )
 	{
-		return $this->controller->searchItems( $filter, $domains, $total );
+		return $this->controller->search( $total );
+	}
+
+
+	/**
+	 * Sets the start value and the number of returned attributes for slicing the list of found attributes
+	 *
+	 * @param integer $start Start value of the first attribute in the list
+	 * @param integer $limit Number of returned attributes
+	 * @return \Aimeos\Controller\Frontend\Attribute\Iface Attribute controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function slice( $start, $limit )
+	{
+		$this->controller->slice( $start, $limit );
+		return $this;
+	}
+
+
+	/**
+	 * Sets the sorting of the result list
+	 *
+	 * @param string|null $key Sorting of the result list like "position", null for no sorting
+	 * @return \Aimeos\Controller\Frontend\Attribute\Iface Attribute controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function sort( $key = null )
+	{
+		$this->controller->sort( $key );
+		return $this;
+	}
+
+
+	/**
+	 * Adds attribute types for filtering
+	 *
+	 * @param array|string $codes Attribute ID or list of IDs
+	 * @return \Aimeos\Controller\Frontend\Attribute\Iface Attribute controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function type( $codes )
+	{
+		$this->controller->type( $codes );
+		return $this;
+	}
+
+
+	/**
+	 * Sets the referenced domains that will be fetched too when retrieving items
+	 *
+	 * @param array $domains Domain names of the referenced items that should be fetched too
+	 * @return \Aimeos\Controller\Frontend\Attribute\Iface Attribute controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function uses( array $domains )
+	{
+		$this->controller->uses( $domains );
+		return $this;
+	}
+
+
+	/**
+	 * Injects the reference of the outmost object
+	 *
+	 * @param \Aimeos\Controller\Frontend\Iface $object Reference to the outmost controller or decorator
+	 * @return \Aimeos\Controller\Frontend\Iface Controller object for chaining method calls
+	 */
+	public function setObject( \Aimeos\Controller\Frontend\Iface $object )
+	{
+		parent::setObject( $object );
+
+		$this->controller->setObject( $object );
+
+		return $this;
 	}
 
 

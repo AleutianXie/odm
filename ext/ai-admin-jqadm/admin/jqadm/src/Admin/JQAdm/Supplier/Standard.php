@@ -39,7 +39,7 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'supplier' );
+			$manager = \Aimeos\MShop::create( $context, 'supplier' );
 			$view->item = $manager->getItem( $id, $this->getDomains() );
 
 			$view->itemData = $this->toArray( $view->item, true );
@@ -84,7 +84,7 @@ class Standard
 			$data = $view->param( 'item', [] );
 
 			if( !isset( $view->item ) ) {
-				$view->item = \Aimeos\MShop\Factory::createManager( $context, 'supplier' )->createItem();
+				$view->item = \Aimeos\MShop::create( $context, 'supplier' )->createItem();
 			}
 
 			$data['supplier.siteid'] = $view->item->getSiteId();
@@ -126,7 +126,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'supplier' );
+		$manager = \Aimeos\MShop::create( $context, 'supplier' );
 		$manager->begin();
 
 		try
@@ -183,7 +183,7 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'supplier' );
+			$manager = \Aimeos\MShop::create( $context, 'supplier' );
 
 			$view->item = $manager->getItem( $id, $this->getDomains() );
 			$view->itemSubparts = $this->getSubClientNames();
@@ -223,7 +223,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'supplier' );
+		$manager = \Aimeos\MShop::create( $context, 'supplier' );
 		$manager->begin();
 
 		try
@@ -279,7 +279,7 @@ class Standard
 		{
 			$total = 0;
 			$params = $this->storeSearchParams( $view->param(), 'supplier' );
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'supplier' );
+			$manager = \Aimeos\MShop::create( $context, 'supplier' );
 			$search = $this->initCriteria( $manager->createSearch(), $params );
 
 			$view->items = $manager->searchItems( $search, $this->getDomains(), $total );
@@ -325,7 +325,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/supplier/template-list';
-		$default = 'supplier/list-standard.php';
+		$default = 'supplier/list-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -489,12 +489,12 @@ class Standard
 	/**
 	 * Creates new and updates existing items using the data array
 	 *
-	 * @param string[] Data array
+	 * @param array $data Data array
 	 * @return \Aimeos\MShop\Supplier\Item\Iface New supplier item object
 	 */
 	protected function fromArray( array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'supplier' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'supplier' );
 
 		if( isset( $data['supplier.id'] ) && $data['supplier.id'] != '' ) {
 			$item = $manager->getItem( $data['supplier.id'], $this->getDomains() );
@@ -502,7 +502,7 @@ class Standard
 			$item = $manager->createItem();
 		}
 
-		$item->fromArray( $data );
+		$item->fromArray( $data, true );
 
 		return $item;
 	}
@@ -557,7 +557,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/supplier/template-item';
-		$default = 'supplier/item-standard.php';
+		$default = 'supplier/item-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

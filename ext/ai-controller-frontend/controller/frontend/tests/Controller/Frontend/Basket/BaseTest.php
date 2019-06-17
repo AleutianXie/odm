@@ -16,13 +16,13 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	protected function setUp()
 	{
 		$this->context = \TestHelperFrontend::getContext();
-		\Aimeos\MShop\Factory::setCache( true );
+		\Aimeos\MShop::cache( true );
 	}
 
 
 	protected function tearDown()
 	{
-		\Aimeos\MShop\Factory::setCache( false );
+		\Aimeos\MShop::cache( false );
 		$this->context->getSession()->set( 'aimeos', [] );
 
 		unset( $this->context );
@@ -31,7 +31,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCheckLocale()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( null )
 			->getMock();
@@ -43,14 +43,14 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopyAddresses()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( \TestHelperFrontend::getContext(), 'order/base' );
+		$manager = \Aimeos\MShop::create( \TestHelperFrontend::getContext(), 'order/base' );
 		$ordBaseItem = $manager->createItem();
 
 		$address = $this->getAddress( 'Example company' );
-		$ordBaseItem->setAddress( $address, \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT );
+		$ordBaseItem->addAddress( $address, \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT );
 
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( null )
 			->getMock();
@@ -61,8 +61,8 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( ['test'], $result );
 		$this->assertEquals( 1, count( $object->get()->getAddresses() ) );
 
-		$addr = $object->get()->getAddress( \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT );
-		$this->assertInstanceOf( '\Aimeos\MShop\Order\Item\Base\Address\Iface', $addr );
+		$addr = $object->get()->getAddress( \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT, 0 );
+		$this->assertInstanceOf( \Aimeos\MShop\Order\Item\Base\Address\Iface::class, $addr );
 
 		$object->clear();
 	}
@@ -70,19 +70,19 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopyAddressesException()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( \TestHelperFrontend::getContext(), 'order/base' );
+		$manager = \Aimeos\MShop::create( \TestHelperFrontend::getContext(), 'order/base' );
 		$ordBaseItem = $manager->createItem();
 
 		$address = $this->getAddress( 'Example company' );
-		$ordBaseItem->setAddress( $address, \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT );
+		$ordBaseItem->addAddress( $address, \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT );
 
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
-			->setMethods( ['setAddress'] )
+			->setMethods( ['get'] )
 			->getMock();
 
-		$object->expects( $this->once() )->method( 'setAddress' )->will( $this->throwException( new \Exception() ) );
+		$object->expects( $this->once() )->method( 'get' )->will( $this->throwException( new \Exception() ) );
 
 		$result = $this->access( 'copyAddresses' )->invokeArgs( $object, [$ordBaseItem, [], 'unittest|en|EUR'] );
 
@@ -93,11 +93,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopyCoupon()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( \TestHelperFrontend::getContext(), 'order/base' );
+		$manager = \Aimeos\MShop::create( \TestHelperFrontend::getContext(), 'order/base' );
 		$ordBaseItem = $manager->createItem();
 
-		$product = \Aimeos\MShop\Factory::createManager( $this->context, 'product' )->findItem( 'CNC', ['price'] );
-		$ordProdManager = \Aimeos\MShop\Factory::createManager( $this->context, 'order/base/product' );
+		$product = \Aimeos\MShop::create( $this->context, 'product' )->findItem( 'CNC', ['price'] );
+		$ordProdManager = \Aimeos\MShop::create( $this->context, 'order/base/product' );
 		$ordProdItem = $ordProdManager->createItem()->copyFrom( $product );
 
 		$priceItems = $product->getRefItems( 'price' );
@@ -107,12 +107,12 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$ordBaseItem->addCoupon( 'OPQR', [] );
 
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( null )
 			->getMock();
 
-		$object->addProduct( $product->getId() );
+		$object->addProduct( $product );
 
 		$result = $this->access( 'copyCoupons' )->invokeArgs( $object, [$ordBaseItem, ['test'], 'unittest|en|EUR'] );
 
@@ -125,13 +125,13 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopyCouponException()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( \TestHelperFrontend::getContext(), 'order/base' );
+		$manager = \Aimeos\MShop::create( \TestHelperFrontend::getContext(), 'order/base' );
 		$ordBaseItem = $manager->createItem();
 
 		$ordBaseItem->addCoupon( '90AB', [] );
 
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( ['addCoupon'] )
 			->getMock();
@@ -147,16 +147,16 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopyProduct()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( \TestHelperFrontend::getContext(), 'order/base' );
+		$manager = \Aimeos\MShop::create( \TestHelperFrontend::getContext(), 'order/base' );
 		$ordBaseItem = $manager->createItem();
 
-		$product = \Aimeos\MShop\Factory::createManager( $this->context, 'product' )->findItem( 'CNC' );
-		$ordProdManager = \Aimeos\MShop\Factory::createManager( $this->context, 'order/base/product' );
+		$product = \Aimeos\MShop::create( $this->context, 'product' )->findItem( 'CNC' );
+		$ordProdManager = \Aimeos\MShop::create( $this->context, 'order/base/product' );
 		$ordProdItem = $ordProdManager->createItem()->copyFrom( $product );
 		$ordBaseItem->addProduct( $ordProdItem );
 
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( null )
 			->getMock();
@@ -166,7 +166,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 		$this->assertEquals( ['test'], $result );
 		$this->assertEquals( 1, count( $object->get()->getProducts() ) );
-		$this->assertInstanceOf( '\Aimeos\MShop\Order\Item\Base\Product\Iface', $object->get()->getProduct( 0 ) );
+		$this->assertInstanceOf( \Aimeos\MShop\Order\Item\Base\Product\Iface::class, $object->get()->getProduct( 0 ) );
 
 		$object->clear();
 	}
@@ -174,16 +174,16 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopyProductException()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( \TestHelperFrontend::getContext(), 'order/base' );
+		$manager = \Aimeos\MShop::create( \TestHelperFrontend::getContext(), 'order/base' );
 		$ordBaseItem = $manager->createItem();
 
-		$product = \Aimeos\MShop\Factory::createManager( $this->context, 'product' )->findItem( 'CNC' );
-		$ordProdManager = \Aimeos\MShop\Factory::createManager( $this->context, 'order/base/product' );
+		$product = \Aimeos\MShop::create( $this->context, 'product' )->findItem( 'CNC' );
+		$ordProdManager = \Aimeos\MShop::create( $this->context, 'order/base/product' );
 		$ordProdItem = $ordProdManager->createItem()->copyFrom( $product );
 		$ordBaseItem->addProduct( $ordProdItem );
 
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( ['addProduct'] )
 			->getMock();
@@ -199,11 +199,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopyServices()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( \TestHelperFrontend::getContext(), 'order/base' );
+		$manager = \Aimeos\MShop::create( \TestHelperFrontend::getContext(), 'order/base' );
 		$ordBaseItem = $manager->createItem();
 
-		$serviceManager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
-		$ordServManager = \Aimeos\MShop\Factory::createManager( $this->context, 'order/base/service' );
+		$serviceManager = \Aimeos\MShop::create( $this->context, 'service' );
+		$ordServManager = \Aimeos\MShop::create( $this->context, 'order/base/service' );
 
 		$serviceItem = $serviceManager->findItem( 'unitcode', [], 'service', 'delivery' );
 		$ordServItem = $ordServManager->createItem()->copyFrom( $serviceItem );
@@ -211,7 +211,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$ordBaseItem->addService( $ordServItem, \Aimeos\MShop\Order\Item\Base\Service\Base::TYPE_DELIVERY );
 
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( null )
 			->getMock();
@@ -225,7 +225,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$services = $object->get()->getService( \Aimeos\MShop\Order\Item\Base\Service\Base::TYPE_DELIVERY );
 
 		foreach( $services as $service ) {
-			$this->assertInstanceOf( '\Aimeos\MShop\Order\Item\Base\Service\Iface', $service );
+			$this->assertInstanceOf( \Aimeos\MShop\Order\Item\Base\Service\Iface::class, $service );
 		}
 
 		$object->clear();
@@ -234,11 +234,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCopyServicesException()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( \TestHelperFrontend::getContext(), 'order/base' );
+		$manager = \Aimeos\MShop::create( \TestHelperFrontend::getContext(), 'order/base' );
 		$ordBaseItem = $manager->createItem();
 
-		$serviceManager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
-		$ordServManager = \Aimeos\MShop\Factory::createManager( $this->context, 'order/base/service' );
+		$serviceManager = \Aimeos\MShop::create( $this->context, 'service' );
+		$ordServManager = \Aimeos\MShop::create( $this->context, 'order/base/service' );
 
 		$serviceItem = $serviceManager->findItem( 'unitcode', [], 'service', 'delivery' );
 		$ordServItem = $ordServManager->createItem()->copyFrom( $serviceItem );
@@ -246,7 +246,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 		$ordBaseItem->addService( $ordServItem, \Aimeos\MShop\Order\Item\Base\Service\Base::TYPE_DELIVERY );
 
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( ['addService'] )
 			->getMock();
@@ -261,7 +261,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCreateSubscriptions()
 	{
-		$baseManager = \Aimeos\MShop\Factory::createManager( $this->context, 'order/base' );
+		$baseManager = \Aimeos\MShop::create( $this->context, 'order/base' );
 
 		$search = $baseManager->createSearch();
 		$search->setConditions( $search->compare( '==', 'order.base.price', '53.50' ) );
@@ -272,17 +272,17 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 			throw new \Exception( sprintf( 'No order base item found for price "%1$s"', '53,50' ) );
 		}
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( ['getAttributes'] )
 			->getMock();
 
-		$stub = $this->getMockBuilder( '\Aimeos\MShop\Subscription\Manager\Standard' )
+		$stub = $this->getMockBuilder( \Aimeos\MShop\Subscription\Manager\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( ['saveItem'] )
 			->getMock();
 
-		\Aimeos\MShop\Factory::injectManager( $this->context, 'subscription', $stub );
+		\Aimeos\MShop::inject( 'subscription', $stub );
 
 		$stub->expects( $this->exactly( 2 ) )->method( 'saveItem' );
 
@@ -292,7 +292,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetOrderProductAttributes()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( ['getAttributes'] )
 			->getMock();
@@ -312,7 +312,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	 */
 	protected function getAddress( $company )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( \TestHelperFrontend::getContext(), 'customer/address' );
+		$manager = \Aimeos\MShop::create( \TestHelperFrontend::getContext(), 'customer/address' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'customer.address.company', $company ) );
@@ -322,7 +322,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 			throw new \RuntimeException( sprintf( 'No address item with company "%1$s" found', $company ) );
 		}
 
-		$ordAddrManager = \Aimeos\MShop\Factory::createManager( \TestHelperFrontend::getContext(), 'order/base/address' );
+		$ordAddrManager = \Aimeos\MShop::create( \TestHelperFrontend::getContext(), 'order/base/address' );
 		$ordAddrItem = $ordAddrManager->createItem()->copyFrom( $item );
 
 		return $ordAddrItem;
@@ -331,7 +331,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	protected function access( $name )
 	{
-		$class = new \ReflectionClass( '\Aimeos\Controller\Frontend\Basket\Base' );
+		$class = new \ReflectionClass( \Aimeos\Controller\Frontend\Basket\Base::class );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 

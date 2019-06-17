@@ -40,7 +40,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetHeaderException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\Html\Basket\Mini\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\Html\Basket\Mini\Standard::class )
 			->setConstructorArgs( array( $this->context, [] ) )
 			->setMethods( array( 'addData' ) )
 			->getMock();
@@ -68,13 +68,13 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetBodyAddedOneProduct()
 	{
-		$controller = \Aimeos\Controller\Frontend\Basket\Factory::createController( $this->context );
+		$controller = \Aimeos\Controller\Frontend\Basket\Factory::create( $this->context );
 
 		$productItem = $this->getProductItem( 'CNE' );
 
 		$view = $this->object->getView();
 
-		$controller->addProduct( $productItem->getId(), 9 );
+		$controller->addProduct( $productItem, 9 );
 		$view->miniBasket = $controller->get();
 
 		$output = $this->object->getBody();
@@ -89,7 +89,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetBodyHtmlException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\Html\Basket\Mini\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\Html\Basket\Mini\Standard::class )
 			->setConstructorArgs( array( $this->context, [] ) )
 			->setMethods( array( 'addData' ) )
 			->getMock();
@@ -105,7 +105,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetBodyFrontendException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\Html\Basket\Mini\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\Html\Basket\Mini\Standard::class )
 			->setConstructorArgs( array( $this->context, [] ) )
 			->setMethods( array( 'addData' ) )
 			->getMock();
@@ -121,7 +121,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetBodyMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\Html\Basket\Mini\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\Html\Basket\Mini\Standard::class )
 			->setConstructorArgs( array( $this->context, [] ) )
 			->setMethods( array( 'addData' ) )
 			->getMock();
@@ -160,7 +160,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	*/
 	protected function getProductItem( $code )
 	{
-		$manager = \Aimeos\MShop\Product\Manager\Factory::createManager( $this->context );
+		$manager = \Aimeos\MShop\Product\Manager\Factory::create( $this->context );
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'product.code', $code ) );
 		$items = $manager->searchItems( $search, array( 'price' ) );

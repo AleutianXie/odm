@@ -121,7 +121,7 @@ class Standard
 		 *
 		 * The partial template files are usually stored in the templates/partials/ folder
 		 * of the core or the extensions. The configured path to the partial file must
-		 * be relative to the templates/ folder, e.g. "partials/data-standard.php".
+		 * be relative to the templates/ folder, e.g. "partials/data-standard".
 		 *
 		 * @param string Relative path to the template file
 		 * @since 2016.01
@@ -149,7 +149,7 @@ class Standard
 
 		foreach( $include as $type )
 		{
-			$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), $type );
+			$manager = \Aimeos\MShop::create( $this->getContext(), $type );
 
 			$search = $manager->createSearch();
 			$search->setConditions( $search->compare( '==', str_replace( '/', '.', $type ) . '.baseid', $ids ) );

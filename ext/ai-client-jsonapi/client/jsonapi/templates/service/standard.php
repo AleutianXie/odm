@@ -180,7 +180,7 @@ $flatFcn = function( array $map )
 	"meta": {
 		"total": <?= $this->get( 'total', 0 ); ?>,
 		"prefix": <?= json_encode( $this->get( 'prefix' ) ); ?>,
-		"content-baseurl": "<?= $this->config( 'client/html/common/content/baseurl' ); ?>"
+		"content-baseurl": "<?= $this->config( 'resource/fs/baseurl' ); ?>"
 
 		<?php if( $this->csrf()->name() != '' ) : ?>
 			, "csrf": {
@@ -195,7 +195,6 @@ $flatFcn = function( array $map )
 	}
 
 	<?php if( isset( $this->errors ) ) : ?>
-
 		,"errors": <?= json_encode( $this->errors, JSON_PRETTY_PRINT ); ?>
 
 	<?php elseif( isset( $this->items ) ) : ?>

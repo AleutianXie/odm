@@ -28,7 +28,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetItem()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'supplier' );
+		$manager = \Aimeos\MShop::create( $this->context, 'supplier' );
 		$supId = $manager->findItem( 'unitCode001' )->getId();
 
 		$params = array(
@@ -62,7 +62,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetItemAddress()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'supplier' );
+		$manager = \Aimeos\MShop::create( $this->context, 'supplier' );
 		$supId = $manager->findItem( 'unitCode001' )->getId();
 
 		$params = array(
@@ -150,7 +150,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\JsonApi\Supplier\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\JsonApi\Supplier\Standard::class )
 			->setConstructorArgs( [$this->context, 'supplier'] )
 			->setMethods( ['getItems'] )
 			->getMock();
@@ -171,7 +171,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\JsonApi\Supplier\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\JsonApi\Supplier\Standard::class )
 			->setConstructorArgs( [$this->context, 'supplier'] )
 			->setMethods( ['getItems'] )
 			->getMock();

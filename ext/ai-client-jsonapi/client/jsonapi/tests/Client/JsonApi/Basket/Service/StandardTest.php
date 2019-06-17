@@ -34,7 +34,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testDelete()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
+		$manager = \Aimeos\MShop::create( $this->context, 'service' );
 		$servId = $manager->findItem( 'unitcode', [], 'service', 'delivery' )->getId();
 
 		$body = '{"data": {"type": "basket/service", "id": "delivery", "attributes": {"service.id": ' . $servId . '}}}';
@@ -66,7 +66,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testDeleteById()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
+		$manager = \Aimeos\MShop::create( $this->context, 'service' );
 		$servId = $manager->findItem( 'unitcode', [], 'service', 'delivery' )->getId();
 
 		$body = '{"data": {"type": "basket/service", "id": "delivery", "attributes": {"service.id": ' . $servId . '}}}';
@@ -94,6 +94,19 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$this->assertArrayNotHasKey( 'basket/service', $result['data']['relationships'] );
 
 		$this->assertArrayNotHasKey( 'errors', $result );
+	}
+
+
+	public function testDeletePluginException()
+	{
+		$object = $this->getObject( 'setType', $this->throwException( new \Aimeos\MShop\Plugin\Provider\Exception() ) );
+
+		$response = $object->delete( $this->view->request(), $this->view->response() );
+		$result = json_decode( (string) $response->getBody(), true );
+
+
+		$this->assertEquals( 409, $response->getStatusCode() );
+		$this->assertArrayHasKey( 'errors', $result );
 	}
 
 
@@ -125,7 +138,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testPost()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
+		$manager = \Aimeos\MShop::create( $this->context, 'service' );
 		$servId = $manager->findItem( 'unitcode', [], 'service', 'delivery' )->getId();
 
 		$body = '{"data": {"type": "basket/service", "id": "delivery", "attributes": {"service.id": ' . $servId . '}}}';
@@ -149,7 +162,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testPostMultiple()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'service' );
+		$manager = \Aimeos\MShop::create( $this->context, 'service' );
 		$servId = $manager->findItem( 'unitcode', [], 'service', 'delivery' )->getId();
 		$servId2 = $manager->findItem( 'unitpaymentcode', [], 'service', 'payment' )->getId();
 
@@ -175,6 +188,19 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( 'unitpaymentcode', $result['included'][1]['attributes']['order.base.service.code'] );
 
 		$this->assertArrayNotHasKey( 'errors', $result );
+	}
+
+
+	public function testPostPluginException()
+	{
+		$object = $this->getObject( 'setType', $this->throwException( new \Aimeos\MShop\Plugin\Provider\Exception() ) );
+
+		$response = $object->post( $this->view->request(), $this->view->response() );
+		$result = json_decode( (string) $response->getBody(), true );
+
+
+		$this->assertEquals( 409, $response->getStatusCode() );
+		$this->assertArrayHasKey( 'errors', $result );
 	}
 
 
@@ -229,7 +255,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	 */
 	protected function getObject( $method, $result )
 	{
-		$cntl = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Basket\Standard' )
+		$cntl = $this->getMockBuilder( \Aimeos\Controller\Frontend\Basket\Standard::class )
 			->setConstructorArgs( [$this->context] )
 			->setMethods( [$method] )
 			->getMock();

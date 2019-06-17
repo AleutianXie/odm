@@ -22,8 +22,8 @@ class Standard
 	extends Base
 	implements Iface, \Aimeos\Controller\Frontend\Common\Iface
 {
+	private $manager;
 	private $baskets = [];
-	private $domainManager;
 	private $type = 'default';
 
 
@@ -37,19 +37,32 @@ class Standard
 	{
 		parent::__construct( $context );
 
-		$this->domainManager = \Aimeos\MShop\Factory::createManager( $context, 'order/base' );
+		$this->manager = \Aimeos\MShop::create( $context, 'order/base' );
+	}
+
+
+	/**
+	 * Adds values like comments to the basket
+	 *
+	 * @param array $values Order base values like comment
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
+	 */
+	public function add( array $values )
+	{
+		$this->baskets[$this->type] = $this->get()->fromArray( $values );
+		return $this;
 	}
 
 
 	/**
 	 * Empties the basket and removing all products, addresses, services, etc.
 	 *
-	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
 	 */
 	public function clear()
 	{
-		$this->baskets[$this->type] = $this->domainManager->createItem();
-		$this->domainManager->setSession( $this->baskets[$this->type], $this->type );
+		$this->baskets[$this->type] = $this->manager->createItem();
+		$this->manager->setSession( $this->baskets[$this->type], $this->type );
 
 		return $this;
 	}
@@ -64,7 +77,7 @@ class Standard
 	{
 		if( !isset( $this->baskets[$this->type] ) )
 		{
-			$this->baskets[$this->type] = $this->domainManager->getSession( $this->type );
+			$this->baskets[$this->type] = $this->manager->getSession( $this->type );
 			$this->checkLocale( $this->baskets[$this->type]->getLocale(), $this->type );
 		}
 
@@ -75,12 +88,12 @@ class Standard
 	/**
 	 * Explicitely persists the basket content
 	 *
-	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
 	 */
 	public function save()
 	{
 		if( isset( $this->baskets[$this->type] ) && $this->baskets[$this->type]->isModified() ) {
-			$this->domainManager->setSession( $this->baskets[$this->type], $this->type );
+			$this->manager->setSession( $this->baskets[$this->type], $this->type );
 		}
 
 		return $this;
@@ -91,7 +104,7 @@ class Standard
 	 * Sets the new basket type
 	 *
 	 * @param string $type Basket type
-	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
 	 */
 	public function setType( $type )
 	{
@@ -147,7 +160,7 @@ class Standard
 		 */
 		$seconds = $config->get( 'controller/frontend/basket/limit-seconds', 300 );
 
-		$search = $this->domainManager->createSearch();
+		$search = $this->manager->createSearch();
 		$expr = [
 			$search->compare( '==', 'order.base.editor', $context->getEditor() ),
 			$search->compare( '>=', 'order.base.ctime', date( 'Y-m-d H:i:s', time() - $seconds ) ),
@@ -155,7 +168,7 @@ class Standard
 		$search->setConditions( $search->combine( '&&', $expr ) );
 		$search->setSlice( 0, 0 );
 
-		$this->domainManager->searchItems( $search, [], $total );
+		$this->manager->searchItems( $search, [], $total );
 
 		if( $total > $count )
 		{
@@ -164,13 +177,13 @@ class Standard
 		}
 
 
-		$basket = $this->get()->finish();
-		$basket->setCustomerId( (string) $context->getUserId() );
+		$basket = $this->get()->setCustomerId( (string) $context->getUserId() )->finish()->check();
 
-		$this->domainManager->begin();
-		$this->domainManager->store( $basket );
-		$this->domainManager->commit();
+		$this->manager->begin();
+		$this->manager->store( $basket );
+		$this->manager->commit();
 
+		$this->save(); // for reusing unpaid orders, might have side effects (!)
 		$this->createSubscriptions( $basket );
 
 		return $basket;
@@ -187,54 +200,45 @@ class Standard
 	 */
 	public function load( $id, $parts = \Aimeos\MShop\Order\Item\Base\Base::PARTS_ALL, $default = true )
 	{
-		return $this->domainManager->load( $id, $parts, false, $default );
+		return $this->manager->load( $id, $parts, false, $default );
 	}
 
 
 	/**
-	 * Adds a categorized product to the basket of the user stored in the session.
+	 * Adds a product to the basket of the customer stored in the session
 	 *
-	 * @param string $prodid ID of the base product to add
+	 * @param \Aimeos\MShop\Product\Item\Iface $product Product to add including texts, media, prices, attributes, etc.
 	 * @param integer $quantity Amount of products that should by added
-	 * @param array $variantAttributeIds List of variant-building attribute IDs that identify a specific product
-	 * 	in a selection products
-	 * @param array $configAttributeIds  List of attribute IDs that doesn't identify a specific product in a
-	 * 	selection of products but are stored together with the product (e.g. for configurable products)
-	 * @param array $hiddenAttributeIds Deprecated
-	 * @param array $customAttributeValues Associative list of attribute IDs and arbitrary values that should be stored
-	 * 	along with the product in the order
+	 * @param array $variant List of variant-building attribute IDs that identify an article in a selection product
+	 * @param array $config List of configurable attribute IDs the customer has chosen from
+	 * @param array $custom Associative list of attribute IDs as keys and arbitrary values that will be added to the ordered product
 	 * @param string $stocktype Unique code of the stock type to deliver the products from
+	 * @param string|null $supplier Unique supplier code the product is from
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
 	 * @throws \Aimeos\Controller\Frontend\Basket\Exception If the product isn't available
 	 */
-	public function addProduct( $prodid, $quantity = 1, $stocktype = 'default', array $variantAttributeIds = [],
-		array $configAttributeIds = [], array $hiddenAttributeIds = [], array $customAttributeValues = [] )
+	public function addProduct( \Aimeos\MShop\Product\Item\Iface $product, $quantity = 1,
+		array $variant = [], array $config = [], array $custom = [], $stocktype = 'default', $supplier = null )
 	{
-		$attributeMap = [
-			'custom' => array_keys( $customAttributeValues ),
-			'config' => array_keys( $configAttributeIds ),
-		];
-		$this->checkListRef( $prodid, 'attribute', $attributeMap );
+		$attributeMap = ['custom' => array_keys( $custom ), 'config' => array_keys( $config )];
+		$this->checkListRef( $product->getId(), 'attribute', $attributeMap );
 
+		$prices = $product->getRefItems( 'price', 'default', 'default' );
+		$hidden = $product->getRefItems( 'attribute', null, 'hidden' );
 
-		$context = $this->getContext();
-		$productManager = \Aimeos\MShop\Factory::createManager( $context, 'product' );
+		$custAttr = $this->getOrderProductAttributes( 'custom', array_keys( $custom ), $custom );
+		$confAttr = $this->getOrderProductAttributes( 'config', array_keys( $config ), [], $config );
+		$hideAttr = $this->getOrderProductAttributes( 'hidden', array_keys( $hidden ) );
 
-		$productItem = $productManager->getItem( $prodid, ['attribute', 'media', 'supplier', 'price', 'product', 'text'], true );
-		$prices = $productItem->getRefItems( 'price', 'default', 'default' );
-		$hidden = $productItem->getRefItems( 'attribute', null, 'hidden' );
+		$orderBaseProductItem = \Aimeos\MShop::create( $this->getContext(), 'order/base/product' )->createItem()
+			->copyFrom( $product )->setQuantity( $quantity )->setStockType( $stocktype )->setSupplierCode( $supplier )
+			->setAttributeItems( array_merge( $custAttr, $confAttr, $hideAttr ) );
 
-		$orderBaseProductItem = \Aimeos\MShop\Factory::createManager( $context, 'order/base/product' )->createItem();
-		$orderBaseProductItem->copyFrom( $productItem )->setQuantity( $quantity )->setStockType( $stocktype );
+		$orderBaseProductItem = $orderBaseProductItem
+			->setPrice( $this->calcPrice( $orderBaseProductItem, $prices, $quantity ) );
 
-		$custAttr = $this->getOrderProductAttributes( 'custom', array_keys( $customAttributeValues ), $customAttributeValues );
-		$confAttr = $this->getOrderProductAttributes( 'config', array_keys( $configAttributeIds ), [], $configAttributeIds );
-		$attr = array_merge( $custAttr, $confAttr, $this->getOrderProductAttributes( 'hidden', array_keys( $hidden ) ) );
-
-		$orderBaseProductItem->setAttributes( $attr );
-		$orderBaseProductItem->setPrice( $this->calcPrice( $orderBaseProductItem, $prices, $quantity ) );
-
-		$this->get()->addProduct( $orderBaseProductItem );
-		$this->save();
+		$this->baskets[$this->type] = $this->get()->addProduct( $orderBaseProductItem );
+		return $this->save();
 	}
 
 
@@ -242,6 +246,7 @@ class Standard
 	 * Deletes a product item from the basket.
 	 *
 	 * @param integer $position Position number (key) of the order product item
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
 	 */
 	public function deleteProduct( $position )
 	{
@@ -253,8 +258,8 @@ class Standard
 			throw new \Aimeos\Controller\Frontend\Basket\Exception( sprintf( $msg, $position ) );
 		}
 
-		$this->get()->deleteProduct( $position );
-		$this->save();
+		$this->baskets[$this->type] = $this->get()->deleteProduct( $position );
+		return $this->save();
 	}
 
 
@@ -263,9 +268,9 @@ class Standard
 	 *
 	 * @param integer $position Position number (key) of the order product item
 	 * @param integer $quantity New quantiy of the product item
-	 * @param string[] $configAttributeCodes Codes of the product config attributes that should be REMOVED
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
 	 */
-	public function editProduct( $position, $quantity, array $configAttributeCodes = [] )
+	public function updateProduct( $position, $quantity )
 	{
 		$product = $this->get()->getProduct( $position );
 
@@ -275,24 +280,14 @@ class Standard
 			throw new \Aimeos\Controller\Frontend\Basket\Exception( sprintf( $msg, $position ) );
 		}
 
-		$product->setQuantity( $quantity );
-
-		$attributes = $product->getAttributes();
-		foreach( $attributes as $key => $attribute )
-		{
-			if( in_array( $attribute->getCode(), $configAttributeCodes ) ) {
-				unset( $attributes[$key] );
-			}
-		}
-		$product->setAttributes( $attributes );
-
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product' );
 		$productItem = $manager->findItem( $product->getProductCode(), array( 'price', 'text' ), true );
-		$product->setPrice( $this->calcPrice( $product, $productItem->getRefItems( 'price', 'default' ), $quantity ) );
 
-		$this->get()->editProduct( $product, $position );
+		$price = $this->calcPrice( $product, $productItem->getRefItems( 'price', 'default' ), $quantity );
+		$product = $product->setQuantity( $quantity )->setPrice( $price );
 
-		$this->save();
+		$this->baskets[$this->type] = $this->get()->addProduct( $product, $position );
+		return $this->save();
 	}
 
 
@@ -300,6 +295,7 @@ class Standard
 	 * Adds the given coupon code and updates the basket.
 	 *
 	 * @param string $code Coupon code entered by the user
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
 	 * @throws \Aimeos\Controller\Frontend\Basket\Exception if the coupon code is invalid or not allowed
 	 */
 	public function addCoupon( $code )
@@ -330,32 +326,8 @@ class Standard
 			throw new \Aimeos\Controller\Frontend\Basket\Exception( $msg );
 		}
 
-
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'coupon' );
-
-		$search = $manager->createSearch();
-		$search->setConditions( $search->compare( '==', 'coupon.code.code', $code ) );
-		$search->setSlice( 0, 1 );
-
-		$result = $manager->searchItems( $search );
-
-		if( ( $item = reset( $result ) ) === false )
-		{
-			$msg = sprintf( $context->getI18n()->dt( 'controller/frontend', 'Coupon code "%1$s" is invalid or not available any more' ), $code );
-			throw new \Aimeos\Controller\Frontend\Basket\Exception( $msg );
-		}
-
-
-		$provider = $manager->getProvider( $item, strtolower( $code ) );
-
-		if( $provider->isAvailable( $this->get() ) !== true )
-		{
-			$msg = sprintf( $context->getI18n()->dt( 'controller/frontend', 'Requirements for coupon code "%1$s" aren\'t met' ), $code );
-			throw new \Aimeos\Controller\Frontend\Basket\Exception( $msg );
-		}
-
-		$provider->addCoupon( $this->get() );
-		$this->save();
+		$this->baskets[$this->type] = $this->get()->addCoupon( $code );
+		return $this->save();
 	}
 
 
@@ -363,114 +335,91 @@ class Standard
 	 * Removes the given coupon code and its effects from the basket.
 	 *
 	 * @param string $code Coupon code entered by the user
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
 	 * @throws \Aimeos\Controller\Frontend\Basket\Exception if the coupon code is invalid
 	 */
 	public function deleteCoupon( $code )
 	{
-		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'coupon' );
-
-		$search = $manager->createSearch();
-		$search->setConditions( $search->compare( '==', 'coupon.code.code', $code ) );
-		$search->setSlice( 0, 1 );
-
-		$result = $manager->searchItems( $search );
-
-		if( ( $item = reset( $result ) ) === false )
-		{
-			$msg = $context->getI18n()->dt( 'controller/frontend', 'Coupon code "%1$s" is invalid' );
-			throw new \Aimeos\Controller\Frontend\Basket\Exception( sprintf( $msg, $code ) );
-		}
-
-		$manager->getProvider( $item, strtolower( $code ) )->deleteCoupon( $this->get() );
-		$this->save();
+		$this->baskets[$this->type] = $this->get()->deleteCoupon( $code );
+		return $this->save();
 	}
 
 
 	/**
-	 * Sets the address of the customer in the basket.
+	 * Adds an address of the customer to the basket
 	 *
-	 * @param string $type Address type constant from \Aimeos\MShop\Order\Item\Base\Address\Base
-	 * @param \Aimeos\MShop\Common\Item\Address\Iface|array|null $value Address object or array with key/value pairs of address or null to remove address from basket
-	 * @throws \Aimeos\Controller\Frontend\Basket\Exception If the billing or delivery address is not of any required type of
-	 * 	if one of the keys is invalid when using an array with key/value pairs
+	 * @param string $type Address type code like 'payment' or 'delivery'
+	 * @param array $values Associative list of key/value pairs with address details
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
 	 */
-	public function setAddress( $type, $value )
+	public function addAddress( $type, array $values = [], $position = null )
 	{
+		foreach( $values as $key => $value ) {
+			$values[$key] = strip_tags( $value ); // prevent XSS
+		}
+
 		$context = $this->getContext();
-		$address = \Aimeos\MShop\Factory::createManager( $context, 'order/base/address' )->createItem();
-		$address->setType( $type );
+		$address = \Aimeos\MShop::create( $context, 'order/base/address' )->createItem()->fromArray( $values );
 
-		if( $value instanceof \Aimeos\MShop\Common\Item\Address\Iface )
-		{
-			$address->copyFrom( $value );
-			$this->get()->setAddress( $address, $type );
-		}
-		else if( is_array( $value ) )
-		{
-			$this->setAddressFromArray( $address, $value );
-			$this->get()->setAddress( $address, $type );
-		}
-		else if( $value === null )
-		{
-			$this->get()->deleteAddress( $type );
-		}
-		else
-		{
-			$msg = $context->getI18n()->dt( 'controller/frontend', 'Invalid value for address type "%1$s"' );
-			throw new \Aimeos\Controller\Frontend\Basket\Exception( sprintf( $msg, $type ) );
-		}
-
-		$this->save();
+		$this->baskets[$this->type] = $this->get()->addAddress( $address, $type, $position );
+		return $this->save();
 	}
 
 
 	/**
-	 * Adds the delivery/payment service item based on the service ID.
+	 * Removes the address of the given type and position if available
 	 *
-	 * @param string $type Service type code like 'payment' or 'delivery'
-	 * @param string $id|null Unique ID of the service item or null to remove it
-	 * @param array $attributes Associative list of key/value pairs containing the attributes selected or
-	 * 	entered by the customer when choosing one of the delivery or payment options
-	 * @throws \Aimeos\Controller\Frontend\Basket\Exception If there is no price to the service item attached
+	 * @param string $type Address type code like 'payment' or 'delivery'
+	 * @param integer|null $position Position of the address in the list to overwrite
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
 	 */
-	public function addService( $type, $id, array $attributes = [] )
+	public function deleteAddress( $type, $position = null )
+	{
+		$this->baskets[$this->type] = $this->get()->deleteAddress( $type, $position );
+		return $this->save();
+	}
+
+
+	/**
+	 * Adds the delivery/payment service including the given configuration
+	 *
+	 * @param \Aimeos\MShop\Service\Item\Iface $service Service item selected by the customer
+	 * @param array $config Associative list of key/value pairs with the options selected by the customer
+	 * @param integer|null $position Position of the address in the list to overwrite
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
+	 * @throws \Aimeos\Controller\Frontend\Basket\Exception If given service attributes are invalid
+	 */
+	public function addService( \Aimeos\MShop\Service\Item\Iface $service, array $config = [], $position = null )
 	{
 		$context = $this->getContext();
+		$manager = \Aimeos\MShop::create( $context, 'service' );
 
-		$serviceManager = \Aimeos\MShop\Factory::createManager( $context, 'service' );
-		$serviceItem = $serviceManager->getItem( $id, array( 'media', 'price', 'text' ) );
-
-		$provider = $serviceManager->getProvider( $serviceItem, $serviceItem->getType() );
-		$result = $provider->checkConfigFE( $attributes );
-		$unknown = array_diff_key( $attributes, $result );
+		$provider = $manager->getProvider( $service, $service->getType() );
+		$errors = $provider->checkConfigFE( $config );
+		$unknown = array_diff_key( $config, $errors );
 
 		if( count( $unknown ) > 0 )
 		{
-			$msg = $context->getI18n()->dt( 'controller/frontend', 'Unknown attributes "%1$s"' );
-			$msg = sprintf( $msg, implode( '","', array_keys( $unknown ) ) );
-			throw new \Aimeos\Controller\Frontend\Basket\Exception( $msg );
+			$msg = $context->getI18n()->dt( 'controller/frontend', 'Unknown service attributes' );
+			throw new \Aimeos\Controller\Frontend\Basket\Exception( $msg, -1, null, $unknown );
 		}
 
-		foreach( $result as $key => $value )
+		if( count( array_filter( $errors ) ) > 0 )
 		{
-			if( $value !== null ) {
-				throw new \Aimeos\Controller\Frontend\Basket\Exception( $value );
-			}
+			$msg = $context->getI18n()->dt( 'controller/frontend', 'Invalid service attributes' );
+			throw new \Aimeos\Controller\Frontend\Basket\Exception( $msg, -1, null, array_filter( $errors ) );
 		}
-
-		$orderBaseServiceManager = \Aimeos\MShop\Factory::createManager( $context, 'order/base/service' );
-		$orderServiceItem = $orderBaseServiceManager->createItem();
-		$orderServiceItem->copyFrom( $serviceItem );
 
 		// remove service rebate of original price
 		$price = $provider->calcPrice( $this->get() )->setRebate( '0.00' );
-		$orderServiceItem->setPrice( $price );
 
-		$provider->setConfigFE( $orderServiceItem, $attributes );
+		$orderBaseServiceManager = \Aimeos\MShop::create( $context, 'order/base/service' );
 
-		$this->get()->addService( $orderServiceItem, $type );
-		$this->save();
+		$orderServiceItem = $orderBaseServiceManager->createItem()->copyFrom( $service )->setPrice( $price );
+		$orderServiceItem = $provider->setConfigFE( $orderServiceItem, $config );
+
+		$this->baskets[$this->type] = $this->get()->addService( $orderServiceItem, $service->getType(), $position );
+		return $this->save();
 	}
 
 
@@ -478,34 +427,12 @@ class Standard
 	 * Removes the delivery or payment service items from the basket
 	 *
 	 * @param string $type Service type code like 'payment' or 'delivery'
+	 * @param integer|null $position Position of the address in the list to overwrite
+	 * @return \Aimeos\Controller\Frontend\Basket\Iface Basket frontend object for fluent interface
 	 */
-	public function deleteService( $type )
+	public function deleteService( $type, $position = null )
 	{
-		$this->get()->deleteService( $type );
-		$this->save();
-	}
-
-
-	/**
-	 * Fills the order address object with the values from the array.
-	 *
-	 * @param \Aimeos\MShop\Order\Item\Base\Address\Iface $address Address item to store the values into
-	 * @param array $map Associative array of key/value pairs. The keys must be the same as when calling toArray() from
-	 * 	an address item.
-	 * @throws \Aimeos\Controller\Frontend\Basket\Exception
-	 */
-	protected function setAddressFromArray( \Aimeos\MShop\Order\Item\Base\Address\Iface $address, array $map )
-	{
-		foreach( $map as $key => $value ) {
-			$map[$key] = strip_tags( $value ); // prevent XSS
-		}
-
-		$errors = $address->fromArray( $map );
-
-		if( count( $errors ) > 0 )
-		{
-			$msg = $this->getContext()->getI18n()->dt( 'controller/frontend', 'Invalid address properties, please check your input' );
-			throw new \Aimeos\Controller\Frontend\Basket\Exception( $msg, 0, null, $errors );
-		}
+		$this->baskets[$this->type] = $this->get()->deleteService( $type, $position );
+		return $this->save();
 	}
 }

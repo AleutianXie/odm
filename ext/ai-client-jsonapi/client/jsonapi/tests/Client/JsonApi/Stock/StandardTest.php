@@ -28,7 +28,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetItem()
 	{
-		$stockManager = \Aimeos\MShop\Factory::createManager( $this->context, 'stock' );
+		$stockManager = \Aimeos\MShop::create( $this->context, 'stock' );
 		$stockId = $stockManager->findItem( 'CNE', [], 'product', 'default' )->getId();
 
 		$params = array(
@@ -84,7 +84,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\JsonApi\Stock\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\JsonApi\Stock\Standard::class )
 			->setConstructorArgs( [$this->context, 'stock'] )
 			->setMethods( ['getItems'] )
 			->getMock();
@@ -105,7 +105,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\JsonApi\Stock\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\JsonApi\Stock\Standard::class )
 			->setConstructorArgs( [$this->context, 'stock'] )
 			->setMethods( ['getItems'] )
 			->getMock();

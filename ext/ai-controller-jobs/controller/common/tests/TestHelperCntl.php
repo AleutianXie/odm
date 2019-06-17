@@ -15,7 +15,7 @@ class TestHelperCntl
 	public static function bootstrap()
 	{
 		self::getAimeos();
-		\Aimeos\MShop\Factory::setCache( false );
+		\Aimeos\MShop::cache( false );
 	}
 
 
@@ -75,12 +75,12 @@ class TestHelperCntl
 		$ctx->setSession( $session );
 
 
-		$localeManager = \Aimeos\MShop\Locale\Manager\Factory::createManager( $ctx );
+		$localeManager = \Aimeos\MShop\Locale\Manager\Factory::create( $ctx );
 		$locale = $localeManager->bootstrap( $site, '', '', false );
 		$ctx->setLocale( $locale );
 
 
-		$ctx->setEditor( 'core:controller/common' );
+		$ctx->setEditor( 'ai-controller-jobs:cntl/common' );
 
 		return $ctx;
 	}

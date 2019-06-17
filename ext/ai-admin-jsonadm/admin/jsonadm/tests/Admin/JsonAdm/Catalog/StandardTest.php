@@ -18,12 +18,20 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function setUp()
 	{
+		\Aimeos\MShop::cache( true );
+
 		$this->context = \TestHelperJadm::getContext();
 		$this->view = $this->context->getView();
 
 		$this->object = new \Aimeos\Admin\JsonAdm\Catalog\Standard( $this->context, 'catalog' );
 		$this->object->setAimeos( \TestHelperJadm::getAimeos() );
 		$this->object->setView( $this->view );
+	}
+
+
+	protected function tearDown()
+	{
+		\Aimeos\MShop::cache( false );
 	}
 
 
@@ -143,7 +151,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getCatalogItem( $code )
 	{
-		$manager = \Aimeos\MShop\Catalog\Manager\Factory::createManager( $this->context );
+		$manager = \Aimeos\MShop::create( $this->context, 'catalog' );
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'catalog.code', $code ) );
 		$items = $manager->searchItems( $search );

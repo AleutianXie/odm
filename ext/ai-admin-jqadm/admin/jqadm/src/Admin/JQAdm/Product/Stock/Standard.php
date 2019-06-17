@@ -88,7 +88,7 @@ class Standard
 	{
 		parent::delete();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'stock' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'stock' );
 
 		$code = $this->getView()->item->getCode();
 		$search = $manager->createSearch();
@@ -126,7 +126,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'stock' );
+		$manager = \Aimeos\MShop::create( $context, 'stock' );
 		$manager->begin();
 
 		try
@@ -254,9 +254,13 @@ class Standard
 	 */
 	protected function addViewData( \Aimeos\MW\View\Iface $view )
 	{
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'stock/type' );
+		$typeManager = \Aimeos\MShop::create( $this->getContext(), 'stock/type' );
 
-		$view->stockTypes = $typeManager->searchItems( $typeManager->createSearch() );
+		$search = $typeManager->createSearch( true )->setSlice( 0, 10000 );
+		$search->setConditions( $search->compare( '==', 'stock.type.domain', 'product' ) );
+		$search->setSortations( [$search->sort( '+', 'stock.type.position' )] );
+
+		$view->stockTypes = $this->map( $typeManager->searchItems( $search ) );
 
 		return $view;
 	}
@@ -310,12 +314,11 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'stock' );
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'stock/type' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'stock' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'stock.productcode', $item->getCode() ) );
@@ -325,17 +328,16 @@ class Standard
 
 		foreach( $list as $idx => $id )
 		{
-			$typeId = $this->getValue( $data, 'stock.typeid/' . $idx );
+			$type = $this->getValue( $data, 'stock.type/' . $idx );
 
-			if( isset( $stockItems[$id] ) && $stockItems[$id]->getTypeId() == $typeId )
+			if( isset( $stockItems[$id] ) && $stockItems[$id]->getType() == $type )
 			{
 				$stockItem = $stockItems[$id];
 				unset( $stockItems[$id] );
 			}
 			else
 			{
-				$type = $typeManager->getItem( $typeId )->getCode();
-				$stockItem = $manager->createItem( $type, 'product' );
+				$stockItem = $manager->createItem()->setType( $type );
 			}
 
 			$stockItem->setProductCode( $item->getCode() );
@@ -361,11 +363,11 @@ class Standard
 		$data = [];
 		$context = $this->getContext();
 		$siteId = $context->getLocale()->getSiteId();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'stock' );
+		$manager = \Aimeos\MShop::create( $context, 'stock' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'stock.productcode', $item->getCode() ) );
-		$search->setSortations( array( $search->sort( '+', 'stock.type.code' ) ) );
+		$search->setSortations( array( $search->sort( '+', 'stock.type' ) ) );
 
 		foreach( $manager->searchItems( $search ) as $stockItem )
 		{
@@ -416,7 +418,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/stock/template-item';
-		$default = 'product/item-stock-standard.php';
+		$default = 'product/item-stock-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

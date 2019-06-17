@@ -276,8 +276,12 @@ class Standard
 	 */
 	protected function getPropertyTypes()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'attribute/property/type' );
-		return $manager->searchItems( $manager->createSearch()->setSlice( 0, 0x7fffffff ) );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'attribute/property/type' );
+
+		$search = $manager->createSearch( true )->setSlice( 0, 10000 );
+		$search->setSortations( [$search->sort( '+', 'attribute.property.type.position')] );
+
+		return $manager->searchItems( $search );
 	}
 
 
@@ -285,11 +289,11 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Attribute\Item\Iface $item Attribute item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Attribute\Item\Iface $item, array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'attribute/property' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'attribute/property' );
 
 		$propItems = $item->getPropertyItems( null, false );
 
@@ -305,7 +309,7 @@ class Standard
 				$propItem = $manager->createItem();
 			}
 
-			$propItem->fromArray( $entry );
+			$propItem->fromArray( $entry, true );
 			$item->addPropertyItem( $propItem );
 		}
 
@@ -370,7 +374,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/attribute/property/template-item';
-		$default = 'attribute/item-property-standard.php';
+		$default = 'attribute/item-property-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

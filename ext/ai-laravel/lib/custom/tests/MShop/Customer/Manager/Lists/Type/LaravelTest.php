@@ -10,13 +10,13 @@ namespace Aimeos\MShop\Customer\Manager\Lists\Type;
 class LaravelTest extends \PHPUnit\Framework\TestCase
 {
 	private $object;
-	private $editor = 'ai-laravel:unittest';
+	private $editor = 'ai-laravel:lib/custom';
 
 
 	protected function setUp()
 	{
 		$this->editor = \TestHelper::getContext()->getEditor();
-		$manager = \Aimeos\MShop\Customer\Manager\Factory::createManager( \TestHelper::getContext(), 'Laravel' );
+		$manager = \Aimeos\MShop\Customer\Manager\Factory::create( \TestHelper::getContext(), 'Laravel' );
 
 		$listManager = $manager->getSubManager( 'lists', 'Laravel' );
 		$this->object = $listManager->getSubManager( 'type', 'Laravel' );
@@ -109,8 +109,8 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( $itemExp->getTimeCreated(), $itemUpd->getTimeCreated() );
 		$this->assertRegExp( '/\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}/', $itemUpd->getTimeModified() );
 
-		$this->assertInstanceOf( '\Aimeos\MShop\Common\Item\Iface', $resultSaved );
-		$this->assertInstanceOf( '\Aimeos\MShop\Common\Item\Iface', $resultUpd );
+		$this->assertInstanceOf( \Aimeos\MShop\Common\Item\Iface::class, $resultSaved );
+		$this->assertInstanceOf( \Aimeos\MShop\Common\Item\Iface::class, $resultUpd );
 
 		$this->setExpectedException('\\Aimeos\\MShop\\Exception');
 		$this->object->getItem( $itemSaved->getId() );
@@ -141,7 +141,7 @@ class LaravelTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( 1, count( $results ) );
 		$this->assertEquals( 1, $total );
 
-		foreach($results as $itemId => $item) {
+		foreach( $results as $itemId => $item ) {
 			$this->assertEquals( $itemId, $item->getId() );
 		}
 	}

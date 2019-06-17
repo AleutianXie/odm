@@ -18,12 +18,20 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function setUp()
 	{
+		\Aimeos\MShop::cache( true );
+
 		$this->context = \TestHelperJadm::getContext();
 		$this->view = $this->context->getView();
 
 		$this->object = new \Aimeos\Admin\JsonAdm\Locale\Site\Standard( $this->context, 'locale/site' );
 		$this->object->setAimeos( \TestHelperJadm::getAimeos() );
 		$this->object->setView( $this->view );
+	}
+
+
+	protected function tearDown()
+	{
+		\Aimeos\MShop::cache( false );
 	}
 
 
@@ -142,7 +150,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getSiteItem( $code )
 	{
-		$manager = \Aimeos\MShop\Locale\Manager\Factory::createManager( $this->context )->getSubManager( 'site' );
+		$manager = \Aimeos\MShop::create( $this->context, 'locale/site' );
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'locale.site.code', $code ) );
 		$items = $manager->searchItems( $search );

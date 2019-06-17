@@ -28,15 +28,11 @@ $enc = $this->encoder();
 $disablenew = (bool) $this->config( 'client/html/common/address/billing/disable-new', false );
 
 
-try {
-	$addrArray = $this->standardBasket->getAddress( \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT )->toArray();
-} catch( Exception $e ) {
-	$addrArray = [];
-}
-
+$addresses = $this->standardBasket->getAddress( \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT );
+$addrArray = ( ( $address = current( $addresses ) ) !== false ? $address->toArray() : [] );
 
 if( !isset( $addrArray['order.base.address.addressid'] ) || $addrArray['order.base.address.addressid'] == '' ) {
-	$billingDefault = ( isset( $this->addressCustomerItem ) ? $this->addressCustomerItem->getId() : 'null' );
+	$billingDefault = ( isset( $this->addressCustomerItem ) && $this->addressCustomerItem->getId() !== null ? $this->addressCustomerItem->getId() : 'null' );
 } else {
 	$billingDefault = $addrArray['order.base.address.addressid'];
 }
@@ -69,7 +65,7 @@ foreach( $this->get( 'billingHidden', [] ) as $name ) {
 	<h2><?= $enc->html( $this->translate( 'client', 'Billing address' ), $enc::TRUST ); ?></h2>
 
 
-	<?php if( isset( $this->addressPaymentItem )  ) : ?>
+	<?php if( isset( $this->addressPaymentItem ) && $this->addressPaymentItem->getAddressId() != null ) : ?>
 		<div class="item-address">
 			<div class="header">
 
@@ -154,7 +150,7 @@ foreach( $this->get( 'billingHidden', [] ) as $name ) {
 					 * @category Developer
 					 * @category User
 					 */
-					$this->config( 'client/html/checkout/standard/partials/address', 'checkout/standard/address-partial-standard.php' ),
+					$this->config( 'client/html/checkout/standard/partials/address', 'checkout/standard/address-partial-standard' ),
 					array(
 						'address' => $addrValues,
 						'salutations' => $billingSalutations,
@@ -173,7 +169,6 @@ foreach( $this->get( 'billingHidden', [] ) as $name ) {
 
 
 	<?php if( $disablenew === false ) : ?>
-
 		<div class="item-address item-new" data-option="<?= $enc->attr( $billingOption ); ?>">
 			<div class="header">
 				<input id="ca_billingoption-new" type="radio"
@@ -213,7 +208,7 @@ foreach( $this->get( 'billingHidden', [] ) as $name ) {
 			<ul class="form-list">
 
 				<?= $this->partial(
-					$this->config( 'client/html/checkout/standard/partials/address', 'checkout/standard/address-partial-standard.php' ),
+					$this->config( 'client/html/checkout/standard/partials/address', 'checkout/standard/address-partial-standard' ),
 					$values
 				); ?>
 
@@ -223,7 +218,7 @@ foreach( $this->get( 'billingHidden', [] ) as $name ) {
 					</label>
 					<div class="col-md-7">
 						<input class="form-control birthday" type="date"
-						       id="customer-birthday"
+							   id="customer-birthday"
 							name="<?= $enc->attr( $this->formparam( array( 'ca_extra', 'customer.birthday' ) ) ); ?>"
 							value="<?= $enc->attr( $this->get( 'addressExtra/customer.birthday' ) ); ?>"
 						/>

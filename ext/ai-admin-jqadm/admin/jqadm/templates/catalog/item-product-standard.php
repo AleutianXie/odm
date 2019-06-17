@@ -43,7 +43,7 @@ $delConfig = $this->config( 'admin/jsonadm/url/config', [] );
  * @since 2017.10
  * @category Developer
  */
-$default = ['catalog.lists.status', 'catalog.lists.typeid', 'catalog.lists.position', 'catalog.lists.refid'];
+$default = ['catalog.lists.status', 'catalog.lists.type', 'catalog.lists.position', 'catalog.lists.refid'];
 $default = $this->config( 'admin/jqadm/catalog/product/fields', $default );
 $fields = $this->session( 'aimeos/admin/jqadm/catalogproduct/fields', $default );
 
@@ -55,7 +55,7 @@ $refItems = $this->get( 'productItems', [] );
 <div id="product" class="item-product content-block tab-pane fade" role="tabpanel" aria-labelledby="product">
 
 	<?= $this->partial(
-			$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard.php' ),
+			$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard' ),
 			['pageParams' => $params, 'pos' => 'top', 'total' => $this->get( 'productTotal' ),
 			'group' => 'cp', 'action' => ( $this->param( 'id') ? 'get' : 'search' ), 'fragment' => 'product',
 			'page' => $this->session( 'aimeos/admin/jqadm/catalogproduct/page', [] )]
@@ -66,14 +66,14 @@ $refItems = $this->get( 'productItems', [] );
 		<thead class="list-header">
 			<tr>
 				<?= $this->partial(
-					$this->config( 'admin/jqadm/partial/listhead', 'common/partials/listhead-standard.php' ), [
+					$this->config( 'admin/jqadm/partial/listhead', 'common/partials/listhead-standard' ), [
 						'fields' => $fields, 'params' => $params, 'tabindex' => $this->get( 'tabindex' ),
 						'group' => 'cp', 'action' => ( $this->param( 'id') ? 'get' : 'search' ), 'fragment' => 'product',
 						'sort' => $this->session( 'aimeos/admin/jqadm/catalogproduct/sort' ),
 						'data' => [
 							'catalog.lists.position' => $this->translate( 'admin', 'Position' ),
 							'catalog.lists.status' => $this->translate( 'admin', 'Status' ),
-							'catalog.lists.typeid' => $this->translate( 'admin', 'Type' ),
+							'catalog.lists.type' => $this->translate( 'admin', 'Type' ),
 							'catalog.lists.config' => $this->translate( 'admin', 'Config' ),
 							'catalog.lists.datestart' => $this->translate( 'admin', 'Start date' ),
 							'catalog.lists.dateend' => $this->translate( 'admin', 'End date' ),
@@ -89,12 +89,12 @@ $refItems = $this->get( 'productItems', [] );
 					</a>
 
 					<?= $this->partial(
-						$this->config( 'admin/jqadm/partial/columns', 'common/partials/columns-standard.php' ), [
+						$this->config( 'admin/jqadm/partial/columns', 'common/partials/columns-standard' ), [
 							'fields' => $fields, 'group' => 'cp', 'tabindex' => $this->get( 'tabindex' ),
 							'data' => [
 								'catalog.lists.position' => $this->translate( 'admin', 'Position' ),
 								'catalog.lists.status' => $this->translate( 'admin', 'Status' ),
-								'catalog.lists.typeid' => $this->translate( 'admin', 'Type' ),
+								'catalog.lists.type' => $this->translate( 'admin', 'Type' ),
 								'catalog.lists.config' => $this->translate( 'admin', 'Config' ),
 								'catalog.lists.datestart' => $this->translate( 'admin', 'Start date' ),
 								'catalog.lists.dateend' => $this->translate( 'admin', 'End date' ),
@@ -107,7 +107,7 @@ $refItems = $this->get( 'productItems', [] );
 		</thead>
 		<tbody>
 			<?= $this->partial(
-				$this->config( 'admin/jqadm/partial/listsearch', 'common/partials/listsearch-standard.php' ), [
+				$this->config( 'admin/jqadm/partial/listsearch', 'common/partials/listsearch-standard' ), [
 					'fields' => $fields, 'group' => 'cp', 'tabindex' => $this->get( 'tabindex' ),
 					'filter' => $this->session( 'aimeos/admin/jqadm/catalogproduct/filter', [] ),
 					'data' => [
@@ -118,7 +118,7 @@ $refItems = $this->get( 'productItems', [] );
 							'-1' => $this->translate( 'mshop/code', 'status:-1' ),
 							'-2' => $this->translate( 'mshop/code', 'status:-2' ),
 						]],
-						'catalog.lists.typeid' => ['op' => '==', 'type' => 'select', 'val' => $this->get( 'productListTypes', [])],
+						'catalog.lists.type' => ['op' => '==', 'type' => 'select', 'val' => array_keys( $this->get( 'productListTypes', [] ) )],
 						'catalog.lists.config' => ['op' => '~='],
 						'catalog.lists.datestart' => ['op' => '>=', 'type' => 'datetime-local'],
 						'catalog.lists.dateend' => ['op' => '>=', 'type' => 'datetime-local'],
@@ -169,14 +169,14 @@ $refItems = $this->get( 'productItems', [] );
 							<div class="form-group row mandatory">
 								<label class="col-sm-4 form-control-label"><?= $enc->html( $this->translate( 'admin', 'Type' ) ); ?></label>
 								<div class="col-sm-8">
-									<select class="form-control custom-select item-typeid" required="required" tabindex="<?= $this->get( 'tabindex' ); ?>" disabled="disabled"
-										name="<?= $enc->attr( $this->formparam( array( 'product', 'catalog.lists.typeid', '' ) ) ); ?>" >
+									<select class="form-control custom-select item-type" required="required" tabindex="<?= $this->get( 'tabindex' ); ?>" disabled="disabled"
+										name="<?= $enc->attr( $this->formparam( array( 'product', 'catalog.lists.type', '' ) ) ); ?>" >
 										<option value="">
 											<?= $enc->html( $this->translate( 'admin', 'Please select' ) ); ?>
 										</option>
 
-										<?php foreach( $this->get( 'productListTypes', [] ) as $id => $type ) : ?>
-											<option value="<?= $enc->attr( $id ); ?>"><?= $enc->html( $type ); ?></option>
+										<?php foreach( $this->get( 'productListTypes', [] ) as $type => $item ) : ?>
+											<option value="<?= $enc->attr( $type ); ?>"><?= $enc->html( $type ); ?></option>
 										<?php endforeach; ?>
 									</select>
 								</div>
@@ -288,17 +288,17 @@ $refItems = $this->get( 'productItems', [] );
 							</select>
 						</td>
 					<?php endif; ?>
-					<?php if( in_array( 'catalog.lists.typeid', $fields ) ) : ?>
-						<td class="catalog-lists-typeid">
-							<select class="form-control custom-select item-typeid" required="required" tabindex="<?= $this->get( 'tabindex' ); ?>"
-								name="<?= $enc->attr( $this->formparam( array( 'product', 'catalog.lists.typeid', '' ) ) ); ?>"
+					<?php if( in_array( 'catalog.lists.type', $fields ) ) : ?>
+						<td class="catalog-lists-type">
+							<select class="form-control custom-select item-type" required="required" tabindex="<?= $this->get( 'tabindex' ); ?>"
+								name="<?= $enc->attr( $this->formparam( array( 'product', 'catalog.lists.type', '' ) ) ); ?>"
 								<?= $this->site()->readonly( $siteId ); ?> disabled="disabled" >
 								<option value="">
 									<?= $enc->html( $this->translate( 'admin', 'Please select' ) ); ?>
 								</option>
 
-								<?php foreach( $this->get( 'productListTypes', [] ) as $id => $type ) : ?>
-									<option value="<?= $enc->attr( $id ); ?>" <?= $selected( $this->get( 'productData/catalog.lists.typeid/' . $idx ), $id ); ?> >
+								<?php foreach( $this->get( 'productListTypes', [] ) as $type => $item ) : ?>
+									<option value="<?= $enc->attr( $type ); ?>" <?= $selected( $this->get( 'productData/catalog.lists.type/' . $idx ), $type ); ?> >
 										<?= $enc->html( $type ); ?>
 									</option>
 								<?php endforeach; ?>
@@ -405,7 +405,7 @@ $refItems = $this->get( 'productItems', [] );
 	<?php endif; ?>
 
 	<?= $this->partial(
-			$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard.php' ),
+			$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard' ),
 			['pageParams' => $params, 'pos' => 'bottom', 'total' => $this->get( 'productTotal' ),
 			'group' => 'cp', 'action' => ( $this->param( 'id') ? 'get' : 'search' ), 'fragment' => 'product',
 			'page' => $this->session( 'aimeos/admin/jqadm/catalogproduct/page', [] )]

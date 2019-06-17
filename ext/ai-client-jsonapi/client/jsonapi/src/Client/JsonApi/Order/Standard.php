@@ -37,20 +37,22 @@ class Standard
 
 		try
 		{
-			$cntl = \Aimeos\Controller\Frontend\Factory::createController( $this->getContext(), 'order' );
+			$cntl = \Aimeos\Controller\Frontend::create( $this->getContext(), 'order' );
 
 			if( ( $id = $view->param( 'id' ) ) != '' )
 			{
-				$view->items = $cntl->getItem( $id );
+				$view->items = $cntl->get( $id );
 				$view->total = 1;
 			}
 			else
 			{
 				$total = 0;
-				$filter = $cntl->createFilter();
-				$this->initCriteria( $filter, $view->param() );
+				$items = $cntl->parse( (array) $view->param( 'filter', [] ) )
+					->slice( $view->param( 'page/offset', 0 ), $view->param( 'page/limit', 48 ) )
+					->sort( $view->param( 'sort', '-order.id' ) )
+					->search( $total );
 
-				$view->items = $cntl->searchItems( $filter, $total );
+				$view->items = $items;
 				$view->total = $total;
 			}
 
@@ -152,7 +154,7 @@ class Standard
 		];
 
 		$tplconf = 'client/jsonapi/standard/template-options';
-		$default = 'options-standard.php';
+		$default = 'options-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -173,10 +175,8 @@ class Standard
 	protected function createOrder( $baseId )
 	{
 		$context = $this->getContext();
-		$cntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'order' );
-
-		$item = $cntl->addItem( $baseId, 'jsonapi' );
-		$cntl->block( $item );
+		$cntl = \Aimeos\Controller\Frontend::create( $context, 'order' );
+		$item = $cntl->add( $baseId, ['order.type' => 'jsonapi'] )->store();
 
 		$context->getSession()->set( 'aimeos/orderid', $item->getId() );
 
@@ -203,7 +203,7 @@ class Standard
 		}
 
 		$parts = \Aimeos\MShop\Order\Item\Base\Base::PARTS_SERVICE;
-		$cntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'basket' );
+		$cntl = \Aimeos\Controller\Frontend::create( $context, 'basket' );
 
 		return $cntl->load( $baseId, $parts, false );
 	}
@@ -215,7 +215,7 @@ class Standard
 	 * @param \Aimeos\MShop\Order\Item\Base\Iface $basket Saved basket object including payment service object
 	 * @param \Aimeos\MShop\Order\Item\Iface $orderItem Saved order item created for the basket object
 	 * @param array $attributes Associative list of payment data pairs
-	 * @return \Aimeos\MShop\Common\Item\Helper\Form\Iface|null Form object with URL, parameters, etc.
+	 * @return \Aimeos\MShop\Common\Helper\Form\Iface|null Form object with URL, parameters, etc.
 	 * 	or null if no form data is required
 	 */
 	protected function getPaymentForm( \Aimeos\MShop\Order\Item\Base\Iface $basket,
@@ -228,11 +228,11 @@ class Standard
 
 		if( $services === [] || $total <= '0.00' && $this->isSubscription( $basket->getProducts() ) === false )
 		{
-			$orderCntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'order' );
-			$orderCntl->saveItem( $orderItem->setPaymentStatus( \Aimeos\MShop\Order\Item\Base::PAY_AUTHORIZED ) );
+			$cntl = \Aimeos\Controller\Frontend::create( $context, 'order' );
+			$cntl->save( $orderItem->setPaymentStatus( \Aimeos\MShop\Order\Item\Base::PAY_AUTHORIZED ) );
 
 			$url = $this->getUrlConfirm( $view, [], ['absoluteUri' => true, 'namespace' => false] );
-			return new \Aimeos\MShop\Common\Item\Helper\Form\Standard( $url, 'GET' );
+			return new \Aimeos\MShop\Common\Helper\Form\Standard( $url, 'GET' );
 		}
 
 		if( ( $service = reset( $services ) ) !== false )
@@ -244,11 +244,11 @@ class Standard
 				'payment.url-update' => $this->getUrlUpdate( $view, $args, $config ),
 			);
 
-			foreach( $service->getAttributes() as $item ) {
+			foreach( $service->getAttributeItems() as $item ) {
 				$attributes[$item->getCode()] = $item->getValue();
 			}
 
-			$serviceCntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'service' );
+			$serviceCntl = \Aimeos\Controller\Frontend::create( $context, 'service' );
 			return $serviceCntl->process( $orderItem, $service->getServiceId(), $urls, $attributes );
 		}
 	}
@@ -341,7 +341,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'client/jsonapi/order/standard/template';
-		$default = 'order/standard.php';
+		$default = 'order/standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 

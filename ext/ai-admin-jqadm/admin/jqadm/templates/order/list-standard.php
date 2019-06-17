@@ -156,6 +156,7 @@ $columnList = [
 	'order.base.address.telefax' => $this->translate( 'admin', 'Facsimile' ),
 	'order.base.address.email' => $this->translate( 'admin', 'E-Mail' ),
 	'order.base.address.website' => $this->translate( 'admin', 'Web site' ),
+	'order.base.coupon.code' => $this->translate( 'admin', 'Coupon' ),
 	'order.base.service.code' => $this->translate( 'admin', 'Service' ),
 	'order.base.service.name' => $this->translate( 'admin', 'Service name' ),
 	'order.base.service.price' => $this->translate( 'admin', 'Service price' ),
@@ -203,7 +204,7 @@ $statusList = [
 	</span>
 
 	<?= $this->partial(
-		$this->config( 'admin/jqadm/partial/navsearch', 'common/partials/navsearch-standard.php' ), [
+		$this->config( 'admin/jqadm/partial/navsearch', 'common/partials/navsearch-standard' ), [
 			'filter' => $this->session( 'aimeos/admin/jqadm/order/filter', [] ),
 			'filterAttributes' => $this->get( 'filterAttributes', [] ),
 			'filterOperators' => $this->get( 'filterOperators', [] ),
@@ -214,7 +215,7 @@ $statusList = [
 
 
 <?= $this->partial(
-		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard.php' ),
+		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard' ),
 		['pageParams' => $params, 'pos' => 'top', 'total' => $this->get( 'total' ),
 		'page' => $this->session( 'aimeos/admin/jqadm/order/page', [] )]
 	);
@@ -228,7 +229,7 @@ $statusList = [
 		<thead class="list-header">
 			<tr>
 				<?= $this->partial(
-						$this->config( 'admin/jqadm/partial/listhead', 'common/partials/listhead-standard.php' ),
+						$this->config( 'admin/jqadm/partial/listhead', 'common/partials/listhead-standard' ),
 						['fields' => $fields, 'params' => $params, 'data' => $columnList, 'sort' => $this->session( 'aimeos/admin/jqadm/order/sort' )]
 					);
 				?>
@@ -241,7 +242,7 @@ $statusList = [
 					</a>
 
 					<?= $this->partial(
-							$this->config( 'admin/jqadm/partial/columns', 'common/partials/columns-standard.php' ),
+							$this->config( 'admin/jqadm/partial/columns', 'common/partials/columns-standard' ),
 							['fields' => $fields, 'data' => $columnList]
 						);
 					?>
@@ -251,7 +252,7 @@ $statusList = [
 		<tbody>
 
 			<?= $this->partial(
-				$this->config( 'admin/jqadm/partial/listsearch', 'common/partials/listsearch-standard.php' ), [
+				$this->config( 'admin/jqadm/partial/listsearch', 'common/partials/listsearch-standard' ), [
 					'fields' => $fields, 'filter' => $this->session( 'aimeos/admin/jqadm/order/filter', [] ),
 					'data' => [
 						'order.id' => ['op' => '=='],
@@ -294,6 +295,7 @@ $statusList = [
 						'order.base.address.telefax' => [],
 						'order.base.address.email' => [],
 						'order.base.address.website' => [],
+						'order.base.coupon.code' => ['op' => '=~'],
 						'order.base.service.code' => [],
 						'order.base.service.name' => [],
 						'order.base.service.price' => ['op' => '==', 'type' => 'number'],
@@ -370,11 +372,7 @@ $statusList = [
 						<td class="order-base-comment"><a class="items-field" href="<?= $url; ?>"><?= $baseItem ? $enc->html( $baseItem->getComment() ) : ''; ?></a></td>
 					<?php endif; ?>
 
-					<?php $addrItem = null;
-						if( $baseItem && ( $addresses = $baseItem->getAddresses() ) && isset( $addresses[\Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT] ) ) {
-							$addrItem = $addresses[\Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT];
-						}
-					?>
+					<?php $addrItem = ( $baseItem ? current( $baseItem->getAddress( \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT ) ) : null ); ?>
 
 					<?php if( in_array( 'order.base.address.salutation', $fields ) ) : ?>
 						<td class="order-base-address-salutation"><a class="items-field" href="<?= $url; ?>"><?= $addrItem ? $enc->html( $addrItem->getSalutation() ) : ''; ?></a></td>
@@ -429,6 +427,16 @@ $statusList = [
 					<?php endif; ?>
 					<?php if( in_array( 'order.base.address.website', $fields ) ) : ?>
 						<td class="order-base-address-website"><a class="items-field" href="<?= $url; ?>"><?= $addrItem ? $enc->html( $addrItem->getWebsite() ) : ''; ?></a></td>
+					<?php endif; ?>
+
+					<?php $coupons = ( $baseItem ? $baseItem->getCoupons() : [] ); ?>
+
+					<?php if( in_array( 'order.base.coupon.code', $fields ) ) : ?>
+						<td class="order-base-coupon-code"><a class="items-field" href="<?= $url; ?>">
+							<?php foreach( $coupons as $code => $orderProducts ) : ?>
+								<?= $enc->html( $code ) ?><br/>
+							<?php endforeach ?>
+						</a></td>
 					<?php endif; ?>
 
 					<?php $services = ( $baseItem ? $baseItem->getServices() : [] ); ?>
@@ -506,7 +514,7 @@ $statusList = [
 </form>
 
 <?= $this->partial(
-		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard.php' ),
+		$this->config( 'admin/jqadm/partial/pagination', 'common/partials/pagination-standard' ),
 		['pageParams' => $params, 'pos' => 'bottom', 'total' => $this->get( 'total' ),
 		'page' => $this->session( 'aimeos/admin/jqadm/order/page', [] )]
 	);
@@ -514,4 +522,4 @@ $statusList = [
 
 <?php $this->block()->stop(); ?>
 
-<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard.php' ) ); ?>
+<?= $this->render( $this->config( 'admin/jqadm/template/page', 'common/page-standard' ) ); ?>

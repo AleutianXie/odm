@@ -32,7 +32,7 @@ class Standard
 	 * @category Developer
 	 */
 
-	private $cache;
+	private $types = [];
 
 
 	/**
@@ -47,7 +47,12 @@ class Standard
 	{
 		parent::__construct( $context, $mapping, $object );
 
-		$this->cache = $this->getCache( 'stocktype' );
+		$manager = \Aimeos\MShop::create( $context, 'stock/type' );
+		$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+
+		foreach( $manager->searchItems( $search ) as $item ) {
+			$this->types[$item->getCode()] = $item->getCode();
+		}
 	}
 
 
@@ -60,7 +65,7 @@ class Standard
 	 */
 	public function process( \Aimeos\MShop\Product\Item\Iface $product, array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'stock' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'stock' );
 		$manager->begin();
 
 		try
@@ -74,28 +79,22 @@ class Standard
 					continue;
 				}
 
-				$stockType = trim( isset( $list['stock.type'] ) ? $list['stock.type'] : 'default' );
-
-				if( !isset( $list['stock.typeid'] ) ) {
-					$list['stock.typeid'] = $this->cache->get( $stockType );
-				}
-
-				if( isset( $list['stock.dateback'] ) && trim( $list['stock.dateback'] ) === '' ) {
-					$list['stock.dateback'] = null;
-				}
-
-				if( trim( $list['stock.stocklevel'] ) === '' ) {
-					$list['stock.stocklevel'] = null;
-				}
-
 				$list['stock.productcode'] = $product->getCode();
+				$list['stock.dateback'] = $this->getValue( $list, 'stock.dateback' );
+				$list['stock.stocklevel'] = $this->getValue( $list, 'stock.stocklevel' );
+				$list['stock.type'] = $this->getValue( $list, 'stock.type', 'default' );
+
+				if( !in_array( $list['stock.type'], $this->types ) )
+				{
+					$msg = sprintf( 'Invalid type "%1$s" (%2$s)', $list['stock.type'], 'stock' );
+					throw new \Aimeos\Controller\Common\Exception( $msg );
+				}
 
 				if( ( $item = array_pop( $items ) ) === null ) {
 					$item = $manager->createItem();
 				}
 
-				$item->fromArray( $list );
-				$manager->saveItem( $item, false );
+				$manager->saveItem( $item->fromArray( $list ), false );
 			}
 
 			$manager->deleteItems( array_keys( $items ) );
@@ -122,7 +121,7 @@ class Standard
 	 */
 	protected function getStockItems( $code )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'stock' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'stock' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'stock.productcode', $code ) );

@@ -23,15 +23,13 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 		$this->object = new \Aimeos\Controller\Jobs\Subscription\Process\Renew\Standard( $this->context, $this->aimeos );
 
-		\Aimeos\MShop\Factory::setCache( true );
+		\Aimeos\MShop::cache( true );
 	}
 
 
 	protected function tearDown()
 	{
-		\Aimeos\MShop\Factory::setCache( false );
-		\Aimeos\MShop\Factory::clear();
-
+		\Aimeos\MShop::cache( false );
 		unset( $this->object, $this->context, $this->aimeos );
 	}
 
@@ -63,7 +61,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->setMethods( ['searchItems', 'saveItem'] )
 			->getMock();
 
-		\Aimeos\MShop\Factory::injectManager( $this->context, 'subscription', $managerStub );
+		\Aimeos\MShop::inject( 'subscription', $managerStub );
 
 		$object->expects( $this->once() )->method( 'createOrderBase' )
 			->will( $this->returnValue( $this->getOrderBaseItem( $item->getOrderBaseId() ) ) );
@@ -91,7 +89,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->setMethods( ['searchItems', 'saveItem'] )
 			->getMock();
 
-		\Aimeos\MShop\Factory::injectManager( $this->context, 'subscription', $managerStub );
+		\Aimeos\MShop::inject( 'subscription', $managerStub );
 
 		$managerStub->expects( $this->once() )->method( 'searchItems' )
 			->will( $this->returnValue( [$managerStub->createItem()] ) );
@@ -102,13 +100,26 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	}
 
 
-	public function testAddCoupons()
+	public function testAddBasketAddresses()
+	{
+		$basket = \Aimeos\MShop::create( $this->context, 'order/base' )->createItem();
+		$address = \Aimeos\MShop::create( $this->context, 'order/base/address' )->createItem();
+
+		$addresses = ['payment' => [$address]];
+		$basket = $this->access( 'addBasketAddresses' )->invokeArgs( $this->object, [$this->context, $basket, $addresses] );
+
+		$this->assertEquals( 1, count( $basket->getAddresses() ) );
+		$this->assertInstanceOf( \Aimeos\MShop\Order\Item\Base\Address\Iface::class, $basket->getAddress( 'payment', 0 ) );
+	}
+
+
+	public function testAddBasketCoupons()
 	{
 		$this->context->getConfig()->set( 'controller/jobs/subcription/process/renew/standard/use-coupons', true );
 
-		$basket = \Aimeos\MShop\Factory::createManager( $this->context, 'order/base' )->createItem();
-		$product = \Aimeos\MShop\Factory::createManager( $this->context, 'product' )->findItem( 'CNC', ['price'] );
-		$orderProduct = \Aimeos\MShop\Factory::createManager( $this->context, 'order/base/product' )->createItem();
+		$basket = \Aimeos\MShop::create( $this->context, 'order/base' )->createItem();
+		$product = \Aimeos\MShop::create( $this->context, 'product' )->findItem( 'CNC', ['price'] );
+		$orderProduct = \Aimeos\MShop::create( $this->context, 'order/base/product' )->createItem();
 
 		$price = $product->getRefItems( 'price', 'default', 'default' );
 		$basket->addProduct( $orderProduct->copyFrom( $product )->setPrice( reset( $price ) ) );
@@ -117,13 +128,53 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( '30.00', $basket->getPrice()->getCosts() );
 		$this->assertEquals( '0.00', $basket->getPrice()->getRebate() );
 
-		$basket = $this->access( 'addBasketCoupons' )->invokeArgs( $this->object, [$this->context, $basket, ['90ab']] );
+		$basket = $this->access( 'addBasketCoupons' )->invokeArgs( $this->object, [$this->context, $basket, ['90AB']] );
 
 		$this->assertEquals( 1, count( $basket->getCoupons() ) );
 		$this->assertEquals( 2, count( $basket->getProducts() ) );
 		$this->assertEquals( '537.00', $basket->getPrice()->getValue() );
 		$this->assertEquals( '30.00', $basket->getPrice()->getCosts() );
 		$this->assertEquals( '63.00', $basket->getPrice()->getRebate() );
+	}
+
+
+	public function testAddBasketProducts()
+	{
+		$basket = \Aimeos\MShop::create( $this->context, 'order/base' )->createItem();
+		$product = \Aimeos\MShop::create( $this->context, 'product' )->findItem( 'CNC' );
+		$manager = \Aimeos\MShop::create( $this->context, 'order/base/product' );
+
+		$orderProducts = [
+			$manager->createItem()->copyFrom( $product )->setId( 1 ),
+			$manager->createItem()->copyFrom( $product )->setId( 2 ),
+		];
+
+		$basket = $this->access( 'addBasketProducts' )->invokeArgs( $this->object, [$this->context, $basket, $orderProducts, 1] );
+
+		$this->assertEquals( 1, count( $basket->getProducts() ) );
+		$this->assertNull( $basket->getProduct( 0 )->getId() );
+	}
+
+
+	public function testAddBasketServices()
+	{
+		$basket = \Aimeos\MShop::create( $this->context, 'order/base' )->createItem();
+		$manager = \Aimeos\MShop::create( $this->context, 'order/base/service' );
+
+		$orderServices = [
+			'delivery' => [$manager->createItem()->setCode( 'shiptest' )],
+			'payment' => [$manager->createItem()->setCode( 'paytest' )],
+		];
+
+		$basket = $this->access( 'addBasketServices' )->invokeArgs( $this->object, [$this->context, $basket, $orderServices] );
+
+		$class = \Aimeos\MShop\Order\Item\Base\Service\Iface::class;
+
+		$this->assertEquals( 2, count( $basket->getServices() ) );
+		$this->assertEquals( 1, count( $basket->getService( 'delivery' ) ) );
+		$this->assertInstanceOf( $class, $basket->getService( 'delivery', 'unitcode' ) );
+		$this->assertEquals( 1, count( $basket->getService( 'payment' ) ) );
+		$this->assertInstanceOf( $class, $basket->getService( 'payment', 'paytest' ) );
 	}
 
 
@@ -136,7 +187,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->setMethods( ['store'] )
 			->getMock();
 
-		\Aimeos\MShop\Factory::injectManager( $this->context, 'order/base', $managerStub );
+		\Aimeos\MShop::inject( 'order/base', $managerStub );
 
 		$managerStub->expects( $this->once() )->method( 'store' );
 
@@ -154,7 +205,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->setMethods( ['saveItem'] )
 			->getMock();
 
-		\Aimeos\MShop\Factory::injectManager( $this->context, 'order', $managerStub );
+		\Aimeos\MShop::inject( 'order', $managerStub );
 
 		$managerStub->expects( $this->once() )->method( 'saveItem' );
 
@@ -173,7 +224,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->setMethods( ['saveItem'] )
 			->getMock();
 
-		\Aimeos\MShop\Factory::injectManager( $this->context, 'order', $managerStub );
+		\Aimeos\MShop::inject( 'order', $managerStub );
 
 		$managerStub->expects( $this->once() )->method( 'saveItem' );
 
@@ -183,19 +234,19 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getOrderItem()
 	{
-		return \Aimeos\MShop\Factory::createManager( $this->context, 'order' )->createItem();
+		return \Aimeos\MShop::create( $this->context, 'order' )->createItem();
 	}
 
 
 	protected function getOrderBaseItem( $baseId )
 	{
-		return \Aimeos\MShop\Factory::createManager( $this->context, 'order/base' )->getItem( $baseId, ['order/base/service'] );
+		return \Aimeos\MShop::create( $this->context, 'order/base' )->getItem( $baseId, ['order/base/service'] );
 	}
 
 
 	protected function getSubscription()
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->context, 'subscription' );
+		$manager = \Aimeos\MShop::create( $this->context, 'subscription' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'subscription.dateend', '2010-01-01' ) );
@@ -212,7 +263,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function access( $name )
 	{
-		$class = new \ReflectionClass( '\Aimeos\Controller\Jobs\Subscription\Process\Renew\Standard' );
+		$class = new \ReflectionClass( \Aimeos\Controller\Jobs\Subscription\Process\Renew\Standard::class );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 

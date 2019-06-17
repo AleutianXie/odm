@@ -15,8 +15,6 @@ class TestHelperJadm
 	public static function bootstrap()
 	{
 		self::getAimeos();
-		\Aimeos\MShop\Factory::setCache( false );
-		\Aimeos\Admin\JsonAdm\Factory::setCache( false );
 	}
 
 
@@ -83,7 +81,7 @@ class TestHelperJadm
 		$ctx->setI18n( array( 'de' => $i18n ) );
 
 
-		$localeManager = \Aimeos\MShop\Locale\Manager\Factory::createManager( $ctx );
+		$localeManager = \Aimeos\MShop::create( $ctx, 'locale' );
 		$locale = $localeManager->bootstrap( $site, 'de', '', false );
 		$ctx->setLocale( $locale );
 
@@ -92,7 +90,7 @@ class TestHelperJadm
 		$ctx->setView( $view );
 
 
-		$ctx->setEditor( 'core:admin/jsonadm' );
+		$ctx->setEditor( 'ai-admin-jsonadm:admin/jsonadm' );
 
 		return $ctx;
 	}

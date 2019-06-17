@@ -19,6 +19,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	protected function setUp()
 	{
 		$this->context = \TestHelperHtml::getContext();
+		$this->context->setUserId( \Aimeos\MShop::create( $this->context, 'customer' )->findItem( 'UTC001' )->getId() );
 
 		$this->object = new \Aimeos\Client\Html\Checkout\Standard\Address\Standard( $this->context );
 		$this->object->setView( \TestHelperHtml::getView() );
@@ -27,7 +28,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function tearDown()
 	{
-		\Aimeos\Controller\Frontend\Basket\Factory::createController( $this->context )->clear();
+		\Aimeos\Controller\Frontend\Basket\Factory::create( $this->context )->clear();
 
 		unset( $this->object, $this->context );
 	}
@@ -70,6 +71,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$view = $this->object->getView();
 		$view->standardStepActive = 'address';
 		$view->standardSteps = array( 'address', 'after' );
+		$view->standardBasket = \Aimeos\MShop::create( $this->context, 'order/base' )->createItem();
 		$this->object->setView( $this->object->addData( $view ) );
 
 		$output = $this->object->getBody();
@@ -120,7 +122,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	 */
 	protected function getCustomerItem( $code = 'UTC001' )
 	{
-		$customerManager = \Aimeos\MShop\Customer\Manager\Factory::createManager( $this->context );
+		$customerManager = \Aimeos\MShop\Customer\Manager\Factory::create( $this->context );
 		$search = $customerManager->createSearch();
 		$search->setConditions( $search->compare( '==', 'customer.code', $code ) );
 		$result = $customerManager->searchItems( $search );

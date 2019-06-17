@@ -28,7 +28,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetItem()
 	{
-		$attrManager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' );
+		$attrManager = \Aimeos\MShop::create( $this->context, 'attribute' );
 		$attrId = $attrManager->findItem( 'xs', [], 'product', 'size' )->getId();
 
 		$params = array(
@@ -63,7 +63,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetItemProperties()
 	{
-		$attrManager = \Aimeos\MShop\Factory::createManager( $this->context, 'attribute' );
+		$attrManager = \Aimeos\MShop::create( $this->context, 'attribute' );
 		$attrId = $attrManager->findItem( 'testurl', [], 'product', 'download' )->getId();
 
 		$params = array(
@@ -135,7 +135,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 	{
 		$params = array(
 			'filter' => array(
-				'==' => array( 'attribute.type.code' => 'size' ),
+				'==' => array( 'attribute.type' => 'size' ),
 			),
 			'sort' => 'attribute.position',
 		);
@@ -154,7 +154,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetMShopException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\JsonApi\Attribute\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\JsonApi\Attribute\Standard::class )
 			->setConstructorArgs( [$this->context, 'attribute'] )
 			->setMethods( ['getItems'] )
 			->getMock();
@@ -175,7 +175,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	public function testGetException()
 	{
-		$object = $this->getMockBuilder( '\Aimeos\Client\JsonApi\Attribute\Standard' )
+		$object = $this->getMockBuilder( \Aimeos\Client\JsonApi\Attribute\Standard::class )
 			->setConstructorArgs( [$this->context, 'attribute'] )
 			->setMethods( ['getItems'] )
 			->getMock();

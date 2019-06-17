@@ -25,7 +25,7 @@ class Base
 
 	/**
 	 * Injects a controller object.
-	 * The object is returned via createController() if an instance of the class
+	 * The object is returned via create() if an instance of the class
 	 * with the name name is requested.
 	 *
 	 * @param string $classname Full name of the class for which the object should be returned
@@ -133,7 +133,7 @@ class Base
 		$decorators = $config->get( 'controller/frontend/' . $domain . '/decorators/local', [] );
 		$controller = self::addDecorators( $context, $controller, $decorators, $classprefix );
 
-		return $controller;
+		return $controller->setObject( $controller );
 	}
 
 
@@ -145,7 +145,7 @@ class Base
 	 * @param string $interface Name of the controller interface
 	 * @return \Aimeos\Controller\Frontend\Common\Iface Controller object
 	 */
-	protected static function createControllerBase( \Aimeos\MShop\Context\Item\Iface $context, $classname, $interface )
+	protected static function createController( \Aimeos\MShop\Context\Item\Iface $context, $classname, $interface )
 	{
 		if( isset( self::$objects[$classname] ) ) {
 			return self::$objects[$classname];

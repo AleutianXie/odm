@@ -148,7 +148,7 @@ class Standard
 		 * @see client/html/checkout/confirm/standard/template-header
 		 */
 		$tplconf = 'client/html/checkout/confirm/standard/template-body';
-		$default = 'checkout/confirm/body-standard.php';
+		$default = 'checkout/confirm/body-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -198,7 +198,7 @@ class Standard
 			 * @see client/html/checkout/confirm/standard/template-body
 			 */
 			$tplconf = 'client/html/checkout/confirm/standard/template-header';
-			$default = 'checkout/confirm/header-standard.php';
+			$default = 'checkout/confirm/header-standard';
 
 			return $view->render( $view->config( $tplconf, $default ) );
 		}
@@ -314,22 +314,26 @@ class Standard
 				throw new \Aimeos\Client\Html\Exception( 'No order ID available' );
 			}
 
-			$orderCntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'order' );
-			$serviceCntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'service' );
 
-			if( ( $code = $view->param( 'code' ) ) !== null ) {
+			if( ( $code = $view->param( 'code' ) ) !== null )
+			{
+				$serviceCntl = \Aimeos\Controller\Frontend::create( $context, 'service' );
 				$orderItem = $serviceCntl->updateSync( $view->request(), $code, $orderid );
-			} else {
-				$orderItem = $orderCntl->getItem( $orderid );
+			}
+			else
+			{
+				$orderCntl = \Aimeos\Controller\Frontend::create( $context, 'order' );
+				$orderItem = $orderCntl->get( $orderid );
 			}
 
-			$orderCntl->update( $orderItem );  // update stock, coupons, etc.
+			// update stock, coupons, etc.
+			\Aimeos\Controller\Common\Order\Factory::create( $context )->update( $orderItem );
 
 			parent::process();
 
 			if( $orderItem->getPaymentStatus() > \Aimeos\MShop\Order\Item\Base::PAY_REFUSED )
 			{
-				\Aimeos\Controller\Frontend\Factory::createController( $context, 'basket' )->clear();
+				\Aimeos\Controller\Frontend::create( $context, 'basket' )->clear();
 
 				foreach( $session->get( 'aimeos/basket/cache', [] ) as $key => $value ) {
 					$session->set( $key, null );
@@ -383,10 +387,8 @@ class Standard
 	{
 		$context = $this->getContext();
 
-		if( ( $orderid = $context->getSession()->get( 'aimeos/orderid' ) ) != null )
-		{
-			$cntl = \Aimeos\Controller\Frontend\Factory::createController( $context, 'order' );
-			$view->confirmOrderItem = $cntl->getItem( $orderid, false );
+		if( ( $id = $context->getSession()->get( 'aimeos/orderid' ) ) != null ) {
+			$view->confirmOrderItem = \Aimeos\Controller\Frontend::create( $context, 'order' )->get( $id, false );
 		}
 
 		return parent::addData( $view, $tags, $expire );

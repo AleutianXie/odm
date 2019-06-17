@@ -16,9 +16,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: aimeos-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-27 08:31+0200\n"
-"PO-Revision-Date: 2018-12-04 10:15+0000\n"
-"Last-Translator: Kevin Peters <kevin@popkorn.be>\n"
+"POT-Creation-Date: 2019-04-27 17:50+0200\n"
+"PO-Revision-Date: 2019-04-27 15:50+0000\n"
+"Last-Translator: Aimeos\n"
 "Language-Team: Dutch (http://www.transifex.com/aimeos/aimeos-core/language/nl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -234,6 +234,10 @@ msgid "Client HTML type is empty"
 msgstr "Client HTML type is leeg"
 
 #, php-format
+msgid "Client path is empty"
+msgstr ""
+
+#, php-format
 msgid "Client type \"%1$s\" must consist of two parts separated by \"/\""
 msgstr "Client type \"%1$s\" moet bestaan uit twee delen gescheiden door \"/\""
 
@@ -266,8 +270,24 @@ msgid "Customer with ID \"%1$s\" not found"
 msgstr "Klant met ID \"%1$s\" niet gevonden"
 
 #, php-format
+msgid "Dear %1$s %2$s"
+msgstr ""
+
+#, php-format
 msgid "Dear %1$s %2$s %3$s"
 msgstr "Geachte  %1$s %2$s %3$s"
+
+#, php-format
+msgid "Dear Miss %1$s %2$s"
+msgstr ""
+
+#, php-format
+msgid "Dear Mr %1$s %2$s"
+msgstr ""
+
+#, php-format
+msgid "Dear Mrs %1$s %2$s"
+msgstr ""
 
 msgid "Dear Sir or Madam"
 msgstr "Geachte heer of mevrouw"
@@ -277,6 +297,10 @@ msgstr "Bezorging"
 
 msgid "Delivery address"
 msgstr "Bezorg adres"
+
+#, php-format
+msgid "Delivery address deleted successfully"
+msgstr ""
 
 #, php-format
 msgid "Delivery address part \"%1$s\" is invalid"
@@ -906,6 +930,9 @@ msgstr "Uw order %1$s"
 #, php-format
 msgid "Your order %1$s from %2$s has been dispatched."
 msgstr "Uw bestelling %1$s van %2$s is verstuurd."
+
+msgid "Your reference number"
+msgstr ""
 
 msgid "Your search result"
 msgstr "Uw zoekresultaten"

@@ -15,10 +15,8 @@ class TestHelperJapi
 	public static function bootstrap()
 	{
 		$aimeos = self::getAimeos();
-
-		$includepaths = $aimeos->getIncludePaths();
-		$includepaths[] = get_include_path();
-		set_include_path( implode( PATH_SEPARATOR, $includepaths ) );
+		\Aimeos\MShop::cache( false );
+		\Aimeos\Controller\Frontend::cache( false );
 	}
 
 
@@ -124,12 +122,12 @@ class TestHelperJapi
 		$ctx->setSession( $session );
 
 
-		$localeManager = \Aimeos\MShop\Locale\Manager\Factory::createManager( $ctx );
+		$localeManager = \Aimeos\MShop\Locale\Manager\Factory::create( $ctx );
 		$locale = $localeManager->bootstrap( $site, '', '', false );
 		$ctx->setLocale( $locale );
 
 
-		$ctx->setEditor( 'ai-client-jsonapi:unittest' );
+		$ctx->setEditor( 'ai-client-jsonapi:client/jsonapi' );
 
 		return $ctx;
 	}

@@ -91,7 +91,7 @@ class Standard
 		 * @see admin/jsonadm/standard/template-options
 		 */
 		$tplconf = 'admin/jsonadm/standard/template-delete';
-		$default = 'delete-standard.php';
+		$default = 'delete-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -162,7 +162,7 @@ class Standard
 			 * @see admin/jsonadm/standard/template-options
 			 */
 			$tplconf = 'admin/jsonadm/standard/template-aggregate';
-			$default = 'aggregate-standard.php';
+			$default = 'aggregate-standard';
 		}
 		else
 		{
@@ -192,7 +192,7 @@ class Standard
 			 * @see admin/jsonadm/standard/template-options
 			 */
 			$tplconf = 'admin/jsonadm/standard/template-get';
-			$default = 'get-standard.php';
+			$default = 'get-standard';
 		}
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
@@ -270,7 +270,7 @@ class Standard
 		 * @see admin/jsonadm/standard/template-options
 		 */
 		$tplconf = 'admin/jsonadm/standard/template-patch';
-		$default = 'patch-standard.php';
+		$default = 'patch-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -347,7 +347,7 @@ class Standard
 		 * @see admin/jsonadm/standard/template-options
 		 */
 		$tplconf = 'admin/jsonadm/standard/template-post';
-		$default = 'post-standard.php';
+		$default = 'post-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -399,7 +399,7 @@ class Standard
 		 * @see admin/jsonadm/standard/template-options
 		 */
 		$tplconf = 'admin/jsonadm/standard/template-put';
-		$default = 'put-standard.php';
+		$default = 'put-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -427,7 +427,7 @@ class Standard
 
 			foreach( $this->getDomains( $view ) as $domain )
 			{
-				$manager = \Aimeos\MShop\Factory::createManager( $context, $domain );
+				$manager = \Aimeos\MShop::create( $context, $domain );
 				$resources = array_merge( $resources, $manager->getResourceType( true ) );
 				$attributes = array_merge( $attributes, $manager->getSearchAttributes( true ) );
 			}
@@ -484,7 +484,7 @@ class Standard
 		 * @see admin/jsonadm/standard/template-put
 		 */
 		$tplconf = 'admin/jsonadm/standard/template-options';
-		$default = 'options-standard.php';
+		$default = 'options-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -506,7 +506,7 @@ class Standard
 	 */
 	protected function deleteItems( \Aimeos\MW\View\Iface $view, ServerRequestInterface $request, ResponseInterface $response )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), $this->getPath() );
+		$manager = \Aimeos\MShop::create( $this->getContext(), $this->getPath() );
 
 		if( ( $id = $view->param( 'id' ) ) == null )
 		{
@@ -540,7 +540,7 @@ class Standard
 	 */
 	protected function getItems( \Aimeos\MW\View\Iface $view, ServerRequestInterface $request, ResponseInterface $response )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), $this->getPath() );
+		$manager = \Aimeos\MShop::create( $this->getContext(), $this->getPath() );
 
 		if( ( $key = $view->param( 'aggregate' ) ) !== null )
 		{
@@ -590,7 +590,7 @@ class Standard
 			throw new \Aimeos\Admin\JsonAdm\Exception( sprintf( 'Invalid JSON in body' ), 400 );
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), $this->getPath() );
+		$manager = \Aimeos\MShop::create( $this->getContext(), $this->getPath() );
 
 		if( is_array( $payload->data ) )
 		{
@@ -638,7 +638,7 @@ class Standard
 		}
 
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), $this->getPath() );
+		$manager = \Aimeos\MShop::create( $this->getContext(), $this->getPath() );
 
 		if( is_array( $payload->data ) )
 		{

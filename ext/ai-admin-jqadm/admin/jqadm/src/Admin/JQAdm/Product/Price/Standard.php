@@ -290,20 +290,20 @@ class Standard
 	{
 		$context = $this->getContext();
 
-		$priceTypeManager = \Aimeos\MShop\Factory::createManager( $context, 'price/type' );
-		$listTypeManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists/type' );
-		$currencyManager = \Aimeos\MShop\Factory::createManager( $context, 'locale/currency' );
+		$priceTypeManager = \Aimeos\MShop::create( $context, 'price/type' );
+		$listTypeManager = \Aimeos\MShop::create( $context, 'product/lists/type' );
+		$currencyManager = \Aimeos\MShop::create( $context, 'locale/currency' );
 
 		$search = $priceTypeManager->createSearch( true )->setSlice( 0, 0x7fffffff );
 		$search->setConditions( $search->compare( '==', 'price.type.domain', 'product' ) );
-		$search->setSortations( array( $search->sort( '+', 'price.type.label' ) ) );
+		$search->setSortations( array( $search->sort( '+', 'price.type.position' ) ) );
 
 		$listSearch = $listTypeManager->createSearch( true )->setSlice( 0, 0x7fffffff );
 		$listSearch->setConditions( $listSearch->compare( '==', 'product.lists.type.domain', 'price' ) );
-		$listSearch->setSortations( array( $listSearch->sort( '+', 'product.lists.type.label' ) ) );
+		$listSearch->setSortations( array( $listSearch->sort( '+', 'product.lists.type.position' ) ) );
 
-		$view->priceTypes = $priceTypeManager->searchItems( $search );
-		$view->priceListTypes = $this->sortType( $listTypeManager->searchItems( $listSearch ) );
+		$view->priceTypes = $this->map( $priceTypeManager->searchItems( $search ) );
+		$view->priceListTypes = $this->map( $listTypeManager->searchItems( $listSearch ) );
 		$view->priceCurrencies = $currencyManager->searchItems( $currencyManager->createSearch( true )->setSlice( 0, 0x7fffffff ) );
 
 		if( $view->priceCurrencies === [] ) {
@@ -318,34 +318,31 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
 		$context = $this->getContext();
 
-		$priceManager = \Aimeos\MShop\Factory::createManager( $context, 'price' );
-		$listManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists' );
-		$priceTypeManager = \Aimeos\MShop\Factory::createManager( $context, 'price/type' );
-		$listTypeManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists/type' );
+		$priceManager = \Aimeos\MShop::create( $context, 'price' );
+		$listManager = \Aimeos\MShop::create( $context, 'product/lists' );
 
 		$listItems = $item->getListItems( 'price', null, null, false );
 
 
 		foreach( $data as $idx => $entry )
 		{
-			$type = $priceTypeManager->getItem( $entry['price.typeid'] )->getCode();
-			$listType = $listTypeManager->getItem( $entry['product.lists.typeid'] )->getCode();
+			$listType = $entry['product.lists.type'];
 
 			if( ( $listItem = $item->getListItem( 'price', $listType, $entry['price.id'], false ) ) === null ) {
-				$listItem = $listManager->createItem( $listType, 'price' );
+				$listItem = $listManager->createItem();
 			}
 
 			if( ( $refItem = $listItem->getRefItem() ) === null ) {
-				$refItem = $priceManager->createItem( $type, 'product' );
+				$refItem = $priceManager->createItem();
 			}
 
-			$refItem->fromArray( $entry );
+			$refItem->fromArray( $entry, true );
 			$conf = [];
 
 			foreach( (array) $this->getValue( $entry, 'config/key' ) as $num => $key )
@@ -355,7 +352,7 @@ class Standard
 				}
 			}
 
-			$listItem->fromArray( $entry );
+			$listItem->fromArray( $entry, true );
 			$listItem->setPosition( $idx );
 			$listItem->setConfig( $conf );
 
@@ -440,7 +437,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/price/template-item';
-		$default = 'product/item-price-standard.php';
+		$default = 'product/item-price-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

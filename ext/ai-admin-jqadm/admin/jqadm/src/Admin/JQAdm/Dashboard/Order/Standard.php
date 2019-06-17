@@ -43,7 +43,7 @@ class Standard
 		$view = $this->getView();
 		$view->orderBody = '';
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'locale/currency' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'locale/currency' );
 		$view->orderCurrencyItems = $manager->searchItems( $manager->createSearch( true ) );
 
 		foreach( $this->getSubClients() as $client ) {
@@ -70,7 +70,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/dashboard/order/template-list';
-		$default = 'dashboard/list-order-standard.php';
+		$default = 'dashboard/list-order-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

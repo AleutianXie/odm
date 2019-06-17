@@ -155,7 +155,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'supplier/lists' );
+		$manager = \Aimeos\MShop::create( $context, 'supplier/lists' );
 
 		$manager->begin();
 
@@ -174,13 +174,13 @@ class Standard
 		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
-			$error = array( 'supplier-item-image' => $context->getI18n()->dt( 'mshop', $e->getMessage() ) );
+			$error = array( 'supplier-item-media' => $context->getI18n()->dt( 'mshop', $e->getMessage() ) );
 			$view->errors = $view->get( 'errors', [] ) + $error;
 			$this->logException( $e );
 		}
 		catch( \Exception $e )
 		{
-			$error = array( 'supplier-item-image' => $e->getMessage() . ', ' . $e->getFile() . ':' . $e->getLine() );
+			$error = array( 'supplier-item-media' => $e->getMessage() . ', ' . $e->getFile() . ':' . $e->getLine() );
 			$view->errors = $view->get( 'errors', [] ) + $error;
 			$this->logException( $e );
 		}
@@ -285,9 +285,9 @@ class Standard
 	 * @param integer $total Value/result parameter that will contain the item total afterwards
 	 * @return \Aimeos\MShop\Common\Item\List\Iface[] Supplier list items referencing the products
 	 */
-	protected function getListItems( \Aimeos\MShop\Supplier\Item\Iface $item, array $params = [], &$total )
+	protected function getListItems( \Aimeos\MShop\Supplier\Item\Iface $item, array $params = [], &$total = null )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'supplier/lists' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'supplier/lists' );
 
 		$search = $manager->createSearch();
 		$search->setSortations( [$search->sort( '-', 'supplier.lists.ctime' )] );
@@ -311,18 +311,13 @@ class Standard
 	 */
 	protected function getListTypes()
 	{
-		$list = [];
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'supplier/lists/type' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'supplier/lists/type' );
 
-		$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+		$search = $manager->createSearch( true )->setSlice( 0, 0x7fffffff );
 		$search->setConditions( $search->compare( '==', 'supplier.lists.type.domain', 'product' ) );
-		$search->setSortations( [$search->sort( '+', 'supplier.lists.type.code' )] );
+		$search->setSortations( [$search->sort( '+', 'supplier.lists.type.position' )] );
 
-		foreach( $manager->searchItems( $search ) as $id => $item ) {
-			$list[$id] = $item->getCode();
-		}
-
-		return $list;
+		return $this->map( $manager->searchItems( $search ) );
 	}
 
 
@@ -340,11 +335,10 @@ class Standard
 			$list[] = $listItem->getRefId();
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product' );
 
-		$search = $manager->createSearch();
+		$search = $manager->createSearch()->setSlice( 0, count( $list ) );
 		$search->setConditions( $search->compare( '==', 'product.id', $list ) );
-		$search->setSlice( 0, 0x7fffffff );
 
 		return $manager->searchItems( $search );
 	}
@@ -398,18 +392,17 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Supplier\Item\Iface $item Supplier item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Supplier\Item\Iface $item, array $data )
 	{
 		$context = $this->getContext();
 		$listIds = $this->getValue( $data, 'supplier.lists.id', [] );
 
-		$listManager = \Aimeos\MShop\Factory::createManager( $context, 'supplier/lists' );
+		$listManager = \Aimeos\MShop::create( $context, 'supplier/lists' );
 
-		$search = $listManager->createSearch();
+		$search = $listManager->createSearch()->setSlice( 0, count( $listIds ) );
 		$search->setConditions( $search->compare( '==', 'supplier.lists.id', $listIds ) );
-		$search->setSlice( 0, 0x7fffffff );
 
 		$listItems = $listManager->searchItems( $search );
 
@@ -433,8 +426,8 @@ class Standard
 				$litem->setStatus( $this->getValue( $data, 'supplier.lists.status/' . $idx ) );
 			}
 
-			if( isset( $data['supplier.lists.typeid'][$idx] ) ) {
-				$litem->setTypeId( $this->getValue( $data, 'supplier.lists.typeid/' . $idx ) );
+			if( isset( $data['supplier.lists.type'][$idx] ) ) {
+				$litem->setType( $this->getValue( $data, 'supplier.lists.type/' . $idx ) );
 			}
 
 			if( isset( $data['supplier.lists.position'][$idx] ) ) {
@@ -523,7 +516,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/supplier/product/template-item';
-		$default = 'supplier/item-product-standard.php';
+		$default = 'supplier/item-product-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

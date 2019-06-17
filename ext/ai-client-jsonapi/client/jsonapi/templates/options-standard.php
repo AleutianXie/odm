@@ -32,7 +32,7 @@ foreach( $this->get( 'resources', [] ) as $resource ) {
 {
 	"meta": {
 		"prefix": <?= json_encode( $this->get( 'prefix' ) ); ?>,
-		"content-baseurl": "<?= $this->config( 'client/html/common/content/baseurl' ); ?>"
+		"content-baseurl": "<?= $this->config( 'resource/fs/baseurl' ); ?>"
 
 		<?php if( $this->csrf()->name() != '' ) : ?>
 			, "csrf": {
@@ -41,29 +41,24 @@ foreach( $this->get( 'resources', [] ) as $resource ) {
 			}
 		<?php endif; ?>
 		<?php if( !empty( $resources ) ) : ?>
-
 			, "resources": <?= json_encode( $resources ); ?>
 
 		<?php endif; ?>
 		<?php if( isset( $this->filter ) ) : ?>
-
 			, "filter": <?= json_encode( $this->filter, JSON_PRETTY_PRINT ); ?>
 
 		<?php endif; ?>
 		<?php if( isset( $this->sort ) ) : ?>
-
 			, "sort": <?= json_encode( $this->sort, JSON_PRETTY_PRINT ); ?>
 
 		<?php endif; ?>
 		<?php if( isset( $this->attributes ) ) : ?>
-
 			, "attributes": <?= json_encode( $this->attributes, JSON_PRETTY_PRINT ); ?>
 
 		<?php endif; ?>
 	}
 
 	<?php if( isset( $this->errors ) ) : ?>
-
 		, "errors": <?= json_encode( $this->errors, JSON_PRETTY_PRINT ); ?>
 
 	<?php endif; ?>

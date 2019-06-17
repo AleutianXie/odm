@@ -39,7 +39,7 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'order/base' );
+			$manager = \Aimeos\MShop::create( $context, 'order/base' );
 			$view->item = $manager->load( $id );
 
 			$view->itemData = $this->toArray( $view->item, true );
@@ -84,7 +84,7 @@ class Standard
 			$data = $view->param( 'item', [] );
 
 			if( !isset( $view->item ) ) {
-				$view->item = \Aimeos\MShop\Factory::createManager( $context, 'order/base' )->createItem();
+				$view->item = \Aimeos\MShop::create( $context, 'order/base' )->createItem();
 			}
 
 			$data['order.siteid'] = $view->item->getSiteId();
@@ -178,7 +178,7 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'order/base' );
+			$manager = \Aimeos\MShop::create( $context, 'order/base' );
 			$refs = ['order/base/address', 'order/base/coupon', 'order/base/product', 'order/base/service'];
 
 			$view->item = $manager->getItem( $id, $refs );
@@ -219,7 +219,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'order/base' );
+		$manager = \Aimeos\MShop::create( $context, 'order/base' );
 		$manager->begin();
 
 		try
@@ -275,7 +275,7 @@ class Standard
 		{
 			$total = 0;
 			$params = $this->storeSearchParams( $view->param(), 'order' );
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'order' );
+			$manager = \Aimeos\MShop::create( $context, 'order' );
 
 			$search = $manager->createSearch();
 			$search->setSortations( [$search->sort( '-', 'order.id' )] );
@@ -325,7 +325,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/order/template-list';
-		$default = 'order/list-standard.php';
+		$default = 'order/list-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -430,13 +430,12 @@ class Standard
 			$baseIds[] = $item->getBaseId();
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'order/base' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'order/base' );
 
-		$search = $manager->createSearch();
+		$search = $manager->createSearch()->setSlice( 0, count( $baseIds ) );
 		$search->setConditions( $search->compare( '==', 'order.base.id', $baseIds ) );
-		$search->setSlice( 0, 0x7fffffff );
 
-		return $manager->searchItems( $search, ['order/base/address', 'order/base/service'] );
+		return $manager->searchItems( $search, ['order/base/address', 'order/base/coupon', 'order/base/service'] );
 	}
 
 
@@ -487,21 +486,21 @@ class Standard
 	/**
 	 * Creates new and updates existing items using the data array
 	 *
-	 * @param string[] Data array
+	 * @param array $data Data array
 	 * @return \Aimeos\MShop\Order\Item\Iface New order item object
 	 */
 	protected function fromArray( array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'order/base' );
-		$attrManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'order/base/service/attribute' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'order/base' );
+		$attrManager = \Aimeos\MShop::create( $this->getContext(), 'order/base/service/attribute' );
 
 		if( isset( $data['order.base.id'] ) ) {
-			$basket = $manager->load( $data['order.base.id'] );
+			$basket = $manager->load( $data['order.base.id'] )->off();
 		} else {
-			$basket = $manager->createItem();
+			$basket = $manager->createItem()->off();
 		}
 
-		$basket->fromArray( $data );
+		$basket->fromArray( $data, true );
 
 		foreach( $basket->getProducts() as $pos => $product )
 		{
@@ -510,13 +509,16 @@ class Standard
 			}
 		}
 
-		foreach( $basket->getAddresses() as $type => $address )
+		foreach( $basket->getAddresses() as $type => $addresses )
 		{
-			if( isset( $data['address'][$type] ) ) {
-				$address->fromArray( (array) $data['address'][$type] );
-				$basket->setAddress( $address, $type );
-			} else {
-				$basket->deleteAddress( $type );
+			foreach( $addresses as $pos => $address )
+			{
+				if( isset( $data['address'][$type][$pos] ) ) {
+					$list = (array) $data['address'][$type][$pos];
+					$basket->addAddress( $address->fromArray( $list, true ), $type, $pos );
+				} else {
+					$basket->deleteAddress( $type, $pos );
+				}
 			}
 		}
 
@@ -525,7 +527,7 @@ class Standard
 			foreach( $services as $serviceId => $service )
 			{
 				$list = [];
-				$attrItems = $service->getAttributes();
+				$attrItems = $service->getAttributeItems();
 
 				if( isset( $data['service'][$type][$serviceId] ) )
 				{
@@ -548,7 +550,7 @@ class Standard
 							$attrItem = $attrManager->createItem();
 						}
 
-						$attrItem->fromArray( $array );
+						$attrItem->fromArray( $array, true );
 						$attrItem->setParentId( $service->getId() );
 
 						$item = $attrManager->saveItem( $attrItem );
@@ -576,7 +578,7 @@ class Standard
 
 		if( $item->getCustomerId() != '' )
 		{
-			$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'customer' );
+			$manager = \Aimeos\MShop::create( $this->getContext(), 'customer' );
 
 			try {
 				$data += $manager->getItem( $item->getCustomerId() )->toArray();
@@ -590,18 +592,21 @@ class Standard
 			$data['order.base.id'] = '';
 		}
 
-		foreach( $item->getAddresses() as $type => $addrItem )
+		foreach( $item->getAddresses() as $type => $addresses )
 		{
-			$list = $addrItem->toArray( true );
-
-			foreach( $list as $key => $value ) {
-				$data['address'][$type][$key] = $value;
-			}
-
-			if( $copy === true )
+			foreach( $addresses as $pos => $addrItem )
 			{
-				$data['address'][$type]['order.base.address.siteid'] = $siteId;
-				$data['address'][$type]['order.base.address.id'] = '';
+				$list = $addrItem->toArray( true );
+
+				foreach( $list as $key => $value ) {
+					$data['address'][$type][$pos][$key] = $value;
+				}
+
+				if( $copy === true )
+				{
+					$data['address'][$type][$pos]['order.base.address.siteid'] = $siteId;
+					$data['address'][$type][$pos]['order.base.address.id'] = '';
+				}
 			}
 		}
 
@@ -613,7 +618,7 @@ class Standard
 				{
 					$serviceId = $serviceItem->getServiceId();
 
-					foreach( $serviceItem->getAttributes() as $attrItem )
+					foreach( $serviceItem->getAttributeItems() as $attrItem )
 					{
 						foreach( $attrItem->toArray( true ) as $key => $value ) {
 							$data['service'][$type][$serviceId][$key][] = $value;
@@ -659,7 +664,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/order/template-item';
-		$default = 'order/item-standard.php';
+		$default = 'order/item-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

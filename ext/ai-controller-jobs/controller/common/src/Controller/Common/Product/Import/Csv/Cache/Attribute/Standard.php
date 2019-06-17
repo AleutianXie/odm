@@ -44,11 +44,11 @@ class Standard
 	{
 		parent::__construct( $context );
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'attribute' );
+		$manager = \Aimeos\MShop::create( $context, 'attribute' );
 		$result = $manager->searchItems( $manager->createSearch() );
 
 		foreach( $result as $id => $item ) {
-			$this->attributes[ $item->getCode() ][ $item->getType() ] = $item;
+			$this->attributes[$item->getCode()][$item->getType()] = $item;
 		}
 	}
 
@@ -66,12 +66,12 @@ class Standard
 			return $this->attributes[$code][$type];
 		}
 
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'attribute' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'attribute' );
 
 		$search = $manager->createSearch();
 		$expr = array(
 			$search->compare( '==', 'attribute.code', $code ),
-			$search->compare( '==', 'attribute.type.code', $type ),
+			$search->compare( '==', 'attribute.type', $type ),
 		);
 		$search->setConditions( $search->combine( '&&', $expr ) );
 
@@ -98,6 +98,6 @@ class Standard
 			$this->attributes[$code] = [];
 		}
 
-		$this->attributes[$code][ $item->getType() ] = $item;
+		$this->attributes[$code][$item->getType()] = $item;
 	}
 }

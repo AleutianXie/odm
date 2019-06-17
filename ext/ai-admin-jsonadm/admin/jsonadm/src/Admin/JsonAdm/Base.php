@@ -234,7 +234,7 @@ abstract class Base
 
 		foreach( $map as $domain => $ids )
 		{
-			$manager = \Aimeos\MShop\Factory::createManager( $context, $domain );
+			$manager = \Aimeos\MShop::create( $context, $domain );
 
 			$search = $manager->createSearch();
 			$search->setConditions( $search->compare( '==', str_replace( '/', '.', $domain ) . '.id', $ids ) );
@@ -293,7 +293,19 @@ abstract class Base
 		 * @category Developer
 		 * @see admin/jsonadm/domains
 		 */
-		return (array) $view->config( 'admin/jsonadm/resources', ['coupon/config', 'plugin/config', 'service/config'] );
+		return (array) $view->config( 'admin/jsonadm/resources', [
+			'coupon/config', 'plugin/config', 'service/config',
+			'attribute/type', 'attribute/list/type', 'attribute/property/type',
+			'catalog/list/type',
+			'customer/list/type', 'customer/property/type',
+			'media/type', 'media/list/type', 'media/property/type',
+			'plugin/type',
+			'price/type', 'price/list/type',
+			'product/type', 'product/list/type', 'product/property/type',
+			'service/type', 'service/list/type',
+			'supplier/list/type',
+			'text/type', 'text/list/type',
+		] );
 	}
 
 
@@ -413,7 +425,10 @@ abstract class Base
 			$item = $manager->createItem();
 		}
 
-		$item = $this->addItemData( $manager, $item, $entry, $item->getResourceType() );
+		if( isset( $entry->attributes ) && ( $attr = (array) $entry->attributes ) ) {
+			$item = $item->fromArray( $attr, true );
+		}
+
 		$item = $manager->saveItem( $item );
 
 		if( isset( $entry->relationships ) ) {
@@ -443,7 +458,11 @@ abstract class Base
 			{
 				foreach( (array) $list->data as $data )
 				{
-					$listItem = $this->addItemData( $listManager, $listManager->createItem(), $data, $domain );
+					$listItem = $listManager->createItem();
+
+					if( isset( $data->attributes ) && ( $attr = (array) $data->attributes ) ) {
+						$item = $item->fromArray( $attr, true );
+					}
 
 					if( isset( $data->id ) ) {
 						$listItem->setRefId( $data->id );
@@ -456,35 +475,5 @@ abstract class Base
 				}
 			}
 		}
-	}
-
-
-	/**
-	 * Adds the data from the given object to the item
-	 *
-	 * @param \Aimeos\MShop\Common\Manager\Iface $manager Manager object
-	 * @param \Aimeos\MShop\Common\Item\Iface $item Item object to add the data to
-	 * @param \stdClass $data Object with "attributes" property
-	 * @param string $domain Domain of the type item
-	 * @return \Aimeos\MShop\Common\Item\Iface Item including the data
-	 */
-	protected function addItemData(\Aimeos\MShop\Common\Manager\Iface $manager,
-		\Aimeos\MShop\Common\Item\Iface $item, \stdClass $data, $domain )
-	{
-		if( isset( $data->attributes ) )
-		{
-			$attr = (array) $data->attributes;
-			$key = str_replace( '/', '.', $item->getResourceType() );
-
-			if( isset( $attr[$key.'.type'] ) )
-			{
-				$typeItem = $manager->getSubManager( 'type' )->findItem( $attr[$key.'.type'], [], $domain );
-				$attr[$key.'.typeid'] = $typeItem->getId();
-			}
-
-			$item->fromArray( $attr );
-		}
-
-		return $item;
 	}
 }

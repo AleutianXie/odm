@@ -12,13 +12,13 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 {
 	protected function setUp()
 	{
-		\Aimeos\MShop\Factory::setCache( true );
+		\Aimeos\MShop::cache( true );
 	}
 
 
 	protected function tearDown()
 	{
-		\Aimeos\MShop\Factory::setCache( false );
+		\Aimeos\MShop::cache( false );
 	}
 
 
@@ -28,7 +28,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 		$context->getConfig()->set( 'controller/common/subscription/process/processor/cgroup/groupids', ['1', '2'] );
 
-		$fcn = function( $subject ){
+		$fcn = function( $subject ) {
 			return $subject->getGroups() === ['1', '2'];
 		};
 
@@ -37,7 +37,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->setMethods( ['getItem', 'saveItem'] )
 			->getMock();
 
-		\Aimeos\MShop\Factory::injectManager( $context, 'customer', $customerStub );
+		\Aimeos\MShop::inject( 'customer', $customerStub );
 
 		$customerItem = $customerStub->createItem();
 
@@ -58,7 +58,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 		$context->getConfig()->set( 'controller/common/subscription/process/processor/cgroup/groupids', ['1', '2'] );
 
-		$fcn = function( $subject ){
+		$fcn = function( $subject ) {
 			return $subject->getGroups() === [];
 		};
 
@@ -67,7 +67,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			->setMethods( ['getItem', 'saveItem'] )
 			->getMock();
 
-		\Aimeos\MShop\Factory::injectManager( $context, 'customer', $customerStub );
+		\Aimeos\MShop::inject( 'customer', $customerStub );
 
 		$customerItem = $customerStub->createItem()->setGroups( ['1', '2'] );
 
@@ -84,7 +84,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 
 	protected function getSubscription( $context )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'subscription' );
+		$manager = \Aimeos\MShop::create( $context, 'subscription' );
 
 		$search = $manager->createSearch();
 		$search->setConditions( $search->compare( '==', 'subscription.dateend', '2010-01-01' ) );

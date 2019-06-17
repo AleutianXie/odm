@@ -37,7 +37,7 @@ class Standard
 	{
 		parent::__construct( $context, $path );
 
-		$this->controller = \Aimeos\Controller\Frontend\Basket\Factory::createController( $this->getContext() );
+		$this->controller = \Aimeos\Controller\Frontend\Basket\Factory::create( $this->getContext() );
 	}
 
 
@@ -88,6 +88,12 @@ class Standard
 			$view->item = $this->controller->get();
 			$status = 200;
 		}
+		catch( \Aimeos\MShop\Plugin\Provider\Exception $e )
+		{
+			$status = 409;
+			$errors = $this->translatePluginErrorCodes( $e->getErrorCodes() );
+			$view->errors = $this->getErrorDetails( $e, 'mshop' ) + $errors;
+		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
 			$status = 404;
@@ -129,6 +135,8 @@ class Standard
 				$payload->data = [$payload->data];
 			}
 
+			$cntl = \Aimeos\Controller\Frontend::create( $this->getContext(), 'service' );
+
 			foreach( $payload->data as $entry )
 			{
 				if( !isset( $entry->id ) ) {
@@ -143,15 +151,21 @@ class Standard
 					throw new \Aimeos\Client\JsonApi\Exception( sprintf( 'Service ID in attributes is missing' ) );
 				}
 
-				$serviceId = $entry->attributes->{'service.id'};
+				$item = $cntl->uses( ['media', 'price', 'text'] )->get( $entry->attributes->{'service.id'} );
 				unset( $entry->attributes->{'service.id'} );
 
-				$this->controller->addService( $entry->id, $serviceId, (array) $entry->attributes );
+				$this->controller->addService( $item, (array) $entry->attributes );
 			}
 
 
 			$view->item = $this->controller->get();
 			$status = 201;
+		}
+		catch( \Aimeos\MShop\Plugin\Provider\Exception $e )
+		{
+			$status = 409;
+			$errors = $this->translatePluginErrorCodes( $e->getErrorCodes() );
+			$view->errors = $this->getErrorDetails( $e, 'mshop' ) + $errors;
 		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
@@ -187,7 +201,7 @@ class Standard
 		];
 
 		$tplconf = 'client/jsonapi/standard/template-options';
-		$default = 'options-standard.php';
+		$default = 'options-standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 
@@ -210,7 +224,7 @@ class Standard
 	protected function render( ResponseInterface $response, \Aimeos\MW\View\Iface $view, $status )
 	{
 		$tplconf = 'client/jsonapi/basket/standard/template';
-		$default = 'basket/standard.php';
+		$default = 'basket/standard';
 
 		$body = $view->render( $view->config( $tplconf, $default ) );
 

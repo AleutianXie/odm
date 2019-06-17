@@ -34,6 +34,7 @@ class Standard
 
 	private $cache;
 	private $listTypes;
+	private $types = [];
 
 
 	/**
@@ -67,7 +68,36 @@ class Standard
 		 * @see controller/common/product/import/csv/processor/price/listtypes
 		 * @see controller/common/product/import/csv/processor/text/listtypes
 		 */
-		$this->listTypes = $context->getConfig()->get( 'controller/common/product/import/csv/processor/attribute/listtypes');
+		$key = 'controller/common/product/import/csv/processor/attribute/listtypes';
+		$this->listTypes = $context->getConfig()->get( $key );
+
+		if( $this->listTypes === null )
+		{
+			$this->listTypes = [];
+			$manager = \Aimeos\MShop::create( $context, 'product/lists/type' );
+
+			$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+			$search->setConditions( $search->compare( '==', 'product.lists.type.domain', 'attribute' ) );
+
+			foreach( $manager->searchItems( $search ) as $item ) {
+				$this->listTypes[$item->getCode()] = $item->getCode();
+			}
+		}
+		else
+		{
+			$this->listTypes = array_flip( $this->listTypes );
+		}
+
+
+		$manager = \Aimeos\MShop::create( $context, 'attribute/type' );
+
+		$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+		$search->setConditions( $search->compare( '==', 'attribute.type.domain', 'product' ) );
+
+		foreach( $manager->searchItems( $search ) as $item ) {
+			$this->types[$item->getCode()] = $item->getCode();
+		}
+
 
 		$this->cache = $this->getCache( 'attribute' );
 	}
@@ -83,7 +113,7 @@ class Standard
 	public function process( \Aimeos\MShop\Product\Item\Iface $product, array $data )
 	{
 		$context = $this->getContext();
-		$listManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists' );
+		$listManager = \Aimeos\MShop::create( $context, 'product/lists' );
 		$separator = $context->getConfig()->get( 'controller/common/product/import/csv/separator', "\n" );
 
 		$listMap = [];
@@ -93,7 +123,7 @@ class Standard
 		foreach( $listItems as $listItem )
 		{
 			if( ( $refItem = $listItem->getRefItem() ) !== null ) {
-				$listMap[ $refItem->getCode() ][ $listItem->getType() ] = $listItem;
+				$listMap[$refItem->getCode()][$listItem->getType()] = $listItem;
 			}
 		}
 
@@ -103,28 +133,27 @@ class Standard
 				continue;
 			}
 
-			$codes = explode( $separator, trim( $list['attribute.code'] ) );
+			$codes = explode( $separator, $this->getValue( $list, 'attribute.code', '' ) );
 
 			foreach( $codes as $code )
 			{
 				$code = trim( $code );
-				$typecode = trim( $this->getValue( $list, 'product.lists.type', 'default' ) );
+				$listtype = $this->getValue( $list, 'product.lists.type', 'default' );
 
-				if( isset( $listMap[$code][$typecode] ) )
+				if( isset( $listMap[$code][$listtype] ) )
 				{
-					$listItem = $listMap[$code][$typecode];
-					unset( $listItems[ $listItem->getId() ] );
+					$listItem = $listMap[$code][$listtype];
+					unset( $listItems[$listItem->getId()] );
 				}
 				else
 				{
-					$listItem = $listManager->createItem( $typecode, 'attribute' );
+					$listItem = $listManager->createItem()->setType( $listtype );
 				}
 
-				$attrItem = $this->getAttributeItem( $code, trim( $list['attribute.type'] ) );
-				$attrItem->fromArray( $list );
-				$attrItem->setCode( $code );
+				$listItem = $listItem->setPosition( $pos )->fromArray( $list );
 
-				$listItem->fromArray( $this->addListItemDefaults( $list, $pos ) );
+				$attrItem = $this->getAttributeItem( $code, $this->getValue( $list, 'attribute.type' ) );
+				$attrItem = $attrItem->setCode( $code )->fromArray( $list );
 
 				$product->addListItem( 'attribute', $listItem, $attrItem );
 			}
@@ -144,11 +173,20 @@ class Standard
 	 */
 	protected function checkEntry( array $list )
 	{
-		if( !isset( $list['attribute.code'] ) || trim( $list['attribute.code'] ) === ''
-			|| trim( $list['attribute.type'] ) === '' || isset( $list['product.lists.type'] )
-			&& $this->listTypes !== null && !in_array( trim( $list['product.lists.type'] ), (array) $this->listTypes )
-		) {
+		if( $this->getValue( $list, 'attribute.code' ) === null ) {
 			return false;
+		}
+
+		if( ( $type = $this->getValue( $list, 'product.lists.type' ) ) && !isset( $this->listTypes[$type] ) )
+		{
+			$msg = sprintf( 'Invalid type "%1$s" (%2$s)', $type, 'product list' );
+			throw new \Aimeos\Controller\Common\Exception( $msg );
+		}
+
+		if( ( $type = $this->getValue( $list, 'attribute.type' ) ) && !isset( $this->types[$type] ) )
+		{
+			$msg = sprintf( 'Invalid type "%1$s" (%2$s)', $type, 'attribute' );
+			throw new \Aimeos\Controller\Common\Exception( $msg );
 		}
 
 		return true;
@@ -166,10 +204,10 @@ class Standard
 	{
 		if( ( $item = $this->cache->get( $code, $type ) ) === null )
 		{
-			$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'attribute' );
+			$manager = \Aimeos\MShop::create( $this->getContext(), 'attribute' );
 
 			$item = $manager->createItem();
-			$item->setTypeId( $this->getTypeId( 'attribute/type', 'product', $type ) );
+			$item->setType( $type );
 			$item->setDomain( 'product' );
 			$item->setLabel( $code );
 			$item->setCode( $code );

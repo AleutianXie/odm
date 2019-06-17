@@ -277,13 +277,13 @@ class Standard
 	protected function getPropertyTypes()
 	{
 		$excludes = array( 'package-length', 'package-height', 'package-width', 'package-weight' );
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/property/type' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product/property/type' );
 
-		$search = $manager->createSearch();
+		$search = $manager->createSearch( true )->setSlice( 0, 10000 );
 		$search->setConditions( $search->compare( '!=', 'product.property.type.code', $excludes ) );
-		$search->setSlice( 0, 0x7fffffff );
+		$search->setSortations( [$search->sort( '+', 'product.property.type.position')] );
 
-		return $manager->searchItems( $search );
+		return $this->map( $manager->searchItems( $search ) );
 	}
 
 
@@ -291,13 +291,11 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/property' );
-		$typeManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'product/property/type' );
-
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'product/property' );
 		$propItems = $this->excludeItems( $item->getPropertyItems( null, false ) );
 
 		foreach( $data as $entry )
@@ -309,11 +307,10 @@ class Standard
 			}
 			else
 			{
-				$typeCode = $typeManager->getItem( $entry['product.property.typeid'] )->getCode();
-				$propItem = $manager->createItem( $typeCode, 'product' );
+				$propItem = $manager->createItem();
 			}
 
-			$propItem->fromArray( $entry );
+			$propItem->fromArray( $entry, true );
 			$item->addPropertyItem( $propItem );
 		}
 
@@ -378,7 +375,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/characteristic/property/template-item';
-		$default = 'product/item-characteristic-property-standard.php';
+		$default = 'product/item-characteristic-property-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

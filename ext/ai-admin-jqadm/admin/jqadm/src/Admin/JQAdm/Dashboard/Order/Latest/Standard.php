@@ -86,7 +86,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/dashboard/order/latest/template-item';
-		$default = 'dashboard/item-order-latest-standard.php';
+		$default = 'dashboard/item-order-latest-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -185,7 +185,7 @@ class Standard
 	 */
 	protected function addOrders( \Aimeos\MW\View\Iface $view )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'order' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'order' );
 
 		$search = $manager->createSearch();
 		$search->setSortations( [$search->sort( '-', 'order.ctime' ), $search->sort( '-', 'order.id' )] );
@@ -199,11 +199,10 @@ class Standard
 		}
 
 
-		$baseManager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'order/base' );
+		$baseManager = \Aimeos\MShop::create( $this->getContext(), 'order/base' );
 
-		$baseSearch = $manager->createSearch();
+		$baseSearch = $manager->createSearch()->setSlice( 0, count( $baseIds ) );
 		$baseSearch->setConditions( $baseSearch->compare( '==', 'order.base.id', $baseIds ) );
-		$baseSearch->setSlice( 0, 0x7fffffff );
 
 		$basketItems = $baseManager->searchItems( $baseSearch, ['order/base/address', 'order/base/service'] );
 

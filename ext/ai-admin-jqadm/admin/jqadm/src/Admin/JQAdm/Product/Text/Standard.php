@@ -290,19 +290,19 @@ class Standard
 	{
 		$context = $this->getContext();
 
-		$textTypeManager = \Aimeos\MShop\Factory::createManager( $context, 'text/type' );
-		$listTypeManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists/type' );
+		$textTypeManager = \Aimeos\MShop::create( $context, 'text/type' );
+		$listTypeManager = \Aimeos\MShop::create( $context, 'product/lists/type' );
 
-		$search = $textTypeManager->createSearch( true )->setSlice( 0, 0x7fffffff );
+		$search = $textTypeManager->createSearch( true )->setSlice( 0, 10000 );
 		$search->setConditions( $search->compare( '==', 'text.type.domain', 'product' ) );
-		$search->setSortations( array( $search->sort( '+', 'text.type.label' ) ) );
+		$search->setSortations( array( $search->sort( '+', 'text.type.position' ) ) );
 
-		$listSearch = $listTypeManager->createSearch( true )->setSlice( 0, 0x7fffffff );
+		$listSearch = $listTypeManager->createSearch( true )->setSlice( 0, 10000 );
 		$listSearch->setConditions( $listSearch->compare( '==', 'product.lists.type.domain', 'text' ) );
-		$listSearch->setSortations( array( $listSearch->sort( '+', 'product.lists.type.label' ) ) );
+		$listSearch->setSortations( array( $listSearch->sort( '+', 'product.lists.type.position' ) ) );
 
-		$view->textTypes = $textTypeManager->searchItems( $search );
-		$view->textListTypes = $this->sortType( $listTypeManager->searchItems( $listSearch ) );
+		$view->textTypes = $this->map( $textTypeManager->searchItems( $search ) );
+		$view->textListTypes = $this->map( $listTypeManager->searchItems( $listSearch ) );
 
 		return $view;
 	}
@@ -312,16 +312,14 @@ class Standard
 	 * Creates new and updates existing items using the data array
 	 *
 	 * @param \Aimeos\MShop\Product\Item\Iface $item Product item object without referenced domain items
-	 * @param string[] $data Data array
+	 * @param array $data Data array
 	 */
 	protected function fromArray( \Aimeos\MShop\Product\Item\Iface $item, array $data )
 	{
 		$context = $this->getContext();
 
-		$textManager = \Aimeos\MShop\Factory::createManager( $context, 'text' );
-		$listManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists' );
-		$textTypeManager = \Aimeos\MShop\Factory::createManager( $context, 'text/type' );
-		$listTypeManager = \Aimeos\MShop\Factory::createManager( $context, 'product/lists/type' );
+		$textManager = \Aimeos\MShop::create( $context, 'text' );
+		$listManager = \Aimeos\MShop::create( $context, 'product/lists' );
 
 		$listItems = $item->getListItems( 'text', null, null, false );
 
@@ -332,18 +330,17 @@ class Standard
 				continue;
 			}
 
-			$type = $textTypeManager->getItem( $entry['text.typeid'] )->getCode();
-			$listType = $listTypeManager->getItem( $entry['product.lists.typeid'] )->getCode();
+			$listType = $entry['product.lists.type'];
 
 			if( ( $listItem = $item->getListItem( 'text', $listType, $entry['text.id'], false ) ) === null ) {
-				$listItem = $listManager->createItem( $listType, 'text' );
+				$listItem = $listManager->createItem();
 			}
 
 			if( ( $refItem = $listItem->getRefItem() ) === null ) {
-				$refItem = $textManager->createItem( $type, 'product' );
+				$refItem = $textManager->createItem();
 			}
 
-			$refItem->fromArray( $entry );
+			$refItem->fromArray( $entry, true );
 			$conf = [];
 
 			foreach( (array) $this->getValue( $entry, 'config/key' ) as $num => $key )
@@ -353,7 +350,7 @@ class Standard
 				}
 			}
 
-			$listItem->fromArray( $entry );
+			$listItem->fromArray( $entry, true );
 			$listItem->setPosition( $idx );
 			$listItem->setConfig( $conf );
 
@@ -438,7 +435,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/product/text/template-item';
-		$default = 'product/item-text-standard.php';
+		$default = 'product/item-text-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

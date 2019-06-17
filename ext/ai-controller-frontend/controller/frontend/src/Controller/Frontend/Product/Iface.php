@@ -2,8 +2,7 @@
 
 /**
  * @license LGPLv3, http://opensource.org/licenses/LGPL-3.0
- * @copyright Metaways Infosystems GmbH, 2012
- * @copyright Aimeos (aimeos.org), 2017-2018
+ * @copyright Aimeos (aimeos.org), 2017-2019
  * @package Controller
  * @subpackage Frontend
  */
@@ -21,114 +20,174 @@ namespace Aimeos\Controller\Frontend\Product;
 interface Iface
 {
 	/**
-	 * Returns the given search filter with the conditions attached for filtering by attribute.
+	 * Returns the aggregated count of products for the given key.
 	 *
-	 * @param \Aimeos\MW\Criteria\Iface $filter Criteria object used for product search
-	 * @param array $attrIds List of attribute IDs for faceted search
-	 * @param array $optIds List of OR-combined attribute IDs for faceted search
-	 * @param array $attrIds Associative list of OR-combined attribute IDs per attribute type for faceted search
-	 * @return \Aimeos\MW\Criteria\Iface Criteria object containing the conditions for searching
-	 * @since 2017.03
-	 */
-	public function addFilterAttribute( \Aimeos\MW\Criteria\Iface $filter, array $attrIds, array $optIds, array $oneIds );
-
-
-	/**
-	 * Returns the given search filter with the conditions attached for filtering by category.
-	 *
-	 * @param \Aimeos\MW\Criteria\Iface $filter Criteria object used for product search
-	 * @param string|array $catId Selected category by the user
-	 * @param integer $level Constant for current category only, categories of next level (LEVEL_LIST) or whole subtree (LEVEL_SUBTREE)
-	 * @param string|null $sort Sortation of the product list like "name", "code", "price" and "position", null for no sortation
-	 * @param string $direction Sort direction of the product list ("+", "-")
-	 * @param string $listtype List type of the product associated to the category, usually "default"
-	 * @return \Aimeos\MW\Criteria\Iface Criteria object containing the conditions for searching
-	 * @since 2017.03
-	 */
-	public function addFilterCategory( \Aimeos\MW\Criteria\Iface $filter, $catId,
-		$level = \Aimeos\MW\Tree\Manager\Base::LEVEL_ONE, $sort = null, $direction = '+', $listtype = 'default' );
-
-
-	/**
-	 * Returns the given search filter with the conditions attached for filtering by suppliers.
-	 *
-	 * @param \Aimeos\MW\Criteria\Iface $filter Criteria object used for product search
-	 * @param array $supIds List of supplier IDs for faceted search
-	 * @return \Aimeos\MW\Criteria\Iface Criteria object containing the conditions for searching
-	 * @since 2018.07
-	 */
-	public function addFilterSupplier( \Aimeos\MW\Criteria\Iface $filter, array $supIds );
-
-
-	/**
-	 * Returns the given search filter with the conditions attached for filtering by text.
-	 *
-	 * @param \Aimeos\MW\Criteria\Iface $filter Criteria object used for product search
-	 * @param string $input Search string entered by the user
-	 * @param string|null $sort Sortation of the product list like "name", "code", "price" and "position", null for no sortation
-	 * @param string $direction Sort direction of the product list ("+", "-")
-	 * @param string $listtype List type of the text associated to the product, usually "default"
-	 * @return \Aimeos\MW\Criteria\Iface Criteria object containing the conditions for searching
-	 * @since 2017.03
-	 */
-	public function addFilterText( \Aimeos\MW\Criteria\Iface $filter, $input, $sort = null, $direction = '+', $listtype = 'default' );
-
-
-	/**
-	 * Returns the aggregated count of products from the index for the given key.
-	 *
-	 * @param \Aimeos\MW\Criteria\Iface $filter Critera object which contains the filter conditions
 	 * @param string $key Search key to aggregate for, e.g. "index.attribute.id"
 	 * @return array Associative list of key values as key and the product count for this key as value
-	 * @since 2017.03
+	 * @since 2019.04
 	 */
-	public function aggregate( \Aimeos\MW\Criteria\Iface $filter, $key );
-
+	public function aggregate( $key );
 
 	/**
-	 * Returns the default product filter.
+	 * Adds attribute IDs for filtering where products must reference all IDs
 	 *
-	 * @param string|null $sort Sortation of the product list like "name", "code", "price" and "position", null for no sortation
-	 * @param string $direction Sort direction of the product list ("+", "-")
-	 * @param integer $start Position in the list of found products where to begin retrieving the items
-	 * @param integer $size Number of products that should be returned
-	 * @param string $listtype Type of the product list, e.g. default, promotion, etc.
-	 * @return \Aimeos\MW\Criteria\Iface Criteria object containing the conditions for searching
-	 * @since 2017.03
+	 * @param array|string $attrIds Attribute ID or list of IDs
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
 	 */
-	public function createFilter( $sort = null, $direction = '+', $start = 0, $size = 100, $listtype = 'default' );
-
+	public function allOf( $attrIds );
 
 	/**
-	 * Returns the product for the given product ID from the index
+	 * Adds catalog IDs for filtering
 	 *
-	 * @param string $productId Unique product ID
-	 * @param string[] $domains Domain names of items that are associated with the products and that should be fetched too
+	 * @param array|string $catIds Catalog ID or list of IDs
+	 * @param string $listtype List type of the products referenced by the categories
+	 * @param integer $level Constant from \Aimeos\MW\Tree\Manager\Base if products in subcategories are matched too
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function category( $catIds, $listtype = 'default', $level = \Aimeos\MW\Tree\Manager\Base::LEVEL_ONE );
+
+	/**
+	 * Adds generic condition for filtering products
+	 *
+	 * @param string $operator Comparison operator, e.g. "==", "!=", "<", "<=", ">=", ">", "=~", "~="
+	 * @param string $key Search key defined by the product manager, e.g. "product.status"
+	 * @param array|string $value Value or list of values to compare to
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function compare( $operator, $key, $value );
+
+	/**
+	 * Returns the product for the given product code
+	 *
+	 * @param string $code Unique product code
 	 * @return \Aimeos\MShop\Product\Item\Iface Product item including the referenced domains items
-	 * @since 2017.03
+	 * @since 2019.04
 	 */
-	public function getItem( $productId, array $domains = array( 'attribute', 'media', 'price', 'product', 'product/property', 'text' ) );
-
+	public function find( $code );
 
 	/**
-	 * Returns the product for the given product ID from the index
+	 * Returns the product for the given product ID
 	 *
-	 * @param string[] $productIds List of unique product ID
-	 * @param string[] $domains Domain names of items that are associated with the products and that should be fetched too
-	 * @return \Aimeos\MShop\Product\Item\Iface[] Associative list of product IDs as keys and product items as values
-	 * @since 2017.03
+	 * @param string $id Unique product ID
+	 * @return \Aimeos\MShop\Product\Item\Iface Product item including the referenced domains items
+	 * @since 2019.04
 	 */
-	public function getItems( array $productIds, array $domains = array( 'media', 'price', 'text' ) );
-
+	public function get( $id );
 
 	/**
-	 * Returns the products from the index filtered by the given criteria object.
+	 * Adds a filter to return only items containing a reference to the given ID
 	 *
-	 * @param \Aimeos\MW\Criteria\Iface $filter Critera object which contains the filter conditions
-	 * @param string[] $domains Domain names of items that are associated with the products and that should be fetched too
-	 * @param integer &$total Parameter where the total number of found products will be stored in
-	 * @return array Ordered list of product items implementing \Aimeos\MShop\Product\Item\Iface
-	 * @since 2017.03
+	 * @param string $domain Domain name of the referenced item, e.g. "attribute"
+	 * @param string|null $type Type code of the reference, e.g. "variant" or null for all types
+	 * @param string|null $refId ID of the referenced item of the given domain or null for all references
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
 	 */
-	public function searchItems( \Aimeos\MW\Criteria\Iface $filter, array $domains = array( 'media', 'price', 'text' ), &$total = null );
+	public function has( $domain, $type = null, $refId = null );
+
+	/**
+	 * Adds attribute IDs for filtering where products must reference at least one ID
+	 *
+	 * @param array|string $attrIds Attribute ID or list of IDs
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function oneOf( $attrIds );
+
+	/**
+	 * Parses the given array and adds the conditions to the list of conditions
+	 *
+	 * @param array $conditions List of conditions, e.g. ['&&' => [['>' => ['product.status' => 0]], ['==' => ['product.type' => 'default']]]]
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function parse( array $conditions );
+
+	/**
+	 * Adds product IDs for filtering
+	 *
+	 * @param array|string $prodIds Product ID or list of IDs
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function product( $prodIds );
+
+	/**
+	 * Adds a filter to return only items containing the property
+	 *
+	 * @param string $type Type code of the property, e.g. "isbn"
+	 * @param string|null $value Exact value of the property
+	 * @param string|null $langId ISO country code (en or en_US) or null if not language specific
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function property( $type, $value = null, $langId = null );
+
+	/**
+	 * Returns the product for the given product URL name
+	 *
+	 * @param string $name Product URL name
+	 * @return \Aimeos\MShop\Product\Item\Iface Product item including the referenced domains items
+	 * @since 2019.04
+	 */
+	public function resolve( $name );
+
+	/**
+	 * Returns the products filtered by the previously assigned conditions
+	 *
+	 * @param string[] $domains Domain names of items that are associated with the products and that should be fetched too
+	 * @return \Aimeos\MShop\Product\Item\Iface[] Ordered list of product items
+	 * @since 2019.04
+	 */
+	public function search( &$total = null );
+
+	/**
+	 * Sets the start value and the number of returned products for slicing the list of found products
+	 *
+	 * @param integer $start Start value of the first product in the list
+	 * @param integer $limit Number of returned products
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function slice( $start, $limit );
+
+	/**
+	 * Sets the sorting of the result list
+	 *
+	 * @param string|null $key Sorting of the result list like "name", "-name", "price", "-price", "code", "-code", "ctime, "-ctime" and "relevance", null for no sorting
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function sort( $key = null );
+
+	/**
+	 * Adds supplier IDs for filtering
+	 *
+	 * @param array|string $supIds Supplier ID or list of IDs
+	 * @param string $listtype List type of the products referenced by the suppliers
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function supplier( $supIds, $listtype = 'default' );
+
+	/**
+	 * Adds input string for full text search
+	 *
+	 * @param string|null $text User input for full text search
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function text( $text );
+
+	/**
+	 * Sets the referenced domains that will be fetched too when retrieving items
+	 *
+	 * @param array $domains Domain names of the referenced items that should be fetched too
+	 * @return \Aimeos\Controller\Frontend\Product\Iface Product controller for fluent interface
+	 * @since 2019.04
+	 */
+	public function uses( array $domains );
 }

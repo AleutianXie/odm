@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: aimeos-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-27 08:31+0200\n"
-"PO-Revision-Date: 2018-09-27 06:36+0000\n"
+"POT-Creation-Date: 2019-04-27 17:50+0200\n"
+"PO-Revision-Date: 2019-04-27 15:50+0000\n"
 "Last-Translator: Aimeos\n"
 "Language-Team: Korean (http://www.transifex.com/aimeos/aimeos-core/language/ko/)\n"
 "MIME-Version: 1.0\n"
@@ -224,6 +224,10 @@ msgid "Client HTML type is empty"
 msgstr ""
 
 #, php-format
+msgid "Client path is empty"
+msgstr ""
+
+#, php-format
 msgid "Client type \"%1$s\" must consist of two parts separated by \"/\""
 msgstr ""
 
@@ -256,7 +260,23 @@ msgid "Customer with ID \"%1$s\" not found"
 msgstr ""
 
 #, php-format
+msgid "Dear %1$s %2$s"
+msgstr ""
+
+#, php-format
 msgid "Dear %1$s %2$s %3$s"
+msgstr ""
+
+#, php-format
+msgid "Dear Miss %1$s %2$s"
+msgstr ""
+
+#, php-format
+msgid "Dear Mr %1$s %2$s"
+msgstr ""
+
+#, php-format
+msgid "Dear Mrs %1$s %2$s"
 msgstr ""
 
 msgid "Dear Sir or Madam"
@@ -266,6 +286,10 @@ msgid "Delivery"
 msgstr ""
 
 msgid "Delivery address"
+msgstr ""
+
+#, php-format
+msgid "Delivery address deleted successfully"
 msgstr ""
 
 #, php-format
@@ -894,6 +918,9 @@ msgstr ""
 #. delivery status (%3%s)
 #, php-format
 msgid "Your order %1$s from %2$s has been dispatched."
+msgstr ""
+
+msgid "Your reference number"
 msgstr ""
 
 msgid "Your search result"

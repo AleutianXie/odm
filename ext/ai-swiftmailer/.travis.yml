@@ -2,12 +2,12 @@ sudo: false
 language: php
 
 php:
+  - 7.3
   - 7.2
   - 7.1
   - 7.0
   - 5.6
   - 5.5
-  - 5.4
 
 
 env:
@@ -26,7 +26,7 @@ matrix:
       env: VERSION=6.*
 
 before_script:
-  - git clone --depth=50 --branch=2018.10 git://github.com/aimeos/aimeos-core.git ../aimeos-core
+  - git clone --depth=50 --branch=2019.04 git://github.com/aimeos/aimeos-core.git ../aimeos-core
   - cd ../aimeos-core
   - mv ../ai-swiftmailer ext/
   - composer require "swiftmailer/swiftmailer" "${VERSION}"

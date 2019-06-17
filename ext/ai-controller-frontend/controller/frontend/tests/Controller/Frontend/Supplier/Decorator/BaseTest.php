@@ -20,11 +20,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	{
 		$this->context = \TestHelperFrontend::getContext();
 
-		$this->stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Supplier\Standard' )
+		$this->stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Supplier\Standard::class )
 			->disableOriginalConstructor()
 			->getMock();
 
-		$this->object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Supplier\Decorator\Base' )
+		$this->object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Supplier\Decorator\Base::class )
 			->setConstructorArgs( [$this->stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -38,11 +38,11 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testConstructException()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Iface' )->getMock();
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Iface::class )->getMock();
 
-		$this->setExpectedException( '\Aimeos\MW\Common\Exception' );
+		$this->setExpectedException( \Aimeos\MW\Common\Exception::class );
 
-		$this->getMockBuilder( '\Aimeos\Controller\Frontend\Supplier\Decorator\Base' )
+		$this->getMockBuilder( \Aimeos\Controller\Frontend\Supplier\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 	}
@@ -50,12 +50,12 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	public function testCall()
 	{
-		$stub = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Supplier\Standard' )
+		$stub = $this->getMockBuilder( \Aimeos\Controller\Frontend\Supplier\Standard::class )
 			->disableOriginalConstructor()
 			->setMethods( ['invalid'] )
 			->getMock();
 
-		$object = $this->getMockBuilder( '\Aimeos\Controller\Frontend\Supplier\Decorator\Base' )
+		$object = $this->getMockBuilder( \Aimeos\Controller\Frontend\Supplier\Decorator\Base::class )
 			->setConstructorArgs( [$stub, $this->context] )
 			->getMockForAbstractClass();
 
@@ -65,45 +65,68 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 	}
 
 
-	public function testCreateFilter()
+	public function testCompare()
 	{
-		$search = \Aimeos\MShop\Factory::createManager( $this->context, 'supplier' )->createSearch();
-
-		$this->stub->expects( $this->once() )->method( 'createFilter' )
-			->will( $this->returnValue( $search ) );
-
-		$this->assertInstanceOf( '\Aimeos\MW\Criteria\Iface', $this->object->createFilter() );
+		$this->assertSame( $this->object, $this->object->compare( '==', 'supplier.status', 1 ) );
 	}
 
 
-	public function testGetItem()
+	public function testFind()
 	{
-		$item = \Aimeos\MShop\Factory::createManager( $this->context, 'supplier' )->createItem();
+		$item = \Aimeos\MShop::create( $this->context, 'supplier' )->createItem();
+		$expected = \Aimeos\MShop\Supplier\Item\Iface::class;
 
-		$this->stub->expects( $this->once() )->method( 'getItem' )
+		$this->stub->expects( $this->once() )->method( 'find' )
 			->will( $this->returnValue( $item ) );
 
-		$this->assertInstanceOf( '\Aimeos\MShop\Supplier\Item\Iface', $this->object->getItem( -1 ) );
+		$this->assertInstanceOf( $expected, $this->object->find( 'test' ) );
 	}
 
 
-	public function testGetItems()
+	public function testGet()
 	{
-		$this->stub->expects( $this->once() )->method( 'getItems' )
-			->will( $this->returnValue( [] ) );
+		$item = \Aimeos\MShop::create( $this->context, 'supplier' )->createItem();
+		$expected = \Aimeos\MShop\Supplier\Item\Iface::class;
 
-		$this->assertEquals( [], $this->object->getItems( [-1], ['media'] ) );
+		$this->stub->expects( $this->once() )->method( 'get' )
+			->will( $this->returnValue( $item ) );
+
+		$this->assertInstanceOf( $expected, $this->object->get( 1 ) );
 	}
 
 
-	public function testSearchItems()
+	public function testParse()
 	{
-		$filter = \Aimeos\MShop\Factory::createManager( $this->context, 'supplier' )->createSearch();
+		$this->assertSame( $this->object, $this->object->parse( [] ) );
+	}
 
-		$this->stub->expects( $this->once() )->method( 'searchItems' )
-			->will( $this->returnValue( [] ) );
 
-		$this->assertEquals( [], $this->object->searchItems( $filter, ['media'] ) );
+	public function testSearch()
+	{
+		$item = \Aimeos\MShop::create( $this->context, 'supplier' )->createItem();
+
+		$this->stub->expects( $this->once() )->method( 'search' )
+			->will( $this->returnValue( [$item] ) );
+
+		$this->assertEquals( [$item], $this->object->search() );
+	}
+
+
+	public function testSlice()
+	{
+		$this->assertSame( $this->object, $this->object->slice( 0, 100 ) );
+	}
+
+
+	public function testSort()
+	{
+		$this->assertSame( $this->object, $this->object->sort( 'supplier.label' ) );
+	}
+
+
+	public function testUses()
+	{
+		$this->assertSame( $this->object, $this->object->uses( ['text'] ) );
 	}
 
 
@@ -117,7 +140,7 @@ class BaseTest extends \PHPUnit\Framework\TestCase
 
 	protected function access( $name )
 	{
-		$class = new \ReflectionClass( '\Aimeos\Controller\Frontend\Supplier\Decorator\Base' );
+		$class = new \ReflectionClass( \Aimeos\Controller\Frontend\Supplier\Decorator\Base::class );
 		$method = $class->getMethod( $name );
 		$method->setAccessible( true );
 

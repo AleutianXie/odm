@@ -52,9 +52,9 @@ class Standard
 	public function run()
 	{
 		$context = $this->getContext();
-		$controller = \Aimeos\Controller\Common\Order\Factory::createController( $context );
-		$baseManager = \Aimeos\MShop\Factory::createManager( $context, 'order/base' );
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'order' );
+		$controller = \Aimeos\Controller\Common\Order\Factory::create( $context );
+		$baseManager = \Aimeos\MShop::create( $context, 'order/base' );
+		$manager = \Aimeos\MShop::create( $context, 'order' );
 
 		/** controller/jobs/order/cleanup/unpaid/keep-days
 		 * Removes all orders from the database that are unpaid

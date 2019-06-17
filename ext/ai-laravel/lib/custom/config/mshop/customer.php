@@ -22,10 +22,10 @@ return array(
 							"parentid", "company", "vatid", "salutation", "title",
 							"firstname", "lastname", "address1", "address2", "address3",
 							"postal", "city", "state", "countryid", "langid", "telephone",
-							"email", "telefax", "website", "longitude", "latitude", "flag",
+							"email", "telefax", "website", "longitude", "latitude",
 							"pos", "mtime", "editor", "siteid", "ctime"
 						) VALUES (
-							?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+							?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 						)
 					',
 				),
@@ -37,7 +37,7 @@ return array(
 							"address2" = ?, "address3" = ?, "postal" = ?, "city" = ?,
 							"state" = ?, "countryid" = ?, "langid" = ?, "telephone" = ?,
 							"email" = ?, "telefax" = ?, "website" = ?, "longitude" = ?, "latitude" = ?,
-							"flag" = ?, "pos" = ?, "mtime" = ?, "editor" = ?, "siteid" = ?
+							"pos" = ?, "mtime" = ?, "editor" = ?, "siteid" = ?
 						WHERE "id" = ?
 					',
 				),
@@ -54,9 +54,9 @@ return array(
 							lvuad."telephone" AS "customer.address.telephone", lvuad."email" AS "customer.address.email",
 							lvuad."telefax" AS "customer.address.telefax", lvuad."website" AS "customer.address.website",
 							lvuad."longitude" AS "customer.address.longitude", lvuad."latitude" AS "customer.address.latitude",
-							lvuad."flag" AS "customer.address.flag", lvuad."pos" AS "customer.address.position",
-							lvuad."mtime" AS "customer.address.mtime", lvuad."editor" AS "customer.address.editor",
-							lvuad."ctime" AS "customer.address.ctime", lvuad."siteid" AS "customer.address.siteid"
+							lvuad."pos" AS "customer.address.position", lvuad."mtime" AS "customer.address.mtime",
+							lvuad."editor" AS "customer.address.editor", lvuad."ctime" AS "customer.address.ctime",
+							lvuad."siteid" AS "customer.address.siteid"
 						FROM "users_address" AS lvuad
 						:joins
 						WHERE :cond
@@ -65,7 +65,7 @@ return array(
 							lvuad."address1", lvuad."address2", lvuad."address3", lvuad."postal",
 							lvuad."city", lvuad."state", lvuad."countryid", lvuad."langid",
 							lvuad."telephone", lvuad."email", lvuad."telefax", lvuad."website",
-							lvuad."longitude", lvuad."latitude", lvuad."flag", lvuad."pos",
+							lvuad."longitude", lvuad."latitude", lvuad."pos",
 							lvuad."mtime", lvuad."editor", lvuad."ctime"
 						/*-orderby*/ ORDER BY :order /*orderby-*/
 						LIMIT :size OFFSET :start
@@ -176,62 +176,34 @@ return array(
 						GROUP BY "key"
 					',
 				),
-				'getposmax' => array(
-					'ansi' => '
-						SELECT MAX( "pos" ) AS pos
-						FROM "users_list"
-						WHERE "siteid" = ?
-							AND "parentid" = ?
-							AND "typeid" = ?
-							AND "domain" = ?
-					',
-				),
-				'insert' => array(
-					'ansi' => '
-						INSERT INTO "users_list"(
-							"parentid", "typeid", "domain", "refid", "start", "end",
-						"config", "pos", "status", "mtime", "editor", "siteid", "ctime"
-						) VALUES (
-							?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-						)
-					',
-				),
-				'update' => array(
-					'ansi' => '
-						UPDATE "users_list"
-						SET "parentid"=?, "typeid" = ?, "domain" = ?, "refid" = ?, "start" = ?, "end" = ?,
-							"config" = ?, "pos" = ?, "status" = ?, "mtime" = ?, "editor" = ?
-						WHERE "siteid" = ? AND "id" = ?
-					',
-				),
-				'updatepos' => array(
-					'ansi' => '
-						UPDATE "users_list"
-							SET "pos" = ?, "mtime" = ?, "editor" = ?
-						WHERE "siteid" = ? AND "id" = ?
-					',
-				),
 				'delete' => array(
 					'ansi' => '
 						DELETE FROM "users_list"
 						WHERE :cond AND siteid = ?
 					',
 				),
-				'move' => array(
+				'insert' => array(
+					'ansi' => '
+						INSERT INTO "users_list"(
+							"parentid", "key", "type", "domain", "refid", "start", "end",
+						"config", "pos", "status", "mtime", "editor", "siteid", "ctime"
+						) VALUES (
+							?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+						)
+					',
+				),
+				'update' => array(
 					'ansi' => '
 						UPDATE "users_list"
-							SET "pos" = "pos" + ?, "mtime" = ?, "editor" = ?
-						WHERE "siteid" = ?
-							AND "parentid" = ?
-							AND "typeid" = ?
-							AND "domain" = ?
-							AND "pos" >= ?
+						SET "parentid"=?, "key" = ?, "type" = ?, "domain" = ?, "refid" = ?, "start" = ?, "end" = ?,
+							"config" = ?, "pos" = ?, "status" = ?, "mtime" = ?, "editor" = ?
+						WHERE "siteid" = ? AND "id" = ?
 					',
 				),
 				'search' => array(
 					'ansi' => '
 						SELECT lvuli."id" AS "customer.lists.id", lvuli."siteid" AS "customer.lists.siteid",
-							lvuli."parentid" AS "customer.lists.parentid", lvuli."typeid" AS "customer.lists.typeid",
+							lvuli."parentid" AS "customer.lists.parentid", lvuli."type" AS "customer.lists.type",
 							lvuli."domain" AS "customer.lists.domain", lvuli."refid" AS "customer.lists.refid",
 							lvuli."start" AS "customer.lists.datestart", lvuli."end" AS "customer.lists.dateend",
 							lvuli."config" AS "customer.lists.config", lvuli."pos" AS "customer.lists.position",
@@ -240,7 +212,7 @@ return array(
 						FROM "users_list" AS lvuli
 						:joins
 						WHERE :cond
-						GROUP BY lvuli."id", lvuli."parentid", lvuli."siteid", lvuli."typeid",
+						GROUP BY lvuli."id", lvuli."parentid", lvuli."siteid", lvuli."type",
 							lvuli."domain", lvuli."refid", lvuli."start", lvuli."end",
 							lvuli."config", lvuli."pos", lvuli."status", lvuli."mtime",
 							lvuli."editor", lvuli."ctime" /*-columns*/ , :columns /*columns-*/
@@ -348,17 +320,17 @@ return array(
 				'insert' => array(
 					'ansi' => '
 						INSERT INTO "users_property" (
-							"parentid", "typeid", "langid", "value",
+							"parentid", "key", "type", "langid", "value",
 							"mtime", "editor", "siteid", "ctime"
 						) VALUES (
-							?, ?, ?, ?, ?, ?, ?, ?
+							?, ?, ?, ?, ?, ?, ?, ?, ?
 						)
 					'
 				),
 				'update' => array(
 					'ansi' => '
 						UPDATE "users_property"
-						SET "parentid" = ?, "typeid" = ?, "langid" = ?,
+						SET "parentid" = ?, "key" = ?, "type" = ?, "langid" = ?,
 							"value" = ?, "mtime" = ?, "editor" = ?
 						WHERE "siteid" = ? AND "id" = ?
 					'
@@ -366,14 +338,14 @@ return array(
 				'search' => array(
 					'ansi' => '
 						SELECT lvupr."id" AS "customer.property.id", lvupr."parentid" AS "customer.property.parentid",
-							lvupr."siteid" AS "customer.property.siteid", lvupr."typeid" AS "customer.property.typeid",
+							lvupr."siteid" AS "customer.property.siteid", lvupr."type" AS "customer.property.type",
 							lvupr."langid" AS "customer.property.languageid", lvupr."value" AS "customer.property.value",
 							lvupr."mtime" AS "customer.property.mtime", lvupr."editor" AS "customer.property.editor",
 							lvupr."ctime" AS "customer.property.ctime"
 						FROM "users_property" AS lvupr
 						:joins
 						WHERE :cond
-						GROUP BY lvupr."id", lvupr."parentid", lvupr."siteid", lvupr."typeid",
+						GROUP BY lvupr."id", lvupr."parentid", lvupr."siteid", lvupr."type",
 							lvupr."langid", lvupr."value", lvupr."mtime", lvupr."editor",
 							lvupr."ctime" /*-columns*/ , :columns /*columns-*/
 						/*-orderby*/ ORDER BY :order /*orderby-*/
@@ -413,26 +385,26 @@ return array(
 			'insert' => array(
 				'ansi' => '
 					INSERT INTO "users" (
-						"siteid", "name", "company", "vatid", "salutation", "title",
+						"siteid", "name", "email", "company", "vatid", "salutation", "title",
 						"firstname", "lastname", "address1", "address2", "address3",
 						"postal", "city", "state", "countryid", "langid", "telephone",
-						"telefax", "website", "email", "longitude", "latitude", "label",
+						"telefax", "website", "longitude", "latitude",
 						"birthday", "status", "vdate", "password",
 						"updated_at", "editor", "created_at"
 					) VALUES (
-						?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+						?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
 					)
 				',
 			),
 			'update' => array(
 				'ansi' => '
 					UPDATE "users"
-					SET "siteid" = ?, "name" = ?, "company" = ?, "vatid" = ?,
+					SET "siteid" = ?, "name" = ?, "email" = ?, "company" = ?, "vatid" = ?,
 						"salutation" = ?, "title" = ?, "firstname" = ?, "lastname" = ?,
 						"address1" = ?, "address2" = ?, "address3" = ?, "postal" = ?,
 						"city" = ?, "state" = ?, "countryid" = ?, "langid" = ?,
-						"telephone" = ?, "telefax" = ?, "website" = ?, "email" = ?,
-						"longitude" = ?, "latitude" = ?, "label" = ?, "birthday" = ?,
+						"telephone" = ?, "telefax" = ?, "website" = ?,
+						"longitude" = ?, "latitude" = ?, "birthday" = ?,
 						"status" = ?, "vdate" = ?, "password" = ?, "updated_at" = ?, "editor" = ?
 					WHERE "id" = ?
 				',
@@ -440,7 +412,7 @@ return array(
 			'search' => array(
 				'ansi' => '
 					SELECT lvu."id" AS "customer.id", lvu."siteid" AS "customer.siteid",
-						lvu."label" AS "customer.label", lvu."name" AS "customer.code",
+						lvu."name" AS "customer.label", lvu."email" AS "customer.code",
 						lvu."company" AS "customer.company", lvu."vatid" AS "customer.vatid",
 						lvu."salutation" AS "customer.salutation", lvu."title" AS "customer.title",
 						lvu."firstname" AS "customer.firstname", lvu."lastname" AS "customer.lastname",
@@ -458,7 +430,7 @@ return array(
 					FROM "users" AS lvu
 					:joins
 					WHERE :cond
-					GROUP BY lvu."id", lvu."siteid", lvu."label", lvu."name", lvu."company", lvu."vatid",
+					GROUP BY lvu."id", lvu."siteid", lvu."name", lvu."company", lvu."vatid",
 						lvu."salutation", lvu."title", lvu."firstname", lvu."lastname",
 						lvu."address1", lvu."address2", lvu."address3", lvu."postal",
 						lvu."city", lvu."state", lvu."countryid", lvu."langid",

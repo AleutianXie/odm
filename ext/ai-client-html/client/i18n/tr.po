@@ -3,13 +3,13 @@
 # This file is distributed under the same license as the PACKAGE package.
 # 
 # Translators:
-# Metal <meteoramic@yahoo.com>, 2015-2018
+# Metal <meteoramic@yahoo.com>, 2015-2019
 msgid ""
 msgstr ""
 "Project-Id-Version: aimeos-core\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-09-27 08:31+0200\n"
-"PO-Revision-Date: 2018-10-02 00:10+0000\n"
+"POT-Creation-Date: 2019-04-27 17:50+0200\n"
+"PO-Revision-Date: 2019-05-01 19:15+0000\n"
 "Last-Translator: Metal <meteoramic@yahoo.com>\n"
 "Language-Team: Turkish (http://www.transifex.com/aimeos/aimeos-core/language/tr/)\n"
 "MIME-Version: 1.0\n"
@@ -223,11 +223,15 @@ msgstr "Class \"%1$s\" bulunamadı"
 
 #, php-format
 msgid "Client HTML type is empty"
-msgstr "Müşteri HTML türü boş"
+msgstr "İstemci HTML türü boş"
+
+#, php-format
+msgid "Client path is empty"
+msgstr "İstemci yolu boş"
 
 #, php-format
 msgid "Client type \"%1$s\" must consist of two parts separated by \"/\""
-msgstr "\"%1$s\" müşteri türü \"/\" ile ayrılmış şekilde iki parçadan oluşmalıdır"
+msgstr "\"%1$s\" istemci türü \"/\" ile ayrılmış şekilde iki parçadan oluşmalıdır"
 
 msgid "Close"
 msgstr "Kapat"
@@ -258,8 +262,24 @@ msgid "Customer with ID \"%1$s\" not found"
 msgstr " \"%1$s\" ID'li müşteri bulunamadı"
 
 #, php-format
+msgid "Dear %1$s %2$s"
+msgstr "Sayın %1$s %2$s"
+
+#, php-format
 msgid "Dear %1$s %2$s %3$s"
 msgstr "Sayın %1$s %2$s %3$s"
+
+#, php-format
+msgid "Dear Miss %1$s %2$s"
+msgstr "Sayın %1$s %2$s Hanım"
+
+#, php-format
+msgid "Dear Mr %1$s %2$s"
+msgstr "Sayın %1$s %2$s Bey"
+
+#, php-format
+msgid "Dear Mrs %1$s %2$s"
+msgstr "Sayın %1$s %2$s Hanım"
 
 msgid "Dear Sir or Madam"
 msgstr "Sayın Bay veya Bayan"
@@ -269,6 +289,10 @@ msgstr "Teslimat"
 
 msgid "Delivery address"
 msgstr "Teslimat adresi"
+
+#, php-format
+msgid "Delivery address deleted successfully"
+msgstr "Teslimat adresi başarıyla silindi"
 
 #, php-format
 msgid "Delivery address part \"%1$s\" is invalid"
@@ -367,7 +391,7 @@ msgstr "\"%1$s\" istemci adında geçersiz karakterler"
 
 #, php-format
 msgid "Invalid characters in client name \"%1$s\" in \"%2$s\""
-msgstr "\"%2$s\" içinde \"%1$s\" müşteri adında geçersiz karakterler"
+msgstr "\"%2$s\" içinde \"%1$s\" istemci adında geçersiz karakterler"
 
 #, php-format
 msgid "Invalid class name \"%1$s\""
@@ -898,6 +922,9 @@ msgstr "%1$s No'lu siparişiniz"
 #, php-format
 msgid "Your order %1$s from %2$s has been dispatched."
 msgstr "%2$s tarihinde vermiş olduğunuz %1$s No'lu siparişiniz sevk edildi."
+
+msgid "Your reference number"
+msgstr "Referans numaranız"
 
 msgid "Your search result"
 msgstr "Arama sonucunuz"

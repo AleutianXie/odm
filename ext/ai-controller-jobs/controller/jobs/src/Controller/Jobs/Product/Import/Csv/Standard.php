@@ -18,10 +18,10 @@ namespace Aimeos\Controller\Jobs\Product\Import\Csv;
  * @subpackage Jobs
  */
 class Standard
-	extends \Aimeos\Controller\Jobs\Base
+	extends \Aimeos\Controller\Common\Product\Import\Csv\Base
 	implements \Aimeos\Controller\Jobs\Iface
 {
-	use \Aimeos\Controller\Common\Product\Import\Csv\Traits;
+	private $types = [];
 
 
 	/**
@@ -59,6 +59,11 @@ class Standard
 		$logger = $context->getLogger();
 		$domains = array( 'attribute', 'media', 'price', 'product', 'product/property', 'text' );
 		$mappings = $this->getDefaultMapping();
+
+
+		if( file_exists( $config->get( 'controller/jobs/product/import/csv/location' ) ) === false ) {
+			return;
+		}
 
 
 		/** controller/common/product/import/csv/domains
@@ -108,10 +113,7 @@ class Standard
 		 * and the MShop domain item key (e.g. "product.code") it represents.
 		 *
 		 * You can use all domain item keys which are used in the fromArray()
-		 * methods of the item classes. The "*.type" item keys will be
-		 * automatically converted to their "*.typeid" representation. You only
-		 * need to make sure that the corresponding type is available in the
-		 * database.
+		 * methods of the item classes.
 		 *
 		 * These mappings are grouped together by their processor names, which
 		 * are responsible for importing the data, e.g. all mappings in "item"
@@ -317,8 +319,16 @@ class Standard
 
 		try
 		{
+			$types = [];
 			$procMappings = $mappings;
 			unset( $procMappings['item'] );
+
+			$manager = \Aimeos\MShop::create( $context, 'product/type' );
+			$search = $manager->createSearch()->setSlice( 0, 0x7fffffff );
+
+			foreach( $manager->searchItems( $search ) as $item ) {
+				$types[$item->getCode()] = $item->getCode();
+			}
 
 			$codePos = $this->getCodePosition( $mappings['item'] );
 			$convlist = $this->getConverterList( $converters );
@@ -341,7 +351,7 @@ class Standard
 				{
 					$data = $this->convertData( $convlist, $data );
 					$products = $this->getProducts( array_keys( $data ), $domains );
-					$errcnt = $this->import( $products, $data, $mappings['item'], $processor, $strict );
+					$errcnt = $this->import( $products, $data, $mappings['item'], $types, $processor, $strict );
 					$chunkcnt = count( $data );
 
 					$msg = 'Imported product lines from "%1$s": %2$d/%3$d (%4$s)';
@@ -509,19 +519,20 @@ class Standard
 	 * @param array $products List of products items implementing \Aimeos\MShop\Product\Item\Iface
 	 * @param array $data Associative list of import data as index/value pairs
 	 * @param array $mapping Associative list of positions and domain item keys
+	 * @param array $types List of allowed product type codes
 	 * @param \Aimeos\Controller\Common\Product\Import\Csv\Processor\Iface $processor Processor object
 	 * @param boolean $strict Log columns not mapped or silently ignore them
 	 * @return integer Number of products that couldn't be imported
 	 * @throws \Aimeos\Controller\Jobs\Exception
 	 */
-	protected function import( array $products, array $data, array $mapping,
+	protected function import( array $products, array $data, array $mapping, array $types,
 		\Aimeos\Controller\Common\Product\Import\Csv\Processor\Iface $processor, $strict )
 	{
 		$items = [];
 		$errors = 0;
 		$context = $this->getContext();
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'product' );
-		$indexManager = \Aimeos\MShop\Factory::createManager( $context, 'index' );
+		$manager = \Aimeos\MShop::create( $context, 'product' );
+		$indexManager = \Aimeos\MShop::create( $context, 'index' );
 
 		foreach( $data as $code => $list )
 		{
@@ -542,12 +553,15 @@ class Standard
 				if( isset( $map[0] ) )
 				{
 					$map = $map[0]; // there can only be one chunk for the base product data
+					$map['product.type'] = $this->getValue( $map, 'product.type', 'default' );
 
-					$typecode = trim( isset( $map['product.type'] ) ? $map['product.type'] : 'default' );
-					$map['product.typeid'] = $this->getTypeId( 'product/type', 'product', $typecode );
+					if( !in_array( $map['product.type'], $types ) )
+					{
+						$msg = sprintf( 'Invalid product type "%1$s"', $map['product.type'] );
+						throw new \Aimeos\Controller\Jobs\Exception( $msg );
+					}
 
-					$product->fromArray( $this->addItemDefaults( $map ) );
-					$product = $manager->saveItem( $product );
+					$product = $manager->saveItem( $product->fromArray( $map, true ) );
 
 					$list = $processor->process( $product, $list );
 
@@ -575,21 +589,5 @@ class Standard
 		$indexManager->rebuildIndex( $items );
 
 		return $errors;
-	}
-
-
-	/**
-	 * Adds the product item default values and returns the resulting array
-	 *
-	 * @param array $list Associative list of domain item keys and their values, e.g. "product.status" => 1
-	 * @return array Given associative list enriched by default values if they were not already set
-	 */
-	protected function addItemDefaults( array $list )
-	{
-		if( !isset( $list['product.status'] ) ) {
-			$list['product.status'] = 1;
-		}
-
-		return $list;
 	}
 }

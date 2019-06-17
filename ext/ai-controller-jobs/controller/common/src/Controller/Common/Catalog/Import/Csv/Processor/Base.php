@@ -42,27 +42,6 @@ class Base
 
 
 	/**
-	 * Adds the list item default values and returns the resulting array
-	 *
-	 * @param array $list Associative list of domain item keys and their values, e.g. "catalog.lists.status" => 1
-	 * @param integer $pos Computed position of the list item in the associated list of items
-	 * @return array Given associative list enriched by default values if they were not already set
-	 */
-	protected function addListItemDefaults( array $list, $pos )
-	{
-		if( !isset( $list['catalog.lists.position'] ) ) {
-			$list['catalog.lists.position'] = $pos;
-		}
-
-		if( !isset( $list['catalog.lists.status'] ) ) {
-			$list['catalog.lists.status'] = 1;
-		}
-
-		return $list;
-	}
-
-
-	/**
 	 * Returns the context item
 	 *
 	 * @return \Aimeos\MShop\Context\Item\Iface Context object
@@ -97,19 +76,5 @@ class Base
 		}
 
 		return $this->object;
-	}
-
-
-	/**
-	 * Returns the value from the list or the default value
-	 *
-	 * @param array $list Associative list of key/value pairs
-	 * @param string $key Key for the value to retrieve
-	 * @param mixed $default Default value if key isn't found
-	 * @param mixed Value for the key in the list of the default value
-	 */
-	protected function getValue( array $list, $key, $default )
-	{
-		return ( isset( $list[$key] ) ? $list[$key] : $default );
 	}
 }

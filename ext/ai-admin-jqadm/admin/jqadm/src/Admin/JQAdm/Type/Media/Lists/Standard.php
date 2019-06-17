@@ -39,7 +39,7 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'media/lists/type' );
+			$manager = \Aimeos\MShop::create( $context, 'media/lists/type' );
 			$view->item = $manager->getItem( $id );
 
 			$view->itemData = $this->toArray( $view->item, true );
@@ -84,7 +84,7 @@ class Standard
 			$data = $view->param( 'item', [] );
 
 			if( !isset( $view->item ) ) {
-				$view->item = \Aimeos\MShop\Factory::createManager( $context, 'media/lists/type' )->createItem();
+				$view->item = \Aimeos\MShop::create( $context, 'media/lists/type' )->createItem();
 			}
 
 			$data['media.lists.type.siteid'] = $view->item->getSiteId();
@@ -126,7 +126,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'media/lists/type' );
+		$manager = \Aimeos\MShop::create( $context, 'media/lists/type' );
 		$manager->begin();
 
 		try
@@ -182,7 +182,7 @@ class Standard
 				throw new \Aimeos\Admin\JQAdm\Exception( sprintf( 'Required parameter "%1$s" is missing', 'id' ) );
 			}
 
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'media/lists/type' );
+			$manager = \Aimeos\MShop::create( $context, 'media/lists/type' );
 
 			$view->item = $manager->getItem( $id );
 			$view->itemSubparts = $this->getSubClientNames();
@@ -222,7 +222,7 @@ class Standard
 		$view = $this->getView();
 		$context = $this->getContext();
 
-		$manager = \Aimeos\MShop\Factory::createManager( $context, 'media/lists/type' );
+		$manager = \Aimeos\MShop::create( $context, 'media/lists/type' );
 		$manager->begin();
 
 		try
@@ -278,7 +278,7 @@ class Standard
 		{
 			$total = 0;
 			$params = $this->storeSearchParams( $view->param(), 'type/media/lists' );
-			$manager = \Aimeos\MShop\Factory::createManager( $context, 'media/lists/type' );
+			$manager = \Aimeos\MShop::create( $context, 'media/lists/type' );
 			$search = $this->initCriteria( $manager->createSearch(), $params );
 
 			$view->items = $manager->searchItems( $search, [], $total );
@@ -324,7 +324,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/type/media/lists/template-list';
-		$default = 'type/media/lists/list-standard.php';
+		$default = 'type/media/lists/list-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -464,12 +464,12 @@ class Standard
 	/**
 	 * Creates new and updates existing items using the data array
 	 *
-	 * @param string[] Data array
+	 * @param array $data Data array
 	 * @return \Aimeos\MShop\Common\Item\Type\Iface New list type item object
 	 */
 	protected function fromArray( array $data )
 	{
-		$manager = \Aimeos\MShop\Factory::createManager( $this->getContext(), 'media/lists/type' );
+		$manager = \Aimeos\MShop::create( $this->getContext(), 'media/lists/type' );
 
 		if( isset( $data['media.lists.type.id'] ) && $data['media.lists.type.id'] != '' ) {
 			$item = $manager->getItem( $data['media.lists.type.id'] );
@@ -477,7 +477,7 @@ class Standard
 			$item = $manager->createItem();
 		}
 
-		$item->fromArray( $data );
+		$item->fromArray( $data, true );
 
 		return $item;
 	}
@@ -531,7 +531,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/type/media/lists/template-item';
-		$default = 'type/media/lists/item-standard.php';
+		$default = 'type/media/lists/item-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}

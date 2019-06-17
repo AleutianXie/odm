@@ -119,14 +119,14 @@ $productFcn = function( \Aimeos\MShop\Order\Item\Base\Iface $item, $basketId ) u
 		{
 			$subEntry = $subProduct->toArray();
 
-			foreach( $subProduct->getAttributes() as $attribute ) {
+			foreach( $subProduct->getAttributeItems() as $attribute ) {
 				$subEntry['attribute'][] = $attribute->toArray();
 			}
 
 			$entry['attributes']['product'][] = $subEntry;
 		}
 
-		foreach( $orderProduct->getAttributes() as $attribute ) {
+		foreach( $orderProduct->getAttributeItems() as $attribute ) {
 			$entry['attributes']['attribute'][] = $attribute->toArray();
 		}
 
@@ -159,7 +159,7 @@ $serviceFcn = function( \Aimeos\MShop\Order\Item\Base\Iface $item, $basketId ) u
 				);
 			}
 
-			foreach( $service->getAttributes() as $attribute ) {
+			foreach( $service->getAttributeItems() as $attribute ) {
 				$entry['attributes']['attribute'][] = $attribute->toArray();
 			}
 
@@ -173,28 +173,31 @@ $serviceFcn = function( \Aimeos\MShop\Order\Item\Base\Iface $item, $basketId ) u
 
 $addressFcn = function( \Aimeos\MShop\Order\Item\Base\Iface $item, $basketId ) use ( $fields, $target, $cntl, $action, $config )
 {
-	$addresses = [];
+	$list = [];
 
-	foreach( $item->getAddresses() as $type => $address )
+	foreach( $item->getAddresses() as $type => $addresses )
 	{
-		$entry = ['id' => $type, 'type' => 'basket/address'];
-		$entry['attributes'] = $address->toArray();
-
-		if( $item->getId() === null )
+		foreach( $addresses as $address )
 		{
-			$params = ['resource' => 'basket', 'id' => $basketId, 'related' => 'address', 'relatedid' => $type];
-			$entry['links'] = array(
-				'self' => array(
-					'href' => $this->url( $target, $cntl, $action, $params, [], $config ),
-					'allow' => ['DELETE'],
-				),
-			);
-		}
+			$entry = ['id' => $type, 'type' => 'basket/address'];
+			$entry['attributes'] = $address->toArray();
 
-		$addresses[] = $entry;
+			if( $item->getId() === null )
+			{
+				$params = ['resource' => 'basket', 'id' => $basketId, 'related' => 'address', 'relatedid' => $type];
+				$entry['links'] = array(
+					'self' => array(
+						'href' => $this->url( $target, $cntl, $action, $params, [], $config ),
+						'allow' => ['DELETE'],
+					),
+				);
+			}
+
+			$list[] = $entry;
+		}
 	}
 
-	return $addresses;
+	return $list;
 };
 
 
@@ -224,24 +227,12 @@ $couponFcn = function( \Aimeos\MShop\Order\Item\Base\Iface $item, $basketId ) us
 };
 
 
-$allowed = '["GET"]';
-if( isset( $this->item ) && $this->item->getId() === null )
-{
-	try {
-		$this->item->check();
-		$allowed = '["DELETE","GET","PATCH","POST"]';
-	} catch( \Aimeos\MShop\Exception $e ) {
-		$allowed = '["DELETE","GET","PATCH"]';
-	}
-}
-
-
 ?>
 {
 	"meta": {
 		"total": <?= ( isset( $this->item ) ? 1 : 0 ); ?>,
 		"prefix": <?= json_encode( $this->get( 'prefix' ) ); ?>,
-		"content-baseurl": "<?= $this->config( 'client/html/common/content/baseurl' ); ?>"
+		"content-baseurl": "<?= $this->config( 'resource/fs/baseurl' ); ?>"
 
 		<?php if( $this->csrf()->name() != '' ) : ?>
 			, "csrf": {
@@ -254,7 +245,7 @@ if( isset( $this->item ) && $this->item->getId() === null )
 	"links": {
 		"self": {
 			"href": "<?= $this->url( $target, $cntl, $action, $params, [], $config ); ?>",
-			"allow": <?= $allowed; ?>
+			"allow": <?= isset( $this->item ) && $this->item->getId() ? '["GET"]' : '["DELETE","GET","PATCH","POST"]' ?>
 
 		}
 
@@ -289,7 +280,6 @@ if( isset( $this->item ) && $this->item->getId() === null )
 	},
 
 	<?php if( isset( $this->errors ) ) : ?>
-
 		"errors": <?= json_encode( $this->errors, JSON_PRETTY_PRINT ); ?>
 
 	<?php elseif( isset( $this->item ) ) : ?>

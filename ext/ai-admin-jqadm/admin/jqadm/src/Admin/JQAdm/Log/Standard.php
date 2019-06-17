@@ -37,7 +37,7 @@ class Standard
 		{
 			$total = 0;
 			$params = $this->storeSearchParams( $view->param(), 'log' );
-			$manager = \Aimeos\MAdmin\Factory::createManager( $context, 'log' );
+			$manager = \Aimeos\MAdmin::create( $context, 'log' );
 
 			$search = $manager->createSearch();
 			$search->setSortations( [$search->sort( '-', 'log.timestamp')] );
@@ -84,7 +84,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/log/template-list';
-		$default = 'log/list-standard.php';
+		$default = 'log/list-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
@@ -248,7 +248,7 @@ class Standard
 		 * @category Developer
 		 */
 		$tplconf = 'admin/jqadm/log/template-item';
-		$default = 'log/item-standard.php';
+		$default = 'log/item-standard';
 
 		return $view->render( $view->config( $tplconf, $default ) );
 	}
