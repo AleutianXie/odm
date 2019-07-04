@@ -15,17 +15,17 @@ return [
 	],
 
 	'page' => [
-		// 'account-index' => [ 'account/profile','account/subscription','account/history','account/favorite','account/watch','basket/mini','catalog/session' ],
-		// 'basket-index' => [ 'basket/standard','basket/related' ],
-		// 'catalog-count' => [ 'catalog/count' ],
-		// 'catalog-detail' => [ 'basket/mini','catalog/stage','catalog/detail','catalog/session' ],
+		'account-index' => [ 'account/profile','account/subscription','account/history','account/favorite','account/watch','basket/mini','catalog/session' ],
+		'basket-index' => [ 'basket/standard','basket/related' ],
+		'catalog-count' => [ 'catalog/count' ],
+		'catalog-detail' => [ 'basket/mini','catalog/stage','catalog/detail','catalog/session' ],
 		// Hint: catalog/filter is also available as single 'catalog/tree', 'catalog/search', 'catalog/attribute' (https://aimeos.org/docs/Laravel/Adapt_pages)
 		'catalog-list' => [ 'basket/mini','catalog/filter','catalog/stage','catalog/lists' ],
-		// 'catalog-stock' => [ 'catalog/stock' ],
-		// 'catalog-suggest' => [ 'catalog/suggest' ],
-		// 'checkout-confirm' => [ 'checkout/confirm' ],
-		// 'checkout-index' => [ 'checkout/standard' ],
-		// 'checkout-update' => [ 'checkout/update' ],
+		'catalog-stock' => [ 'catalog/stock' ],
+		'catalog-suggest' => [ 'catalog/suggest' ],
+		'checkout-confirm' => [ 'checkout/confirm' ],
+		'checkout-index' => [ 'checkout/standard' ],
+		'checkout-update' => [ 'checkout/update' ],
 	],
 
 	/*
