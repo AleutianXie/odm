@@ -236,10 +236,12 @@ class Standard
 
 
 			$controller = \Aimeos\Controller\Frontend::create( $this->getContext(), 'basket' );
+			$customerref = $view->param( 'cs_customerref' );
+			$comment = $view->param( 'cs_comment' );
 
-			if( ( $comment = $view->param( 'cs_comment' ) ) !== null )
+			if( $customerref || $comment )
 			{
-				$controller->get()->setComment( $comment );
+				$controller->get()->setCustomerReference( $customerref )->setComment( $comment );
 				$controller->save();
 			}
 
@@ -254,7 +256,7 @@ class Standard
 
 				$view->summaryErrorCodes = $errors;
 				$view->standardStepActive = 'summary';
-				$view->standardErrorList = array( $error ) + $view->get( 'standardErrorList', [] );
+				$view->standardErrorList = array_merge($view->get( 'standardErrorList', [] ), array( $error ));
 			}
 
 
@@ -292,7 +294,8 @@ class Standard
 	public function addData( \Aimeos\MW\View\Iface $view, array &$tags = [], &$expire = null )
 	{
 		$context = $this->getContext();
-		$addresses = $view->standardBasket->getAddress( \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT );
+		$basket = $view->standardBasket;
+		$addresses = $basket->getAddress( \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_PAYMENT );
 
 		if( ( $view->summaryCustomerId = $context->getUserId() ) === null && ( $addr = current( $addresses ) ) !== false )
 		{
@@ -304,7 +307,10 @@ class Standard
 			catch( \Exception $e ) {}
 		}
 
-		$view->summaryTaxRates = $this->getTaxRates( $view->standardBasket );
+		$view->summaryCostsDelivery = $this->getCostsDelivery( $basket );
+		$view->summaryCostsPayment = $this->getCostsPayment( $basket );
+		$view->summaryNamedTaxes = $this->getNamedTaxes( $basket );
+		$view->summaryTaxRates = $this->getTaxRates( $basket );
 
 		return parent::addData( $view, $tags, $expire );
 	}

@@ -193,22 +193,22 @@ class Standard
 			catch( \Aimeos\Client\Html\Exception $e )
 			{
 				$error = array( $context->getI18n()->dt( 'client', $e->getMessage() ) );
-				$view->filterErrorList = $view->get( 'filterErrorList', [] ) + $error;
+				$view->filterErrorList = array_merge($view->get( 'filterErrorList', [] ), $error);
 			}
 			catch( \Aimeos\Controller\Frontend\Exception $e )
 			{
 				$error = array( $context->getI18n()->dt( 'controller/frontend', $e->getMessage() ) );
-				$view->filterErrorList = $view->get( 'filterErrorList', [] ) + $error;
+				$view->filterErrorList = array_merge($view->get( 'filterErrorList', [] ), $error);
 			}
 			catch( \Aimeos\MShop\Exception $e )
 			{
 				$error = array( $context->getI18n()->dt( 'mshop', $e->getMessage() ) );
-				$view->filterErrorList = $view->get( 'filterErrorList', [] ) + $error;
+				$view->filterErrorList = array_merge($view->get( 'filterErrorList', [] ), $error);
 			}
 			catch( \Exception $e )
 			{
 				$error = array( $context->getI18n()->dt( 'client', 'A non-recoverable error occured' ) );
-				$view->filterErrorList = $view->get( 'filterErrorList', [] ) + $error;
+				$view->filterErrorList = array_merge($view->get( 'filterErrorList', [] ), $error);
 				$this->logException( $e );
 			}
 
@@ -418,22 +418,22 @@ class Standard
 		catch( \Aimeos\MShop\Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'mshop', $e->getMessage() ) );
-			$view->filterErrorList = $view->get( 'filterErrorList', [] ) + $error;
+			$view->filterErrorList = array_merge($view->get( 'filterErrorList', [] ), $error);
 		}
 		catch( \Aimeos\Controller\Frontend\Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'controller/frontend', $e->getMessage() ) );
-			$view->filterErrorList = $view->get( 'filterErrorList', [] ) + $error;
+			$view->filterErrorList = array_merge($view->get( 'filterErrorList', [] ), $error);
 		}
 		catch( \Aimeos\Client\Html\Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'client', $e->getMessage() ) );
-			$view->filterErrorList = $view->get( 'filterErrorList', [] ) + $error;
+			$view->filterErrorList = array_merge($view->get( 'filterErrorList', [] ), $error);
 		}
 		catch( \Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'client', 'A non-recoverable error occured' ) );
-			$view->filterErrorList = $view->get( 'filterErrorList', [] ) + $error;
+			$view->filterErrorList = array_merge($view->get( 'filterErrorList', [] ), $error);
 			$this->logException( $e );
 		}
 	}
@@ -478,8 +478,9 @@ class Standard
 		 * @see client/html/catalog/count/url/action
 		 * @see client/html/catalog/count/url/config
 		 */
-		if( $config->get( 'client/html/catalog/count/enable', true ) == true )
-		{
+		if( $config->get( 'client/html/catalog/count/enable', true ) == true
+			&& array_intersect( $this->getSubClientNames(), ['tree', 'supplier', 'attribute'] ) !== []
+		) {
 			/** client/html/catalog/count/url/target
 			 * Destination of the URL where the controller specified in the URL is known
 			 *

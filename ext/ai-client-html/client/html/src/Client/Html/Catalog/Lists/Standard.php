@@ -185,22 +185,22 @@ class Standard
 			catch( \Aimeos\Client\Html\Exception $e )
 			{
 				$error = array( $context->getI18n()->dt( 'client', $e->getMessage() ) );
-				$view->listErrorList = $view->get( 'listErrorList', [] ) + $error;
+				$view->listErrorList = array_merge($view->get( 'listErrorList', [] ), $error);
 			}
 			catch( \Aimeos\Controller\Frontend\Exception $e )
 			{
 				$error = array( $context->getI18n()->dt( 'controller/frontend', $e->getMessage() ) );
-				$view->listErrorList = $view->get( 'listErrorList', [] ) + $error;
+				$view->listErrorList = array_merge($view->get( 'listErrorList', [] ), $error);
 			}
 			catch( \Aimeos\MShop\Exception $e )
 			{
 				$error = array( $context->getI18n()->dt( 'mshop', $e->getMessage() ) );
-				$view->listErrorList = $view->get( 'listErrorList', [] ) + $error;
+				$view->listErrorList = array_merge($view->get( 'listErrorList', [] ), $error);
 			}
 			catch( \Exception $e )
 			{
 				$error = array( $context->getI18n()->dt( 'client', 'A non-recoverable error occured' ) );
-				$view->listErrorList = $view->get( 'listErrorList', [] ) + $error;
+				$view->listErrorList = array_merge($view->get( 'listErrorList', [] ), $error);
 				$this->logException( $e );
 			}
 
@@ -417,22 +417,22 @@ class Standard
 		catch( \Aimeos\Client\Html\Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'client', $e->getMessage() ) );
-			$view->listErrorList = $view->get( 'listErrorList', [] ) + $error;
+			$view->listErrorList = array_merge($view->get( 'listErrorList', [] ), $error);
 		}
 		catch( \Aimeos\Controller\Frontend\Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'controller/frontend', $e->getMessage() ) );
-			$view->listErrorList = $view->get( 'listErrorList', [] ) + $error;
+			$view->listErrorList = array_merge($view->get( 'listErrorList', [] ), $error);
 		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'mshop', $e->getMessage() ) );
-			$view->listErrorList = $view->get( 'listErrorList', [] ) + $error;
+			$view->listErrorList = array_merge($view->get( 'listErrorList', [] ), $error);
 		}
 		catch( \Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'client', 'A non-recoverable error occured' ) );
-			$view->listErrorList = $view->get( 'listErrorList', [] ) + $error;
+			$view->listErrorList = array_merge($view->get( 'listErrorList', [] ), $error);
 			$this->logException( $e );
 		}
 	}
@@ -621,8 +621,7 @@ class Standard
 		 * @see client/html/catalog/lists/levels
 		 * @see client/html/catalog/detail/prodid-default
 		 */
-		$catids = $view->param( 'f_search' ) == '' ? $config->get( 'client/html/catalog/lists/catid-default' ) : null;
-		$catids = $view->param( 'f_catid' ) ?: $catids;
+		$catids = $view->param( 'f_catid', $config->get( 'client/html/catalog/lists/catid-default' ) );
 
 		/** client/html/catalog/lists/sort
 		 * Default sorting of product list if no other sorting is given by parameter
@@ -646,19 +645,20 @@ class Standard
 		$page = min( max( $view->param( 'l_page', 1 ), 1 ), $pages );
 
 		$products = \Aimeos\Controller\Frontend::create( $context, 'product' )
+			->category( $catids, 'default', $level )
+			->supplier( $view->param( 'f_supid', [] ) )
 			->allOf( $view->param( 'f_attrid', [] ) )
 			->oneOf( $view->param( 'f_optid', [] ) )
 			->oneOf( $view->param( 'f_oneid', [] ) )
-			->category( $catids, 'default', $level )
 			->text( $view->param( 'f_search' ) )
-			->slice( ($page - 1) * $size, $size )->sort( $sort )
+			->slice( ( $page - 1 ) * $size, $size )->sort( $sort )
 			->uses( $domains )
 			->search( $total );
 
 		if( $catids != null )
 		{
-			$controller = \Aimeos\Controller\Frontend::create( $context, 'catalog' );
-			$listCatPath = $controller->getPath( is_array( $catids ) ? reset( $catids ) : $catids, $domains );
+			$controller = \Aimeos\Controller\Frontend::create( $context, 'catalog' )->uses($domains);
+			$listCatPath = $controller->getPath( is_array( $catids ) ? reset( $catids ) : $catids );
 
 			if( ( $categoryItem = end( $listCatPath ) ) !== false ) {
 				$view->listCurrentCatItem = $categoryItem;

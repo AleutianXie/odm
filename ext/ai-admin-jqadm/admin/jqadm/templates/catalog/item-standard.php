@@ -68,7 +68,7 @@ $cfgSuggest = $this->config( 'admin/jqadm/catalog/item/config/suggest', ['css-cl
 	<input id="item-id" type="hidden" name="<?= $enc->attr( $this->formparam( array( 'item', 'catalog.id' ) ) ); ?>"
 		value="<?= $enc->attr( $this->get( 'itemData/catalog.id' ) ); ?>" />
 	<input id="item-parentid" type="hidden" name="<?= $enc->attr( $this->formparam( array( 'item', 'catalog.parentid' ) ) ); ?>"
-		value="<?= $enc->attr( $this->get( 'itemData/catalog.parentid', $this->param( 'id', $this->get( 'itemRootId' ) ) ) ); ?>" />
+		value="<?= $enc->attr( $this->get( 'itemData/catalog.parentid', $this->param( 'parentid', $this->param( 'id', $this->get( 'itemRootId' ) ) ) ) ); ?>" />
 	<input id="item-next" type="hidden" name="<?= $enc->attr( $this->formparam( array( 'next' ) ) ); ?>" value="get" />
 	<?= $this->csrf()->formfield(); ?>
 
@@ -126,7 +126,7 @@ $cfgSuggest = $this->config( 'admin/jqadm/catalog/item/config/suggest', ['css-cl
 
 							<?php foreach( array_values( $this->get( 'itemSubparts', [] ) ) as $idx => $subpart ) : ?>
 								<li class="nav-item <?= $enc->attr( $subpart ); ?>">
-									<a class="nav-link" href="#<?= $enc->attr( $subpart ); ?>" data-toggle="tab" role="tab" tabindex="<?= ++$idx+1; ?>">
+									<a class="nav-link" href="#<?= $enc->attr( $subpart ); ?>" data-toggle="tab" role="tab" tabindex="<?= ++$idx + 1; ?>">
 										<?= $enc->html( $this->translate( 'admin', $subpart ) ); ?>
 									</a>
 								</li>
@@ -236,7 +236,7 @@ $cfgSuggest = $this->config( 'admin/jqadm/catalog/item/config/suggest', ['css-cl
 											<th class="actions">
 												<?php if( !$this->site()->readonly( $this->get( 'itemData/catalog.siteid' ) ) ) : ?>
 													<div class="btn act-add fa" tabindex="1"
-														title="<?= $enc->attr( $this->translate( 'admin', 'Insert new entry (Ctrl+I)') ); ?>">
+														title="<?= $enc->attr( $this->translate( 'admin', 'Insert new entry (Ctrl+I)' ) ); ?>">
 													</div>
 												<?php endif; ?>
 											</th>
@@ -261,14 +261,14 @@ $cfgSuggest = $this->config( 'admin/jqadm/catalog/item/config/suggest', ['css-cl
 												<td class="actions">
 													<?php if( !$this->site()->readonly( $this->get( 'itemData/catalog.siteid' ) ) ) : ?>
 														<div class="btn act-delete fa" tabindex="1"
-															title="<?= $enc->attr( $this->translate( 'admin', 'Delete this entry') ); ?>">
+															title="<?= $enc->attr( $this->translate( 'admin', 'Delete this entry' ) ); ?>">
 														</div>
 													<?php endif; ?>
 												</td>
 											</tr>
 										<?php endforeach; ?>
 
-										<tr class="prototype">
+										<tr class="config-item prototype">
 											<td>
 												<input type="text" class="config-key form-control" tabindex="1" disabled="disabled"
 													name="<?= $enc->attr( $this->formparam( array( 'item', 'config', 'key', '' ) ) ); ?>" />
@@ -280,7 +280,7 @@ $cfgSuggest = $this->config( 'admin/jqadm/catalog/item/config/suggest', ['css-cl
 											<td class="actions">
 												<?php if( !$this->site()->readonly( $this->get( 'itemData/catalog.siteid' ) ) ) : ?>
 													<div class="btn act-delete fa" tabindex="1"
-														title="<?= $enc->attr( $this->translate( 'admin', 'Delete this entry') ); ?>">
+														title="<?= $enc->attr( $this->translate( 'admin', 'Delete this entry' ) ); ?>">
 													</div>
 												<?php endif; ?>
 											</td>

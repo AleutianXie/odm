@@ -184,7 +184,7 @@ Aimeos.Media = {
 				if(this.items[idx]) {
 					label += (this.items[idx]['media.languageid'] ? this.items[idx]['media.languageid'] + ': ' : '');
 					label += (this.items[idx]['media.label'] ? this.items[idx]['media.label'] : '');
-					label += (this.items[idx]['media.typename'] ? ' (' + this.items[idx]['media.typename'] + ')' : '');
+					label += (this.items[idx]['media.type'] ? ' (' + this.items[idx]['media.type'] + ')' : '');
 				}
 
 				if(this.items[idx]['media.status'] < 1) {
@@ -382,7 +382,7 @@ Aimeos.Price = {
 				label += (this.items[idx]['price.value'] ? this.items[idx]['price.value'] : '');
 				label += (this.items[idx]['price.costs'] ? ' + ' + this.items[idx]['price.costs'] : '');
 				label += (currency ? ' ' + currency : (this.items[idx]['price.currencyid'] ? ' ' + this.items[idx]['price.currencyid'] : ''));
-				label += (type ? ' (' + type.trim() + ')' : (this.items[idx]['price.typename'] ? ' (' + this.items[idx]['price.typename'] + ')' : ''));
+				label += (type ? ' (' + type.trim() + ')' : (this.items[idx]['price.type'] ? ' (' + this.items[idx]['price.type'] + ')' : ''));
 
 				if(this.items[idx]['price.status'] < 1) {
 					label = '<s>' + label + '</s>';
@@ -394,6 +394,47 @@ Aimeos.Price = {
 
 			toggle : function(idx) {
 				this.$set(this.advanced, idx, (!this.advanced[idx] ? true : false));
+			},
+
+
+			addPropertyItem : function(idx) {
+
+				if(!this.items[idx]) {
+					this.$set(this.items, idx, {});
+				}
+
+				if(!this.items[idx]['property']) {
+					this.$set(this.items[idx], 'property', []);
+				}
+
+				var len = this.items[idx]['property'].length;
+
+				if(!this.items[idx]['property'][len]) {
+					this.$set(this.items[idx]['property'], len, {});
+				}
+
+				var keys = ['price.property.id', 'price.property.languageid', 'price.property.type', 'price.property.value'];
+
+				for(key in keys) {
+					key = keys[key]; this.$set(this.items[idx]['property'][len], key, '');
+				}
+
+				this.$set(this.items[idx]['property'][len], 'price.property.siteid', this.siteid);
+			},
+
+
+			getPropertyData : function(idx) {
+
+				if(this.items[idx] && this.items[idx]['property']) {
+					return this.items[idx]['property'];
+				}
+
+				return [];
+			},
+
+
+			removePropertyItem : function(idx, propidx) {
+				this.items[idx]['property'].splice(propidx, 1);
 			}
 		},
 		'mounted' : function() {
@@ -534,7 +575,7 @@ Aimeos.Text = {
 				var type = $('#item-text-group-data-' + idx + ' .item-type option[value="' + this.items[idx]['text.type'] + '"]').html();
 
 				label += (this.items[idx]['text.languageid'] ? this.items[idx]['text.languageid'].toUpperCase() : '');
-				label += (type ? ' (' + type.trim() + ')' : (this.items[idx]['text.typename'] ? ' (' + this.items[idx]['text.typename'] + ')' : ''));
+				label += (type ? ' (' + type.trim() + ')' : (this.items[idx]['text.type'] ? ' (' + this.items[idx]['text.type'] + ')' : ''));
 
 				if(this.items[idx]['text.content']) {
 					var tmp = document.createElement("span");

@@ -53,8 +53,8 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 		$this->assertEquals( 1, count( $response->getHeader( 'Allow' ) ) );
 		$this->assertEquals( 1, count( $response->getHeader( 'Content-Type' ) ) );
 
-		$this->assertEquals( 15, $result['meta']['total'] );
-		$this->assertEquals( 15, count( $result['data'] ) );
+		$this->assertEquals( 14, $result['meta']['total'] );
+		$this->assertEquals( 14, count( $result['data'] ) );
 		$this->assertGreaterThan( 0, $result['data'][0]['id'] );
 		$this->assertGreaterThan( 0, $result['data'][0]['attributes'] );
 		$this->assertEquals( 'index.attribute.id', $result['data'][0]['type'] );
@@ -132,7 +132,7 @@ class StandardTest extends \PHPUnit\Framework\TestCase
 			'fields' => array(
 				'product' => 'product.id,product.code,product.label'
 			),
-			'sort' => '-code',
+			'sort' => '-code,-product.status',
 			'include' => 'attribute,text,product,product/property'
 		);
 		$helper = new \Aimeos\MW\View\Helper\Param\Standard( $this->view, $params );

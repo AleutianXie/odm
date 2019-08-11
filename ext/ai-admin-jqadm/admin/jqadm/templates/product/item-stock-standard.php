@@ -9,7 +9,7 @@
 $enc = $this->encoder();
 $stockTypes = $this->get( 'stockTypes', [] );
 
-$keys = ['stock.id', 'stock.siteid', 'stock.type', 'stock.stocklevel', 'stock.dateback'];
+$keys = ['stock.id', 'stock.siteid', 'stock.type', 'stock.stocklevel', 'stock.dateback', 'stock.timeframe'];
 
 
 ?>
@@ -44,9 +44,15 @@ $keys = ['stock.id', 'stock.siteid', 'stock.type', 'stock.stocklevel', 'stock.da
 						<?= $enc->html( $this->translate( 'admin', 'Shown if the article reached a stock level of zero' ) ); ?>
 					</div>
 				</th>
+				<th class="stock-timeframe">
+					<span class="help"><?= $enc->html( $this->translate( 'admin', 'Delivery within' ) ); ?></span>
+					<div class="form-text text-muted help-text">
+						<?= $enc->html( $this->translate( 'admin', 'Usual time frame for the delivery of the product' ) ); ?>
+					</div>
+				</th>
 				<th class="actions">
 					<div v-if="(items['stock.id'] || []).length < numtypes" class="btn act-add fa" tabindex="<?= $this->get( 'tabindex' ); ?>"
-						title="<?= $enc->attr( $this->translate( 'admin', 'Insert new entry (Ctrl+I)') ); ?>"
+						title="<?= $enc->attr( $this->translate( 'admin', 'Insert new entry (Ctrl+I)' ) ); ?>"
 						v-on:click="addItem()">
 					</div>
 				</th>
@@ -91,12 +97,19 @@ $keys = ['stock.id', 'stock.siteid', 'stock.type', 'stock.stocklevel', 'stock.da
 						v-bind:readonly="checkSite('stock.siteid', idx)"
 						v-model="items['stock.dateback'][idx]" />
 				</td>
+				<td class="stock-timeframe optional">
+					<input class="form-control item-timeframe" type="text" tabindex="<?= $this->get( 'tabindex' ); ?>"
+						name="<?= $enc->attr( $this->formparam( array( 'stock', 'stock.timeframe', '' ) ) ); ?>"
+						placeholder="<?= $enc->attr( $this->translate( 'admin', 'Time frame (optional)' ) ); ?>"
+						v-bind:readonly="checkSite('stock.siteid', idx)"
+						v-model="items['stock.timeframe'][idx]" />
+				</td>
 				<td class="actions">
 					<input class="item-id" type="hidden" v-model="items['stock.id'][idx]"
 						name="<?= $enc->attr( $this->formparam( array( 'stock', 'stock.id', '' ) ) ); ?>" />
 
 					<div v-if="!checkSite('stock.siteid', idx)" class="btn act-delete fa" tabindex="<?= $this->get( 'tabindex' ); ?>"
-						title="<?= $enc->attr( $this->translate( 'admin', 'Delete this entry') ); ?>"
+						title="<?= $enc->attr( $this->translate( 'admin', 'Delete this entry' ) ); ?>"
 						v-on:click.stop="removeItem(idx)">
 					</div>
 				</td>

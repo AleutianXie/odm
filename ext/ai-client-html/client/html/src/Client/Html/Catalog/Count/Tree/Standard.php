@@ -228,19 +228,72 @@ class Standard
 			 */
 			$limit = $config->get( 'client/html/catalog/count/limit', 10000 );
 			$startid = $view->config( 'client/html/catalog/filter/tree/startid' );
+			$level = $view->config( 'client/html/catalog/lists/levels', \Aimeos\MW\Tree\Manager\Base::LEVEL_ONE );
 
-			$nodes = [];
-			$cntl = \Aimeos\Controller\Frontend::create( $this->getContext(), 'catalog' )->root( $startid );
+			$cntl = \Aimeos\Controller\Frontend::create( $context, 'catalog' )->root( $startid );
+			$root = $cntl->getTree( \Aimeos\MW\Tree\Manager\Base::LEVEL_ONE );
 
-			if( ( $catId = $view->param( 'f_catid', $startid ) ) != null ) {
-				$nodes = $cntl->visible( array_keys( $cntl->getPath( $catId ) ) )->getTree()->toList();
+			if( ( $catId = $view->param( 'f_catid', $root->getId() ) ) != null && $catId != $root->getId() ) {
+				$cntl->visible( array_keys( $cntl->getPath( $catId ) ) );
+			} elseif( $level !== \Aimeos\MW\Tree\Manager\Base::LEVEL_TREE ) {
+				$cntl->visible( [$root->getId()] );
 			}
 
-			$view->treeCountList = \Aimeos\Controller\Frontend::create( $context, 'product' )
-				->category( array_keys( $nodes ) )->slice( 0, $limit )->sort()
-				->aggregate( 'index.catalog.id' );
+			$tree = $cntl->getTree();
+			$cntl = \Aimeos\Controller\Frontend::create( $context, 'product' )
+				->category( array_keys( $tree->toList() ) )
+				->supplier( $view->param( 'f_supid', [] ) )
+				->allof( $view->param( 'f_attrid', [] ) )
+				->oneOf( $view->param( 'f_optid', [] ) )
+				->oneOf( $view->param( 'f_oneid', [] ) )
+				->text( $view->param( 'f_search' ) )
+				->slice( 0, $limit )->sort();
+
+			$view->treeCountList = $cntl->aggregate( 'index.catalog.id' );
+
+			if( $level === \Aimeos\MW\Tree\Manager\Base::LEVEL_TREE ) {
+				$view->treeCountList = $this->counts( $this->traverse( $tree, $view->treeCountList ) );
+			}
 		}
 
 		return parent::addData( $view, $tags, $expire );
+	}
+
+
+	/**
+	 * Returns the product counts per node
+	 *
+	 * @param \Aimeos\MShop\Catalog\Item\Iface $node Tree node, maybe with children
+	 * @return array Associative list of catalog IDs as keys and product counts as values
+	 */
+	protected function counts( \Aimeos\MShop\Catalog\Item\Iface $node )
+	{
+		$list = [$node->getId() => $node->count];
+
+		foreach( $node->getChildren() as $child ) {
+			$list += $this->counts( $child );
+		}
+
+		return $list;
+	}
+
+
+	/**
+	 * Traverses the tree and adds the aggregated product counts to each node
+	 *
+	 * @param \Aimeos\MShop\Catalog\Item\Iface $node Tree node, maybe with children
+	 * @param array $counts Associative list of catalog IDs as keys and product counts as values
+	 * @return \Aimeos\MShop\Catalog\Item\Iface Updated tree node
+	 */
+	protected function traverse( \Aimeos\MShop\Catalog\Item\Iface $node, array $counts )
+	{
+		$count = ( isset( $counts[$node->getId()] ) ? $counts[$node->getId()] : 0 );
+
+		foreach( $node->getChildren() as $child ) {
+			$count += $this->traverse( $child, $counts )->count;
+		}
+
+		$node->count = $count;
+		return $node;
 	}
 }

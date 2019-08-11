@@ -34,7 +34,7 @@ $action = $this->config( 'client/html/checkout/standard/url/action', 'index' );
 $config = $this->config( 'client/html/checkout/standard/url/config', [] );
 
 $addresses = $this->standardBasket->getAddress( \Aimeos\MShop\Order\Item\Base\Address\Base::TYPE_DELIVERY );
-$addrArray = ( $address = current( $addresses ) !== false ? $address->toArray() : [] );
+$addrArray = ( $address = current( $addresses ) ? $address->toArray() : [] );
 
 
 $deliveryDefault = ( $addrArray === [] ? -1 : 'null' );
@@ -63,7 +63,7 @@ foreach( $this->get( 'deliveryHidden', [] ) as $name ) {
 
 ?>
 <?php $this->block()->start( 'checkout/standard/address/delivery' ); ?>
-<div class="checkout-standard-address-delivery col-sm-6">
+<div class="checkout-standard-address-delivery col">
 
 	<h2><?= $enc->html( $this->translate( 'client', 'Delivery address' ), $enc::TRUST ); ?></h2>
 

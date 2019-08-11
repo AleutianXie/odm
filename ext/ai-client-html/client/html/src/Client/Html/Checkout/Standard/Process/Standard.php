@@ -259,7 +259,7 @@ class Standard
 			$basketCntl = \Aimeos\Controller\Frontend::create( $context, 'basket' );
 
 
-			if ( $view->param( 'cs_order', null ) !== null )
+			if( $view->param( 'cs_order', null ) !== null )
 			{
 				parent::process();
 
@@ -268,7 +268,7 @@ class Standard
 
 				$context->getSession()->set( 'aimeos/orderid', $orderItem->getId() );
 			}
-			elseif ( $view->param( 'cp_payment', null ) !== null )
+			elseif( $view->param( 'cp_payment', null ) !== null )
 			{
 				$parts = \Aimeos\MShop\Order\Item\Base\Base::PARTS_ALL;
 				$orderItem = $orderCntl->get( $context->getSession()->get( 'aimeos/orderid' ), false );
@@ -279,46 +279,40 @@ class Standard
 				return;
 			}
 
-			$total = $basket->getPrice()->getValue() + $basket->getPrice()->getCosts();
-			$services = $basket->getService( \Aimeos\MShop\Order\Item\Base\Service\Base::TYPE_PAYMENT );
-
-			if( $services === [] || $total <= 0 && $this->isSubscription( $basket->getProducts() ) === false )
-			{
-				$orderCntl->save( $orderItem->setPaymentStatus( \Aimeos\MShop\Order\Item\Base::PAY_AUTHORIZED ) );
-			}
-			elseif( ( $form = $this->processPayment( $basket, $orderItem ) ) !== null )
+			if( ( $form = $this->processPayment( $basket, $orderItem ) ) !== null )
 			{
 				$view->standardUrlNext = $form->getUrl();
 				$view->standardMethod = $form->getMethod();
 				$view->standardProcessParams = $form->getValues();
 				$view->standardUrlExternal = $form->getExternal();
 				$view->standardHtml = $form->getHtml();
-
-				return;
 			}
-
-			$view->standardUrlNext = $this->getUrlConfirm( $view, [], [] );
-			$view->standardMethod = 'POST';
+			else // no payment service available
+			{
+				$orderCntl->save( $orderItem->setPaymentStatus( \Aimeos\MShop\Order\Item\Base::PAY_AUTHORIZED ) );
+				$view->standardUrlNext = $this->getUrlConfirm( $view, [], [] );
+				$view->standardMethod = 'POST';
+			}
 		}
 		catch( \Aimeos\Client\Html\Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'client', $e->getMessage() ) );
-			$view->standardErrorList = $view->get( 'standardErrorList', [] ) + $error;
+			$view->standardErrorList = array_merge($view->get( 'standardErrorList', [] ), $error);
 		}
 		catch( \Aimeos\Controller\Frontend\Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'controller/frontend', $e->getMessage() ) );
-			$view->standardErrorList = $view->get( 'standardErrorList', [] ) + $error;
+			$view->standardErrorList = array_merge($view->get( 'standardErrorList', [] ), $error);
 		}
 		catch( \Aimeos\MShop\Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'mshop', $e->getMessage() ) );
-			$view->standardErrorList = $view->get( 'standardErrorList', [] ) + $error;
+			$view->standardErrorList = array_merge($view->get( 'standardErrorList', [] ), $error);
 		}
 		catch( \Exception $e )
 		{
 			$error = array( $context->getI18n()->dt( 'client', 'A non-recoverable error occured' ) );
-			$view->standardErrorList = $view->get( 'standardErrorList', [] ) + $error;
+			$view->standardErrorList = array_merge($view->get( 'standardErrorList', [] ), $error);
 			$this->logException( $e );
 		}
 	}

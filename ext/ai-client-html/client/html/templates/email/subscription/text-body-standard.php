@@ -12,6 +12,7 @@ $detailTarget = $this->config( 'client/html/catalog/detail/url/target' );
 $detailController = $this->config( 'client/html/catalog/detail/url/controller', 'catalog' );
 $detailAction = $this->config( 'client/html/catalog/detail/url/action', 'detail' );
 $detailConfig = $this->config( 'client/html/catalog/detail/url/config', array( 'absoluteUri' => 1 ) );
+$detailFilter = array_flip( $this->config( 'client/html/catalog/detail/url/filter', ['d_prodid'] ) );
 
 $product = $this->extOrderProductItem;
 
@@ -59,7 +60,7 @@ $vatFormat = $this->translate( 'client', 'Incl. %1$s%% VAT' );
 <?php if( $price->getCosts() > 0 ) { echo ' ' . strip_tags( sprintf( $costFormat, $this->number( $price->getCosts(), $price->getPrecision() ), $priceCurrency ) ); } ?>
 <?php if( $price->getTaxrate() > 0 ) { echo ', ' . strip_tags( sprintf( $vatFormat, $this->number( $price->getTaxrate() ) ) ); } ?>
 
-<?php $params = array_merge( $this->param(), ['currency' => $product->getPrice()->getCurrencyId(), 'd_prodid' => $product->getProductId(), 'd_name' => $product->getName( 'url' )] ); ?>
+<?php $params = array_diff_key( array_merge( $this->param(), ['currency' => $product->getPrice()->getCurrencyId(), 'd_name' => $product->getName( 'url' ), 'd_prodid' => $product->getProductId(), 'd_pos' => ''] ), $detailFilter ); ?>
 <?= $this->url( ( $product->getTarget() ?: $detailTarget ), $detailController, $detailAction, $params, [], $detailConfig ); ?>
 
 

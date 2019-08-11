@@ -116,7 +116,7 @@ $services = $this->summaryBasket->getServices();
 
 
 	<div class="common-summary-additional row">
-		<div class="item coupon col-sm-6">
+		<div class="item coupon col-sm-4">
 			<div class="header">
 				<h3><?= $enc->html( $this->translate( 'client', 'Coupon codes' ), $enc::TRUST ); ?></h3>
 			</div>
@@ -132,7 +132,17 @@ $services = $this->summaryBasket->getServices();
 			</div>
 		</div><!--
 
-		--><div class="item comment col-sm-6">
+		--><div class="item customerref col-sm-4">
+			<div class="header">
+				<h3><?= $enc->html( $this->translate( 'client', 'Your reference number' ), $enc::TRUST ); ?></h3>
+			</div>
+
+			<div class="content">
+				<?= $enc->html( $this->summaryBasket->getCustomerReference() ); ?>
+			</div>
+		</div><!--
+
+		--><div class="item comment col-sm-4">
 			<div class="header">
 				<h3><?= $enc->html( $this->translate( 'client', 'Your comment' ), $enc::TRUST ); ?></h3>
 			</div>
@@ -168,7 +178,10 @@ $services = $this->summaryBasket->getServices();
 				$this->config( 'client/html/checkout/confirm/summary/detail', 'common/summary/detail-standard' ),
 				array(
 					'summaryBasket' => $this->summaryBasket,
-					'summaryTaxRates' => $this->get( 'summaryTaxRates' ),
+					'summaryTaxRates' => $this->get( 'summaryTaxRates', [] ),
+					'summaryNamedTaxes' => $this->get( 'summaryNamedTaxes', [] ),
+					'summaryCostsPayment' => $this->get( 'summaryCostsPayment', 0 ),
+					'summaryCostsDelivery' => $this->get( 'summaryCostsDelivery', 0 ),
 					'summaryShowDownloadAttributes' => $this->get( 'summaryShowDownloadAttributes' ),
 				)
 			); ?>

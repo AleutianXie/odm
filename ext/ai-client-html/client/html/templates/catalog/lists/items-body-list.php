@@ -13,7 +13,7 @@ $detailTarget = $this->config( 'client/html/catalog/detail/url/target' );
 $detailController = $this->config( 'client/html/catalog/detail/url/controller', 'catalog' );
 $detailAction = $this->config( 'client/html/catalog/detail/url/action', 'detail' );
 $detailConfig = $this->config( 'client/html/catalog/detail/url/config', [] );
-$detailProdid = $this->config( 'client/html/catalog/detail/url/d_prodid', false );
+$detailFilter = array_flip( $this->config( 'client/html/catalog/detail/url/filter', ['d_prodid'] ) );
 
 $basketTarget = $this->config( 'client/html/basket/standard/url/target' );
 $basketController = $this->config( 'client/html/basket/standard/url/controller', 'basket' );
@@ -33,11 +33,8 @@ $basketParams = ( $basketSite ? ['site' => $basketSite] : [] );
 		<?php foreach( $this->get( 'listProductItems', [] ) as $id => $productItem ) : $firstImage = true; ?>
 			<?php
 				$conf = $productItem->getConfig(); $css = ( isset( $conf['css-class'] ) ? $conf['css-class'] : '' );
-				$params = ['d_name' => $productItem->getName( 'url' )];
-				$position === null ?: $params['d_pos'] = $position++;
-				$detailProdid == false ?: $params['d_prodid'] = $id;
-
-				$url = $this->url( ($productItem->getTarget() ?: $detailTarget ), $detailController, $detailAction, $params, [], $detailConfig );
+				$params = array_diff_key( ['d_name' => $productItem->getName( 'url' ), 'd_prodid' => $productItem->getId(), 'd_pos' => $position !== null ? $position++ : ''], $detailFilter );
+				$url = $this->url( ( $productItem->getTarget() ?: $detailTarget ), $detailController, $detailAction, $params, [], $detailConfig );
 			?>
 
 			--><li class="product <?= $enc->attr( $css ); ?>"
@@ -47,20 +44,27 @@ $basketParams = ( $basketSite ? ['site' => $basketSite] : [] );
 
 
 				<a class="media-list" href="<?= $url; ?>">
-					<?php foreach( $productItem->getRefItems( 'media', 'default', 'default' ) as $mediaItem ) : ?>
-						<?php $mediaUrl = $enc->attr( $this->content( $mediaItem->getPreview() ) ); ?>
-						<?php if( $firstImage === true ) : $firstImage = false; ?>
-							<noscript>
-								<div class="media-item" style="background-image: url('<?= $mediaUrl; ?>')"
-									itemtype="http://schema.org/ImageObject" itemscope="">
-									<meta itemprop="contentUrl" content="<?= $mediaUrl; ?>" />
-								</div>
-							</noscript>
-							<div class="media-item lazy-image" data-src="<?= $mediaUrl; ?>"></div>
-						<?php else : ?>
-							<div class="media-item" data-src="<?= $mediaUrl; ?>"></div>
-						<?php endif; ?>
-					<?php endforeach; ?>
+					<?php if( ( $mediaItem = current( $productItem->getRefItems( 'media', 'default', 'default' ) ) ) !== false ) : ?>
+						<noscript>
+							<div class="media-item" itemscope="" itemtype="http://schema.org/ImageObject">
+								<img loading="lazy" src="<?= $enc->attr( $this->content( $mediaItem->getPreview() ) ); ?>" alt="<?= $enc->attr( $mediaItem->getName() ); ?>" />
+								<meta itemprop="contentUrl" content="<?= $enc->attr( $this->content( $mediaItem->getPreview() ) ); ?>" />
+							</div>
+						</noscript>
+
+						<?php foreach( $productItem->getRefItems( 'media', 'default', 'default' ) as $mediaItem ) : ?>
+							<?php
+								$srcset = [];
+								foreach( $mediaItem->getPreviews() as $type => $path ) {
+									$srcset[] = $this->content( $path ) . ' ' . $type . 'w';
+								}
+							?>
+							<div class="media-item">
+								<img loading="lazy" class="lazy-image" data-src="<?= $enc->attr( $this->content( $mediaItem->getPreview() ) ); ?>" data-srcset="<?= $enc->attr( join( ', ', $srcset ) ) ?>" alt="<?= $enc->attr( $mediaItem->getName() ); ?>" />
+								<meta itemprop="contentUrl" content="<?= $enc->attr( $this->content( $mediaItem->getPreview() ) ); ?>" />
+							</div>
+						<?php endforeach; ?>
+					<?php endif; ?>
 				</a><!--
 
 

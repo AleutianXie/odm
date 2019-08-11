@@ -109,7 +109,8 @@ Aimeos = {
 			var element = $(elements[i]);
 
 			if($(window).scrollTop() + $(window).height() + 2 * element.height() >= element.offset().top) {
-				element.css("background-image", "url('" + element.data("src") + "')");
+				element.attr("srcset", element.data("srcset"));
+				element.attr("src", element.data("src"));
 				element.removeClass("lazy-image");
 			}
 		}
@@ -245,6 +246,104 @@ AimeosAccountHistory = {
 	}
 };
 
+
+
+
+/**
+ * Account profile actions
+ */
+AimeosAccountProfile = {
+
+	/**
+	 * Adds a new delivery address form
+	 */
+	setupAddressNew: function() {
+
+		$(".account-profile").on("click", "a.act-new", function(ev) {
+
+			var item = $(".prototype", ev.delegateTarget).removeClass("prototype");
+			$("input,select", item).removeAttr("disabled");
+			$(this).hide();
+
+			return false;
+		});
+	},
+
+
+	/**
+	 * Deletes a watched item without page reload
+	 */
+	setupAddressRemoval: function() {
+
+		$(".account-profile").on("click", "a.act-delete", function(ev) {
+
+			$(this).parents(".panel").remove();
+			return false;
+		});
+
+		$(".account-profile").on("click", "a.act-hide", function(ev) {
+
+			var item = $(this).parents(".panel").addClass("prototype");
+			$("input,select", item).attr("disabled", "disabled");
+			$("a.act-new", ev.delegateTarget).show();
+
+			return false;
+		});
+	},
+
+
+	/**
+	 * Checks address form for missing or wrong values
+	 */
+	setupMandatoryCheck: function() {
+
+		$(".account-profile .form-item").on("blur", "input,select", function(ev) {
+			var value = $(this).val();
+			var node = $(ev.delegateTarget);
+			var regex = new RegExp(node.data('regex') || '/.*/');
+
+			if((value !== '' && value.match(regex)) || (value === '' && !node.hasClass("mandatory"))) {
+				node.removeClass("error").addClass("success");
+			} else {
+				node.removeClass("success").addClass("error");
+			}
+		});
+
+		$(".account-profile form").on("submit", function(ev) {
+			var retval = true;
+			var nodes = [];
+
+			var testfn = function(idx, element) {
+
+				var elem = $(element);
+				var value = $("input,select", elem).val();
+
+				if(value === null || value.trim() === "") {
+					elem.addClass("error");
+					nodes.push(element);
+					retval = false;
+				} else {
+					elem.removeClass("error");
+				}
+			};
+
+			$(".form-list .mandatory", this).each(testfn);
+
+			return retval;
+		});
+	},
+
+
+	/**
+	 * Initializes the account watch actions
+	 */
+	init: function() {
+
+		this.setupAddressNew();
+		this.setupAddressRemoval();
+		this.setupMandatoryCheck();
+	}
+};
 
 
 
@@ -583,6 +682,7 @@ AimeosBasketStandard = {
 
 		$("body").on("focusin", ".basket-standard .basket .product .quantity .value", {}, function(ev) {
 			$(".btn-update", ev.delegateTarget).show();
+			$(".btn-action", ev.delegateTarget).hide();
 		});
 	},
 
@@ -808,11 +908,11 @@ AimeosCatalog = {
 					} else {
 						$(".addbasket .btn-action", parent).removeClass("btn-disabled").removeAttr("disabled");
 					}
+
+					$(".catalog-detail-additional .subproduct-actual").removeClass("subproduct-actual");
+					$(".catalog-detail-additional .subproduct-" + prodId).addClass("subproduct-actual");
 				}
 			}
-
-			$(".catalog-detail-additional .subproduct-actual").removeClass("subproduct-actual");
-			$(".catalog-detail-additional .subproduct-" + prodId).addClass("subproduct-actual");
 		});
 	},
 
@@ -1199,10 +1299,12 @@ AimeosCatalogList = {
 
 			if( list.length > 1 ) {
 				var second = list.eq(1);
-				var size = $(this).height();
+				var size = $(this).outerHeight();
+				var image = $("img", second);
 
 				$(this).css("background-image", "none"); // Don't let default image shine through
-				second.css("background-image", "url('" + second.data("src") + "')");
+				image.attr("srcset", image.data("srcset"));
+				image.attr("src", image.data("src"));
 				second.fadeTo(0, 0.33);
 
 				list.first().fadeTo(400, 0.33, function() {
@@ -1526,11 +1628,6 @@ Aimeos.loadImages();
 
 jQuery(document).ready(function($) {
 
-	/* CSS3 "background-size: contain" support for IE8 */
-	$(".catalog-list-items .media-item").css("background-size", "contain");
-	$(".catalog-detail-image .item").css("background-size", "contain");
-
-
 	/* Lazy product image loading in list view */
 	Aimeos.loadImages();
 	$(window).on("resize", Aimeos.loadImages);
@@ -1554,6 +1651,7 @@ jQuery(document).ready(function($) {
 	AimeosCheckoutStandard.init();
 	AimeosCheckoutConfirm.init();
 
+	AimeosAccountProfile.init();
 	AimeosAccountSubscription.init();
 	AimeosAccountHistory.init();
 	AimeosAccountFavorite.init();
